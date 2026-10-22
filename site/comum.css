@@ -1,0 +1,32 @@
+/* Navegação entre as páginas do site. Usa os tokens de cor definidos em cada página. */
+.abas {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-top: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.abas::-webkit-scrollbar { display: none; }
+.abas a {
+  flex: none;
+  padding: 10px 14px 9px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.abas a:hover { color: var(--ink); background: var(--surface-2); }
+.abas a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.abas a small { font-weight: 500; color: var(--muted); margin-left: 6px; font-size: 12px; }
+
+/* Celular: as abas rolam de lado; um esmaecido na borda direita mostra que há mais abas. */
+@media (max-width: 760px) {
+  .abas { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .abas a { padding: 12px 12px 11px; }
+}

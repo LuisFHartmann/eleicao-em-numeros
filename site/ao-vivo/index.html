@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apuração ao Vivo</title>
+<meta name="description" content="Acompanhamento da apuração do 2º turno para Presidente, com a projeção do resultado final atualizada a cada boletim.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Layout: barra de fonte/tempo fixa → placar (apurado, contagem, projeção, chance) → projeção ao longo da noite →
+   curva esperada × real → distribuição → estados → como funciona. Mesmo sistema visual das outras páginas. */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  --c22: #2a78d6; --c13: #e34948; --band: rgba(42, 120, 214, 0.16); --band-2: rgba(42, 120, 214, 0.30); --esperada: #7d837d; --t1: #b9bdb4;
+  --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 8px 24px rgba(20, 30, 25, 0.08);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px; --gap: 16px;
+  /* projeção inicial: o cinza de referência puxado para a cor de cada candidato, bem mais apagado que a atualizada */
+  --ini13: color-mix(in srgb, var(--c13) 42%, var(--esperada)); --ini22: color-mix(in srgb, var(--c22) 42%, var(--esperada));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --band: rgba(57, 135, 229, 0.20); --band-2: rgba(57, 135, 229, 0.36); --esperada: #8b918a; --t1: #4a514e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --band: rgba(57, 135, 229, 0.20); --band-2: rgba(57, 135, 229, 0.36); --esperada: #8b918a; --t1: #4a514e;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); text-underline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.lede { padding-block: 28px 4px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px 48px; align-items: end; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(32px, 5vw, 54px); line-height: 1.02; letter-spacing: -0.015em; margin: 4px 0 0; text-wrap: balance; }
+.lede p { margin: 12px 0 0; color: var(--ink-2); max-width: 64ch; }
+.answer { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--ink-2); font-size: 14.5px; margin: 0; }
+.answer b { color: var(--ink); }
+.como-ler { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 7px 12px 7px 10px; border: 1px solid var(--accent); border-radius: var(--r); background: var(--accent-soft); color: var(--ink); font-size: 14px; font-weight: 600; text-decoration: none; }
+.como-ler:hover { background: var(--surface); }
+.como-ler svg { width: 18px; height: 18px; flex: none; color: var(--accent); }
+/* barra fixa: fonte de dados e controle do tempo */
+.barra { position: sticky; top: 0; z-index: 20; background: var(--surface); border-block: 1px solid var(--line); margin-top: 20px; }
+.barra .wrap { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding-block: 10px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); flex: none; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.play { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--ink); color: var(--surface); cursor: pointer; display: grid; place-items: center; flex: none; }
+.play svg { width: 14px; height: 14px; }
+.relogio { display: flex; flex-direction: column; line-height: 1.1; min-width: 70px; }
+.relogio b { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 24px; }
+.relogio span { font-size: 11.5px; color: var(--muted); }
+.barra input[type=range] { flex: 1 1 180px; min-width: 140px; accent-color: var(--ink); }
+.status { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.status i.ok { background: #1baf7a; } .status i.erro { background: #c2410c; }
+select.vel { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); padding: 5px 8px; font-size: 13px; }
+/* placar */
+.placar { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; margin-top: 22px; }
+.placar > div { background: var(--surface); padding: 14px 16px; min-width: 0; }
+.placar .rot { font-size: 12.5px; color: var(--ink-2); }
+.placar .big { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 34px; line-height: 1.05; margin-top: 2px; }
+.placar .sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.par > div { display: flex; flex-direction: column; min-width: 0; }
+.par .quem { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.par b { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 28px; line-height: 1.05; }
+.par .iv { font-size: 12px; color: var(--muted); }
+.par .ini { font-size: 12px; color: var(--ink-2); margin-top: 3px; }
+.par .ini b { font-family: var(--f-body); font-size: 12px; font-weight: 700; color: var(--ink); }
+.par .ini > span { white-space: nowrap; }
+/* rótulos do gráfico da projeção, embaixo dele no celular */
+.rot-baixo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.rot-baixo > div { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.rot-baixo b { font-size: 13px; }
+.rot-baixo span { font-size: 12px; color: var(--muted); }
+/* tabela de estados recolhida */
+details.recolhe > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); font-size: 14.5px; font-weight: 600; color: var(--ink); }
+details.recolhe > summary::-webkit-details-marker { display: none; }
+details.recolhe > summary:hover { border-color: var(--line-strong); }
+details.recolhe > summary svg { width: 16px; height: 16px; flex: none; color: var(--ink-2); transition: transform .15s; }
+details.recolhe[open] > summary svg { transform: rotate(90deg); }
+details.recolhe > summary span { font-weight: 400; color: var(--muted); font-size: 13px; }
+details.recolhe[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+details.recolhe > .panel { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+@media (prefers-reduced-motion: reduce) { details.recolhe > summary svg { transition: none; } }
+.duo { display: flex; gap: 2px; height: 8px; border-radius: 2px; overflow: hidden; background: var(--surface-2); margin-top: 8px; }
+.duo i { display: block; height: 100%; }
+section.block { padding-block: 26px; border-top: 1px solid var(--line); }
+.block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px 24px; margin-bottom: 12px; }
+.block-head h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; line-height: 1.1; margin: 2px 0 0; text-wrap: balance; }
+.block-head p { margin: 6px 0 0; color: var(--ink-2); max-width: 74ch; font-size: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.dois { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart .lbl { font-size: 12px; font-weight: 650; fill: var(--ink); }
+.gridline { stroke: var(--line); stroke-width: 1; }
+.baseline { stroke: var(--line-strong); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; align-items: center; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+.tscroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.r, th.r { text-align: right; }
+td.barra-uf { width: 30%; min-width: 120px; }
+.mini { position: relative; height: 10px; background: var(--surface-2); border-radius: 2px; }
+.mini i { position: absolute; top: 0; bottom: 0; left: 0; background: var(--line-strong); border-radius: 2px; }
+.metodo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); font-size: 14px; color: var(--ink-2); }
+.metodo h3 { font-size: 15px; color: var(--ink); margin: 0 0 6px; }
+.metodo p { margin: 0 0 10px; }
+.aviso { background: var(--accent-soft); border-radius: var(--r); padding: 10px 14px; font-size: 13.5px; color: var(--ink-2); margin-top: 14px; }
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); max-width: 300px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.loading { padding: 70px 0; text-align: center; color: var(--muted); }
+footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+@media (max-width: 960px) {
+  .lede, .dois, .metodo { grid-template-columns: minmax(0, 1fr); }
+  .placar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .placar { grid-template-columns: minmax(0, 1fr); } .placar .big { font-size: 28px; } .status { margin-left: 0; }
+  .placar > div { padding: 12px 14px; }
+  /* barra compacta: fontes numa linha que ocupa a largura; play, relógio, tempo e velocidade na linha de baixo */
+  .barra .wrap { gap: 8px 10px; padding-block: 8px; }
+  .barra .seg { width: 100%; }
+  .barra .seg button { flex: 1 1 0; padding: 7px 4px; font-size: 12.5px; white-space: nowrap; }
+  .relogio { min-width: 56px; } .relogio b { font-size: 20px; } .relogio span { font-size: 10.5px; }
+  .barra input[type=range] { min-width: 0; flex: 1 1 60px; }
+  .barra.replay .status { display: none; }  /* na reprodução, a fonte já está no botão marcado */
+  .block-head h2 { font-size: 23px; }
+  .tip { max-width: calc(100vw - 16px); }
+}
+/* tabela de estados: rolagem própria nas duas direções, cabeçalho e coluna do estado presos */
+.tscroll { overflow: auto; padding: 0 0 6px; }
+@media (max-width: 960px) { .tscroll { max-height: min(72vh, 620px); overscroll-behavior: contain; } }
+#tb-uf { min-width: 640px; }
+#tb-uf thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); padding-top: 10px; }
+#tb-uf td:first-child, #tb-uf th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+#tb-uf thead th:first-child { z-index: 3; }
+.ufn { color: var(--muted); }
+details.recolhe > summary { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  #tb-uf td:first-child { min-width: 112px; max-width: 128px; box-shadow: 1px 0 0 var(--line); }
+  #tb-uf .ufn { display: block; font-size: 12px; line-height: 1.3; }
+  details.recolhe > summary span { flex-basis: 100%; padding-left: 26px; margin-top: -6px; }
+}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+  <div class="brand">
+    <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Ao vivo · 2º turno · Presidente</div></div>
+  </div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/" aria-current="page">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav></header>
+
+<main>
+  <section class="wrap lede">
+    <div>
+      <div class="eyebrow" id="eyebrow">Domingo, 25 de outubro de 2026 · a partir das 17h</div>
+      <h1>Para onde a apuração está indo</h1>
+      <p>A contagem da noite mostra só os votos que já chegaram, e eles chegam em ordem: Sul e Centro-Oeste primeiro, Nordeste por último. Esta página estima, a cada atualização, como fica o resultado quando todas as urnas chegarem. Para isso usa o que cada município votou no 1º turno e o quanto os boletins que já chegaram fogem do esperado.</p>
+      <a class="como-ler" href="como-ler/"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.2" fill="currentColor"/></svg>Como ler este painel (e o que ele não diz) →</a>
+    </div>
+    <p class="answer" id="resposta">Carregando…</p>
+  </section>
+
+  <div class="barra" id="barra" hidden>
+    <div class="wrap">
+      <div class="seg" role="group" aria-label="Fonte dos dados" id="fonte">
+        <button type="button" data-fonte="vivo" aria-pressed="false">Ao vivo (TSE)</button>
+        <button type="button" data-fonte="replay_2022" aria-pressed="false">Noite real de 2022</button>
+        <button type="button" data-fonte="sim_2026" aria-pressed="false">Simulação 2026</button>
+      </div>
+      <button type="button" class="play" id="play" aria-label="Reproduzir"></button>
+      <div class="relogio"><b id="hora" class="num">17:00</b><span id="hora-sub">horário de Brasília</span></div>
+      <input type="range" id="tempo" min="0" max="1" value="0" aria-label="Momento da noite">
+      <select class="vel" id="vel" aria-label="Velocidade da reprodução"><option value="1">1 min/s</option><option value="2" selected>2 min/s</option><option value="5">5 min/s</option></select>
+      <div class="status" id="status"><i></i><span>—</span></div>
+    </div>
+  </div>
+
+  <div class="wrap" id="conteudo"><div class="loading">Carregando o modelo…</div></div>
+</main>
+
+<footer><div class="wrap">Dados ao vivo: <a href="https://resultados.tse.jus.br/oficial/app/index.html" target="_blank" rel="noopener">resultados.tse.jus.br</a>, consultados direto do seu navegador. Projeção: modelo próprio, explicado na <a href="../metodologia/">metodologia</a>. Esta página não é do TSE, e o resultado oficial é sempre o do TSE.</div></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script src="modelo.js"></script>
+<script>
+"use strict";
+const UFN = { AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins", ZZ: "Exterior" };
+const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
+// ?eleicao=6257 aponta o modo ao vivo para o 1º turno (já apurado), útil para testar a leitura da API
+const ELE = /^\d{4}$/.test(new URLSearchParams(location.search).get("eleicao") ?? "") ? new URLSearchParams(location.search).get("eleicao") : "6258";
+const TSE = `https://resultados.tse.jus.br/oficial/ele2026/${ELE}`, E6 = `e00${ELE}`;
+const INTERVALO_VIVO = 60000; // ms entre consultas ao TSE
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const fmt = new Intl.NumberFormat("pt-BR");
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const num = s => +String(s ?? "0").replace(/\./g, "").replace(",", ".") || 0;
+const ICON_PLAY = '<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/></svg>';
+const cache = {};
+const getJSON = url => cache[url] ??= fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status} em ${url}`); return r.json(); });
+
+const S = { eixo: "hora", fonte: null, P: null, prior: null, obs: null, hist: [], proj: null, inicial: null, replay: null, k: 0, iEv: 0, tocando: null, timer: null, teste: null };
+
+/* ===================== fontes de dados ===================== */
+async function usarFonte(f) {
+  pararTudo();
+  S.fonte = f;
+  document.querySelectorAll("#fonte button").forEach(b => b.setAttribute("aria-pressed", b.dataset.fonte === f));
+  const ehReplay = f !== "vivo";
+  ["play", "tempo", "vel"].forEach(id => document.getElementById(id).hidden = !ehReplay);
+  document.getElementById("barra").classList.toggle("replay", ehReplay);
+  status("", "carregando…");
+  const arqPrior = f === "replay_2022" ? "prior_2022.json" : "prior_2026.json";
+  S.prior = await getJSON(`dados/${arqPrior}`);
+  S.P = Modelo.preparar(S.prior);
+  S.obs = Modelo.vazio(S.P);
+  S.hist = [];
+  S.inicial = Modelo.projetar(S.P, S.obs, { sims: 4000, semente: 7 });
+  S.teste = await getJSON(`dados/teste_${f === "vivo" ? "replay_2022" : f}.json`).catch(() => null);
+  // a reprodução é carregada antes de montar a página: o aviso do modo 2022 cita o resultado real daquela noite
+  S.replay = ehReplay ? await getJSON(`dados/${f}.json`) : null;
+  montar();
+  if (ehReplay) {
+    S.k = 0; S.iEv = 0;
+    const slider = document.getElementById("tempo");
+    slider.max = S.replay.passos; slider.value = 0;
+    const kPedido = +new URLSearchParams(location.search).get("k") || 0; // ?k=60 abre a reprodução nesse passo
+    atualizarReplay(Math.min(R_passos(), kPedido), true);
+    status("ok", S.replay.nome);
+  } else {
+    try { S.hist = JSON.parse(localStorage.getItem(`aovivo-hist-${ELE}`) || "[]"); } catch { S.hist = []; }
+    const n0 = Array.isArray(S.hist) ? S.hist.length : 0;
+    S.hist = limparHist(S.hist);
+    if (S.hist.length !== n0) try { localStorage.setItem(`aovivo-hist-${ELE}`, JSON.stringify(S.hist)); } catch { /* sem armazenamento */ }
+    await cicloVivo();
+    S.timer = setInterval(cicloVivo, INTERVALO_VIVO);
+  }
+}
+/* Histórico salvo (localStorage ou coletor): só valem pontos com contagem e da noite da eleição. Versões antigas
+   da página gravavam pontos sem contagem, com o horário da consulta, e eles apareciam como linhas antes da apuração. */
+const INICIO_VIVO = { "6258": "2026-10-25T17:00:00-03:00", "6257": "2026-10-04T17:00:00-03:00" }[ELE];
+const limparHist = h => {
+  const t0 = INICIO_VIVO ? Date.parse(INICIO_VIVO) : -Infinity;
+  return (Array.isArray(h) ? h : []).filter(p => p && isFinite(p.t) && p.t >= t0 && p.atual != null && isFinite(p.atual) && p.apurado > 0 && isFinite(p.mediana))
+    .sort((a, b) => a.t - b.t);
+};
+function pararTudo() {
+  clearInterval(S.timer); S.timer = null;
+  if (S.tocando) { clearInterval(S.tocando); S.tocando = null; }
+  document.getElementById("play").innerHTML = ICON_PLAY;
+}
+function status(cls, txt) {
+  const el = document.getElementById("status");
+  el.querySelector("i").className = cls;
+  el.querySelector("span").textContent = txt;
+}
+
+/* ---- ao vivo: índices de andamento (-ab) para saber o que mudou, e só então os municípios (-u) ---- */
+const vistoUF = {}, vistoMun = {};
+async function cicloVivo() {
+  if (await usarSnapshot()) return;
+  try {
+    const br = await getFresh(`${TSE}/dados/br/br-${E6}-ab.json`);
+    const mudouUF = br.abr.filter(x => x.tpabr === "uf" && x.s && num(x.s.st) > 0 && vistoUF[x.cdabr] !== `${x.s.st}|${x.dt}|${x.ht}`);
+    let baixados = 0;
+    for (const u of mudouUF) {
+      const uf = u.cdabr.toLowerCase();
+      const ab = await getFresh(`${TSE}/dados/${uf}/${uf}-${E6}-ab.json`);
+      const muns = ab.abr.filter(x => x.tpabr === "mun" && num(x.s?.st) > 0 && vistoMun[uf + x.cdabr] !== `${x.s.st}|${x.dt}|${x.ht}`);
+      await emLotes(muns, 24, async x => {
+        const d = await getFresh(`${TSE}/dados/${uf}/${uf}${x.cdabr}-c0001-${E6}-u.json`);
+        lerMunicipio(uf, x.cdabr, d);
+        vistoMun[uf + x.cdabr] = `${x.s.st}|${x.dt}|${x.ht}`;
+        baixados++;
+      });
+      if (uf === "zz") { const d = await getFresh(`${TSE}/dados/zz/zz-c0001-${E6}-u.json`); lerMunicipio("zz", "ZZ", d); }
+      vistoUF[u.cdabr] = `${u.s.st}|${u.dt}|${u.ht}`;
+    }
+    const tot = br.abr.find(x => x.tpabr === "br" || x.cdabr === "br");
+    const apuradoTSE = tot ? num(tot.s?.pst) / 100 : null;
+    // também na 1ª consulta (S.proj vazio), para a página nunca ficar sem desenho quando há histórico salvo
+    if (baixados || !S.hist.length || !S.proj) registrar(new Date(), apuradoTSE);
+    status("ok", `TSE · ${tot?.ht || "sem dados ainda"} · ${baixados} municípios novos`);
+    if (!S.hist.length || apuradoTSE === 0) document.getElementById("resposta").innerHTML = textoAntes();
+  } catch (e) {
+    status("erro", `falha ao consultar o TSE (${e.message}); nova tentativa em 1 min`);
+  }
+}
+/* Snapshot publicado pelo coletor (pipeline/coletor.py): um arquivo só com todos os municípios e o histórico.
+   Com muitos visitantes, evita que cada navegador baixe milhares de arquivos do TSE. */
+async function usarSnapshot() {
+  try {
+    // no ar: a Pages Function serve o snapshot do R2 em /vivo/; localmente, o arquivo gravado pelo coletor
+    let d = null;
+    for (const u of [`/vivo/${ELE}.json`, `dados/vivo_${ELE}.json`]) { try { d = await getFresh(u); break; } catch { /* tenta o próximo */ } }
+    if (!d) return false;
+    if (Date.now() - Date.parse(d.atualizado) > 10 * 60000) return false;
+    ["st", "est", "a", "b"].forEach(k => S.obs[k] = Float64Array.from(d.obs[k]));
+    S.hist = limparHist(d.hist).filter(h => h.t < Date.parse(d.atualizado) - 1000);
+    registrar(new Date(d.atualizado), d.apurado);
+    status("ok", `coletor · TSE ${d.horaTSE ?? ""}`);
+    return true;
+  } catch { return false; }
+}
+const getFresh = url => fetch(url, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+async function emLotes(lista, n, f) { for (let i = 0; i < lista.length; i += n) await Promise.all(lista.slice(i, i + n).map(f)); }
+function lerMunicipio(uf, cod, d) {
+  const m = S.P.chave.get(uf + cod);
+  if (m == null) return;
+  const cands = d.carg?.[0]?.agr?.flatMap(a => a.par.flatMap(p => p.cand)) ?? [];
+  const v = n => num(cands.find(c => c.n === n)?.vap);
+  S.obs.a[m] = v(S.prior.rotulos.a); S.obs.b[m] = v(S.prior.rotulos.b);
+  S.obs.st[m] = num(d.s?.st);
+  // eleitores das seções já apuradas; se o arquivo não trouxer, proporcional às seções
+  S.obs.est[m] = num(d.e?.est) || S.P.te[m] * S.obs.st[m] / Math.max(1, num(d.s?.ts) || S.P.ts[m]);
+}
+
+/* ---- replay: eventos gravados, no ritmo escolhido ---- */
+function atualizarReplay(k, salto = false) {
+  const R = S.replay;
+  if (salto || k < S.k) {
+    // pular para um instante: refaz a noite até ali, com projeções mais leves a cada 10 minutos
+    S.obs = Modelo.vazio(S.P); S.iEv = 0; S.hist = [];
+    for (let j = 0; j < k; j++) { S.iEv = Modelo.aplicarEventos(S.obs, R.eventos, S.iEv, j + 1); if (j % 5 === 4 || j === k - 1) registrar(horaReplay(j + 1), null, j === k - 1 ? 2000 : 300, j + 1); }
+  }
+  else { for (let j = S.k; j < k; j++) { S.iEv = Modelo.aplicarEventos(S.obs, R.eventos, S.iEv, j + 1); } registrar(horaReplay(k), null, 800, k); }
+  if (k === 0) registrar(horaReplay(0), null, 800, 0);
+  S.k = k;
+  document.getElementById("tempo").value = k;
+}
+const R_passos = () => S.replay.passos;
+const horaReplay = k => new Date(new Date(S.replay.inicio).getTime() + k * S.replay.passoMin * 60000);
+function alternarPlay() {
+  const play = document.getElementById("play");
+  if (S.tocando) { clearInterval(S.tocando); S.tocando = null; play.innerHTML = ICON_PLAY; return; }
+  if (S.k >= S.replay.passos) atualizarReplay(0, true);
+  play.innerHTML = ICON_PAUSE;
+  // cada passo do arquivo são 2 min da noite; a velocidade diz quantos minutos da noite passam por segundo
+  S.tocando = setInterval(() => {
+    if (S.k >= S.replay.passos) return alternarPlay();
+    atualizarReplay(Math.min(S.replay.passos, S.k + 1));
+  }, 1000 / (+document.getElementById("vel").value / S.replay.passoMin));
+}
+
+/* ===================== projeção e registro ===================== */
+function registrar(t, apuradoTSE, sims = 2000, k = null) {
+  let p = Modelo.projetar(S.P, S.obs, { sims, semente: 11 + (k ?? S.hist.length) });
+  if (!p.contados) p = S.inicial;  // nada contado ainda: a mesma projeção inicial do texto de abertura
+  S.proj = p;
+  if (!p.contados) { pintar(t); return; }  // antes do 1º boletim (ao vivo ou antes do play): só a base esperada
+  const ponto = { t: +t, apurado: apuradoTSE ?? p.apurado, atual: p.atual, mediana: p.mediana, q05: p.q05, q95: p.q95, q25: p.q25, q75: p.q75, pB: p.pB };
+  const ult = S.hist[S.hist.length - 1];
+  if (!ult || ult.t !== ponto.t) S.hist.push(ponto); else S.hist[S.hist.length - 1] = ponto;
+  if (S.fonte === "vivo") try { localStorage.setItem(`aovivo-hist-${ELE}`, JSON.stringify(S.hist.slice(-400))); } catch { /* sem armazenamento: o histórico vale só nesta aba */ }
+  pintar(t);
+}
+
+/* ===================== desenho ===================== */
+const nomeA = () => S.prior.rotulos.nomeA, nomeB = () => S.prior.rotulos.nomeB;
+// os dois candidatos sempre juntos e na ordem do número na urna; cores da convenção da imprensa (13 vermelho, 22 azul)
+const corN = n => n === "22" ? "--c22" : "--c13";
+const CANDS = () => [{ n: S.prior.rotulos.a, nome: nomeA(), lado: "a" }, { n: S.prior.rotulos.b, nome: nomeB(), lado: "b" }];
+const fatia = (lado, xB) => xB == null ? null : lado === "b" ? xB : 1 - xB;   // fatia de cada um entre os válidos dos dois
+function textoAntes() {
+  const p = S.inicial;
+  const [A, B] = CANDS();
+  return `<b>Antes do primeiro boletim:</b> ${esc(A.nome)} (${A.n}) ${pct(1 - p.mediana)} e ${esc(B.nome)} (${B.n}) ${pct(p.mediana)} dos votos válidos, na mediana das simulações. Chance de vitória: ${A.n} ${pct(1 - p.pB, 0)}, ${B.n} ${pct(p.pB, 0)}. É o ponto de partida; os boletins corrigem a estimativa ao longo da noite.`;
+}
+function montar() {
+  const [A, B] = CANDS();
+  document.getElementById("eyebrow").textContent = S.fonte === "replay_2022" ? "Domingo, 30 de outubro de 2022 · noite real, para testar o modelo" : S.fonte === "sim_2026" ? "Simulação · uma noite possível de 25 de outubro de 2026" : "Domingo, 25 de outubro de 2026 · a partir das 17h";
+  document.getElementById("resposta").innerHTML = textoAntes();
+  const aviso = S.fonte === "vivo" ? "" : S.fonte === "sim_2026"
+    ? `<b>Simulação, não é a apuração real.</b> Uma noite inventada para ver o painel funcionando. Os votos de cada seção saem do 1º turno de 2026 redistribuídos como os eleitores migraram em 2014, 2018 e 2022 (o mesmo cálculo da <a href="../segundo-turno/">simulação do 2º turno</a>), mais erros sorteados por região, estado, município e seção. O resultado final fica no centro do que o modelo espera hoje, e os boletins chegam na hora em que chegaram no 1º turno. Na noite de 25/10 o painel troca sozinho para os dados do TSE.`
+    : `<b>Teste com a noite real de 2022.</b> Boletins reais, na hora em que chegaram. O modelo só sabe o que se sabia antes daquela eleição: o 1º turno de 2022 e a migração de votos de 2014 e 2018. É daí que vem a <b>projeção inicial</b> (o esperado antes do primeiro boletim): ${esc(A.nome)} ${pct(1 - S.inicial.mediana)} e ${esc(B.nome)} ${pct(S.inicial.mediana)}. O resultado real foi ${pct(1 - S.replay.final.b)} e ${pct(S.replay.final.b)}; a diferença é o que os boletins precisam corrigir ao longo da noite. A largura da faixa foi calibrada nesta mesma noite (<a href="como-ler/#testes">por que isso importa</a>).`;
+  document.getElementById("conteudo").innerHTML = `
+    ${S.fonte !== "vivo" ? `<p class="aviso">${aviso} Aperte o play.</p>` : ""}
+    <div class="placar" id="placar"></div>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Projeção</div><h2>O resultado projetado, a cada atualização</h2>
+        <p><b>Tracejada, em tom apagado da cor de cada um:</b> a projeção inicial, feita antes de qualquer boletim. Fica fixa a noite toda e serve de régua. Até os primeiros boletins chegarem, ela vem com a faixa de 90% das simulações; depois, fica só a linha. <b>Em cor viva:</b> a projeção atualizada a cada boletim (linha fina na mediana e faixa de 90%) e a contagem oficial (linha grossa). A pontilhada é como a contagem deve aparecer a cada horário, dada a ordem em que os boletins costumam chegar. As linhas começam em 1% apurado, porque antes disso poucos boletins oscilam demais. A contagem anda muito; a projeção deve andar pouco.</p></div></div>
+      <div class="panel"><div class="legend">${CANDS().map(c => `<span><i class="sw" style="background:var(${corN(c.n)})"></i>${esc(c.nome)} (${c.n})</span>`).join("")}<span id="leg-ini">${legIni(true)}</span><span>${legBanda("currentColor", 1.6, null)} projeção atualizada</span><span>${linhaLeg(3)} contagem oficial</span><span>${linhaLeg(1.6, "1 3")} contagem esperada por horário</span></div><div class="chart" id="ch-proj"></div></div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Curva da apuração</div><h2>Como a contagem deve andar, e como está andando</h2>
+        <p>A curva esperada aplica a votação esperada de cada seção à ordem e ao horário em que os boletins chegaram ${S.fonte === "replay_2022" ? "naquela noite" : "no 1º turno"}. Ela mostra, antes da noite começar, como cada candidato deve aparecer no início da contagem e quando a curva deve se aproximar do resultado.</p></div>
+        <div class="seg" role="group" aria-label="Eixo horizontal" id="seg-eixo"><button type="button" data-eixo="pct" aria-pressed="${S.eixo === "pct"}">Por % apurado</button><button type="button" data-eixo="hora" aria-pressed="${S.eixo === "hora"}">Por horário</button></div></div>
+      <div class="dois">
+        <div class="panel"><div class="legend">${CANDS().map(c => `<span><i class="sw" style="background:var(${corN(c.n)})"></i>${esc(c.nome)}</span>`).join("")}<span>${linhaLeg(3)} contagem</span><span>${linhaLeg(1.6, "5 4")} esperada</span>${S.prior.curva1T ? `<span>${linhaLeg(1.6, "1 3")} 1º turno (só ${A.n} e ${B.n})</span>` : ""}</div><div class="chart" id="ch-curva"></div></div>
+        <div class="panel"><div class="legend"><span>Distribuição das simulações do resultado final. À esquerda de 50% vence o ${A.n}; à direita, o ${B.n}.</span></div><div class="chart" id="ch-dist"></div></div>
+      </div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Estados</div><h2>Quanto falta e o que se espera de cada estado</h2>
+        <p>Contagem e projeção de cada candidato entre os votos válidos de cada estado. Quanto menos apurado, mais a projeção depende do que se esperava e do desvio dos outros estados da mesma região.</p></div></div>
+      <details class="recolhe" id="det-uf"><summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ver os 27 estados e o exterior <span>apurado, contagem, projeção e desvio de cada um</span></summary>
+      <div class="panel tscroll"><table id="tb-uf"><thead><tr><th>Estado</th><th class="r">Apurado</th><th>Andamento</th><th class="r">Contagem<br>${A.n} · ${B.n}</th><th class="r">Projeção<br>${A.n} · ${B.n}</th><th class="r">Desvio do esperado</th></tr></thead><tbody></tbody></table></div></details>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Como funciona</div><h2>O modelo em três passos</h2><p>Mais detalhes em <a href="como-ler/">como ler este painel</a> e na <a href="../metodologia/#aovivo">metodologia</a>.</p></div></div>
+      <div class="metodo">
+        <div><h3>1. O esperado de cada município</h3><p>Antes da eleição, cada município recebe uma votação esperada no 2º turno: os votos de cada candidato do 1º turno, de brancos e nulos e a abstenção, redistribuídos como os eleitores migraram em 2014, 2018 e 2022 (ver <a href="../segundo-turno/">simulação do 2º turno</a>).</p></div>
+        <div><h3>2. O desvio do que já chegou</h3><p>A cada atualização, compara-se a contagem de cada município com o esperado. Os desvios são separados em camadas (Brasil, região, estado, município) e os municípios que ainda não apuraram herdam o desvio do seu estado e da sua região. Um município que apurou metade herda também o seu próprio desvio.</p></div>
+        <div><h3>3. A incerteza</h3><p>Cada projeção sorteia milhares de vezes os desvios, mais um choque extra pela ordem de chegada (os primeiros boletins não são uma amostra ao acaso), que diminui conforme a noite avança. Testado na noite real de 2022: <span id="txt-teste">—</span></p></div>
+      </div>
+    </section>`;
+  document.querySelectorAll("#seg-eixo button").forEach(bt => bt.addEventListener("click", () => {
+    S.eixo = bt.dataset.eixo;
+    document.querySelectorAll("#seg-eixo button").forEach(x => x.setAttribute("aria-pressed", x === bt));
+    desenharCurva();
+  }));
+  const T = S.teste;
+  if (T && S.fonte !== "sim_2026") {
+    const ate = T.linhas.filter(l => l.apurado > 0 && l.apurado < 0.95);
+    const dentro = ate.filter(l => l.q05 <= T.final && T.final <= l.q95).length;
+    const l8 = T.linhas.find(l => l.apurado >= 0.08);
+    document.getElementById("txt-teste").innerHTML = `com ${pct(l8.apurado, 0)} apurado, a contagem mostrava Lula ${pct(1 - l8.atual)} e Bolsonaro ${pct(l8.atual)}; a projeção dizia Lula ${pct(1 - l8.mediana)} e Bolsonaro ${pct(l8.mediana)}. O final foi ${pct(1 - T.final)} a ${pct(T.final)}. O resultado ficou dentro da faixa de 90% em ${dentro} de ${ate.length} atualizações até 95% apurado.`;
+  } else if (T) document.getElementById("txt-teste").innerHTML = `veja o modo "Noite real de 2022".`;
+}
+// início da noite em exibição e instante em que a curva esperada chega a ~100% apurado
+const inicioNoite = () => S.replay ? +horaReplay(0) : Date.parse("2026-10-25T17:00:00-03:00");
+const fimCurva = c => { const f = c.q.findIndex(v => v >= 0.997); return f < 0 ? c.b.length : f + 1; };
+const MIN_APURADO = 0.01; // abaixo disso a contagem é feita de poucos boletins e oscila demais para o gráfico
+const fimEsperado = () => { const c = S.prior.curvaEsperadaHora; return inicioNoite() + fimCurva(c) * c.passoMin * 60000; };
+// há contagem a partir de 1% apurado? Até lá, a projeção inicial aparece com a faixa de 90%; depois, só a linha
+const temDados = () => S.hist.some(h => h.atual != null && h.apurado >= MIN_APURADO);
+// tom apagado de cada candidato para a projeção inicial (o cinza de referência puxado para a cor dele)
+const corIni = n => n === "22" ? "--ini22" : "--ini13";
+// legenda da projeção inicial: as duas tracejadas apagadas (13 em cima, 22 embaixo), com a faixa só antes dos dados
+const legIni = (faixa) => { const [A, B] = CANDS(); return `<svg width="24" height="12" aria-hidden="true" style="vertical-align:-1px">${faixa ? `<rect x="0" y="0.5" width="24" height="5.5" fill="var(${corIni(A.n)})" opacity=".3"/><rect x="0" y="6" width="24" height="5.5" fill="var(${corIni(B.n)})" opacity=".3"/>` : ""}<line x1="0" x2="24" y1="3.2" y2="3.2" stroke="var(${corIni(A.n)})" stroke-width="1.6" stroke-dasharray="4 3"/><line x1="0" x2="24" y1="8.8" y2="8.8" stroke="var(${corIni(B.n)})" stroke-width="1.6" stroke-dasharray="4 3"/></svg> ${faixa ? "projeção inicial e faixa de 90% (até chegarem os boletins)" : "projeção inicial (antes da apuração)"}`; };
+// faixa com linha no meio: na cor do texto = projeção atualizada
+const legBanda = (cor = "var(--esperada)", w = 1.4, dash = "5 4") => `<svg width="24" height="12" aria-hidden="true" style="vertical-align:-1px"><rect x="0" y="1" width="24" height="10" rx="1.5" fill="${cor}" opacity=".22"/><line x1="0" x2="24" y1="6" y2="6" stroke="${cor}" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ""}/></svg>`;
+const linhaLeg = (w, dash = null) => `<svg width="24" height="10" aria-hidden="true" style="vertical-align:0"><line x1="0" x2="24" y1="5" y2="5" stroke="currentColor" stroke-width="${w}"${dash ? ` stroke-dasharray="${dash}"` : ""}/></svg>`;
+
+function pintar(t) {
+  const p = S.proj, [A, B] = CANDS();
+  document.getElementById("hora").textContent = new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  document.getElementById("hora-sub").textContent = S.fonte === "vivo" ? "última consulta" : "horário da noite";
+  const fim = S.replay && S.k >= S.replay.passos;
+  const duo = x => x == null ? "" : `<div class="duo"><i style="width:${(1 - x) * 100}%;background:var(${corN(A.n)})"></i><i style="flex:1"></i><i style="width:${x * 100}%;background:var(${corN(B.n)})"></i></div>`;
+  const par = (f, sub = () => "") => `<div class="par">${CANDS().map(c => `<div><span class="quem">${c.n} · ${esc(c.nome)}</span><b class="num" style="color:var(${corN(c.n)})">${f(c)}</b>${sub(c)}</div>`).join("")}</div>`;
+  const chance = c => { const v = c.lado === "b" ? p.pB : 1 - p.pB; return v > 0.995 ? "> 99%" : v < 0.005 ? "< 1%" : pct(v, 0); };
+  const iv = c => `<span class="iv num">faixa ${pct(fatia(c.lado, c.lado === "b" ? p.q05 : p.q95))}–${pct(fatia(c.lado, c.lado === "b" ? p.q95 : p.q05))}</span>`;
+  // projeção inicial (antes de qualquer boletim) ao lado da atualizada, para a comparação ficar à vista
+  const p0 = S.inicial;
+  // a tracejada apagada repete o traço do gráfico: o número grande é a projeção agora, esta linha a de antes da apuração
+  const traco = c => `<svg width="16" height="8" aria-hidden="true" style="vertical-align:1px;margin-right:4px"><line x1="0" x2="16" y1="4" y2="4" stroke="var(${corIni(c.n)})" stroke-width="2" stroke-dasharray="4 2.5"/></svg>`;
+  const ini = c => `<span class="ini num"><span>${traco(c)}${p.contados ? `inicial ${pct(fatia(c.lado, p0.mediana))}` : "nenhum boletim ainda"}</span></span>`;
+  const chance0 = `antes da apuração: ${A.n} ${pct(1 - p0.pB, 0)} · ${B.n} ${pct(p0.pB, 0)}`;
+  document.getElementById("placar").innerHTML = `
+    <div><div class="rot">Seções apuradas</div><div class="big num">${pct(p.apurado)}</div><div class="sub">${fmt.format(Math.round(p.contados))} votos válidos contados</div></div>
+    <div><div class="rot">Contagem oficial agora</div>${par(c => p.atual == null ? "—" : pct(fatia(c.lado, p.atual)))}${duo(p.atual)}<div class="sub">só os votos que já chegaram</div></div>
+    <div><div class="rot">${p.contados ? "Projeção do resultado final (mediana e faixa de 90%)" : "Projeção inicial, antes da apuração (mediana e faixa de 90%)"}</div>${par(c => pct(fatia(c.lado, p.mediana)), c => iv(c) + ini(c))}${duo(p.mediana)}</div>
+    <div><div class="rot">Chance de vitória</div>${par(chance)}<div class="sub">${fim ? `resultado real: ${A.n} ${pct(1 - S.replay.final.b)} · ${B.n} ${pct(S.replay.final.b)}` : p.contados ? `${chance0}<br>em ${fmt.format(p.amostras.length)} simulações desta atualização` : `em ${fmt.format(p.amostras.length)} simulações, antes da apuração`}</div></div>`;
+  if (p.atual != null) {
+    const lider = p.pB >= 0.5 ? B : A, ch = p.pB >= 0.5 ? p.pB : 1 - p.pB;
+    document.getElementById("resposta").innerHTML = `<b>${pct(p.apurado, 0)} apurado.</b> A contagem mostra ${esc(A.nome)} ${pct(1 - p.atual)} e ${esc(B.nome)} ${pct(p.atual)}. Pelo que falta chegar, a projeção atualizada diz ${pct(1 - p.mediana)} a ${pct(p.mediana)} (antes da apuração, dizia ${pct(1 - p0.mediana)} a ${pct(p0.mediana)}); ${esc(lider.nome)} vence em ${ch > 0.995 ? "mais de 99%" : pct(ch, 0)} das simulações.${fim ? ` <b>Resultado real: ${pct(1 - S.replay.final.b)} a ${pct(S.replay.final.b)}.</b>` : ""}`;
+  }
+  desenharProj(); desenharCurva(); desenharDist(); tabelaUF();
+}
+
+function eixoY(g, y, iw) { y.ticks(6).forEach(v => { g.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(v)).attr("y2", y(v)); g.append("text").attr("x", -8).attr("y", y(v)).attr("dy", "0.32em").attr("text-anchor", "end").text(pct(v, 0)); }); }
+function linha50(g, y, iw) { g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(.5)).attr("y2", y(.5)).attr("stroke", css("--ink")).attr("stroke-dasharray", "2 3").attr("opacity", .55); }
+// eixo simétrico em torno de 50%: os dois candidatos são espelho um do outro
+const escalaSim = (vals, ih, minimo = .05) => { const h = Math.max(minimo, d3.max(vals, v => Math.abs(v - .5)) + .01); return d3.scaleLinear().domain([.5 - h, .5 + h]).range([ih, 0]).clamp(true); };
+// Um bloco de rótulo por candidato, preso à linha da projeção: o candidato de cima cresce para cima e o de baixo
+// para baixo, então os blocos nunca se sobrepõem, mesmo quando os dois estão a décimos de 50%.
+function rotulosDireita(g, itens, iw) { // itens: [{y, titulo, sub: texto ou [texto, ...], cor}]
+  itens.sort((a, b) => a.y - b.y).forEach((it, i) => {
+    const subs = it.sub == null ? [] : [].concat(it.sub);
+    const cima = i === 0 && itens.length > 1, y1 = cima ? it.y - 3 - 14 * subs.length : it.y + 4;
+    g.append("text").attr("x", iw + 8).attr("y", y1).attr("dy", "0.32em").style("fill", it.cor).style("font-weight", 700).style("font-size", "12.5px").text(it.titulo);
+    subs.forEach((s, j) => g.append("text").attr("x", iw + 8).attr("y", y1 + 14 * (j + 1)).attr("dy", "0.32em").style("fill", s.cor ?? css("--muted")).style("font-size", "11px").text(s.t ?? s));
+  });
+}
+
+function desenharProj() {
+  const el = document.getElementById("ch-proj"), H0 = S.hist;
+  // no celular os blocos de rótulo saem da direita e vão para baixo do gráfico, que ganha a largura toda
+  const W = Math.max(300, el.clientWidth || 800), estreito = W < 560;
+  const H = estreito ? 290 : Math.round(Math.min(400, Math.max(260, W * 0.38)));
+  const ml = estreito ? 38 : 44, mr = estreito ? 10 : 156, mt = 10, mb = 30, iw = W - ml - mr, ih = H - mt - mb;
+  // a noite inteira desde o início: antes do 1º boletim o gráfico já mostra o que o modelo espera
+  const ini = inicioNoite(), ch = S.prior.curvaEsperadaHora, p0 = S.inicial;
+  const x = d3.scaleTime().domain([ini, Math.max(fimEsperado(), (H0.at(-1)?.t ?? ini) + 600e3)]).range([0, iw]);
+  const esperada = ch.b.slice(0, fimCurva(ch)).map((v, i) => [ini + i * ch.passoMin * 60000, v]).filter((_, i) => ch.q[i] >= MIN_APURADO);
+  const comCont = H0.filter(h => h.atual != null && h.apurado >= MIN_APURADO);
+  const faixaIni = !comCont.length; // a faixa da projeção inicial só até haver contagem a partir de 1% apurado
+  const y = escalaSim(H0.flatMap(h => [h.q05, h.q95]).concat(comCont.map(h => h.atual), faixaIni ? [p0.mediana, p0.q05, p0.q95] : [p0.mediana], esperada.map(d => d[1])).filter(v => v != null), ih);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Projeção do resultado de cada candidato ao longo da noite");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  eixoY(g, y, iw); linha50(g, y, iw);
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  x.ticks(iw < 420 ? 4 : 7).forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(d3.timeFormat("%Hh%M")(t).replace("h00", "h")));
+  const rot = [], x1 = x.range()[1];
+  // 1) projeção inicial (Monte Carlo antes de qualquer boletim): referência fixa a noite inteira, num tom apagado da
+  //    cor de cada candidato. A faixa de 90% só aparece até a contagem começar; depois fica só a linha tracejada.
+  for (const c of CANDS()) {
+    const f = v => fatia(c.lado, v), tom = `var(${corIni(c.n)})`;
+    if (faixaIni) g.append("rect").attr("x", 0).attr("width", x1).attr("y", y(Math.max(f(p0.q05), f(p0.q95)))).attr("height", Math.abs(y(f(p0.q05)) - y(f(p0.q95)))).style("fill", tom).attr("opacity", .13);
+    g.append("line").attr("x1", 0).attr("x2", x1).attr("y1", y(f(p0.mediana))).attr("y2", y(f(p0.mediana))).style("stroke", tom).attr("stroke-width", 1.5).attr("stroke-dasharray", "5 4");
+  }
+  const leg = document.getElementById("leg-ini");
+  if (leg) leg.innerHTML = legIni(faixaIni);
+  // enquanto há faixa, uma nota no canto direito abaixo da faixa de baixo; depois, a legenda e os rótulos bastam
+  if (faixaIni) {
+    const yBaixo = d3.max(CANDS(), c => y(Math.min(fatia(c.lado, p0.q05), fatia(c.lado, p0.q95))));
+    g.append("text").attr("x", x1 - 6).attr("y", Math.min(ih - 6, yBaixo + 14)).attr("text-anchor", "end").style("fill", css("--ink-2")).style("font-size", "11.5px")
+      .text(iw >= 560 ? "tracejada apagada: projeção inicial · faixa: 90% das simulações (sai quando a contagem começar)" : "tracejada e faixa: projeção inicial");
+  }
+  // 2) contagem esperada a cada horário e, durante a noite, a projeção atualizada e a contagem, nas cores dos candidatos
+  for (const c of CANDS()) {
+    const cor = css(corN(c.n)), f = v => fatia(c.lado, v);
+    g.append("path").attr("d", d3.line().x(d => x(d[0])).y(d => y(f(d[1]))).curve(d3.curveMonotoneX)(esperada)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.6).attr("stroke-dasharray", "1 3").attr("opacity", .7);
+    const subIni = { t: `projeção inicial ${pct(f(p0.mediana))}`, cor: `var(${corIni(c.n)})` };
+    if (!H0.length) {
+      rot.push({ y: y(f(p0.mediana)), titulo: `${c.n} · ${pct(f(p0.mediana))}`, sub: [{ t: "projeção inicial", cor: subIni.cor }, `faixa ${pct(Math.min(f(p0.q05), f(p0.q95)))}–${pct(Math.max(f(p0.q05), f(p0.q95)))}`], cor });
+      continue;
+    }
+    const area = (a, b, op) => g.append("path").attr("d", d3.area().x(h => x(h.t)).y0(h => y(f(h[a]))).y1(h => y(f(h[b]))).curve(d3.curveMonotoneX)(H0)).attr("fill", cor).attr("opacity", op);
+    area("q05", "q95", .17);
+    g.append("path").attr("d", d3.line().x(h => x(h.t)).y(h => y(f(h.mediana))).curve(d3.curveMonotoneX)(H0)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.8);
+    g.append("path").attr("d", d3.line().x(h => x(h.t)).y(h => y(f(h.atual))).curve(d3.curveMonotoneX)(comCont)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 3).attr("opacity", .9);
+    const u = H0.at(-1);
+    const temCont = u.atual != null && u.apurado >= MIN_APURADO;
+    rot.push({ y: y(f(u.mediana)), titulo: `${c.n} · ${pct(f(u.mediana))} agora`, sub: [subIni].concat(temCont ? [`contagem ${pct(f(u.atual))}`] : []), cor });
+  }
+  if (!estreito) rotulosDireita(g, rot, iw);
+  if (!H0.length) g.append("text").attr("x", 8).attr("y", y(.5) - 7).style("fill", css("--ink-2")).text(S.fonte === "vivo" ? (estreito ? "Aguardando o primeiro boletim." : "Aguardando o primeiro boletim. Por enquanto, só o que o modelo espera.") : (estreito ? "Aperte o play." : "Aperte o play: por enquanto, só o que o modelo espera."));
+  const espEm = t => { const i = Math.round((t - ini) / (ch.passoMin * 60000)); return i >= 0 && i < ch.b.length && ch.q[i] > 0.002 ? ch.b[i] : null; };
+  g.append("rect").attr("width", iw).attr("height", ih).attr("fill", "transparent")
+    .on("pointermove", e => {
+      const t = +x.invert(d3.pointer(e)[0]), h = H0.length ? H0.reduce((a, b) => Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a, H0[0]) : null;
+      const perto = h && Math.abs(h.t - t) < 15 * 60000, te = perto ? h.t : t, esp = espEm(te);
+      mostrarTip(e, `<b>${d3.timeFormat("%H:%M")(te)}</b>${perto ? ` · ${pct(h.apurado)} apurado` : ""}` + CANDS().map(c => `<div class="r"><span style="color:var(${corN(c.n)})">${c.n} · ${esc(c.nome)}</span><span class="num">${perto ? `${pct(fatia(c.lado, h.atual))} → ${pct(fatia(c.lado, h.mediana))}` : `contagem esperada ${pct(fatia(c.lado, esp))}`}</span></div>`).join("") +
+        `<div class="r"><span style="color:var(--muted)">Projeção inicial</span><span class="num">${S.prior.rotulos.a} ${pct(1 - p0.mediana)} · ${S.prior.rotulos.b} ${pct(p0.mediana)}</span></div>` +
+        (perto ? `<div class="r"><span>Chance de vitória</span><span class="num">${S.prior.rotulos.a} ${pct(1 - h.pB, 0)} · ${S.prior.rotulos.b} ${pct(h.pB, 0)}</span></div><div style="color:var(--muted)">contagem oficial → projeção atualizada</div>` : `<div style="color:var(--muted)">contagem esperada neste horário</div>`));
+    })
+    .on("pointerleave", esconderTip);
+  el.replaceChildren(svg.node());
+  if (estreito) { // os mesmos blocos de rótulo, lado a lado embaixo do gráfico, na ordem do número na urna
+    const caixa = document.createElement("div");
+    caixa.className = "rot-baixo";
+    caixa.innerHTML = rot.map(it => `<div><b style="color:${it.cor}">${esc(it.titulo)}</b>${[].concat(it.sub ?? []).map(s => `<span${s.cor ? ` style="color:${s.cor}"` : ""}>${esc(s.t ?? s)}</span>`).join("")}</div>`).join("");
+    el.append(caixa);
+  }
+}
+
+function desenharCurva() {
+  const el = document.getElementById("ch-curva"), pr = S.prior, porHora = S.eixo === "hora";
+  const W = Math.max(300, el.clientWidth || 600), H = Math.round(Math.min(360, Math.max(230, W * 0.58)));
+  const ml = 44, mr = 16, mt = 10, mb = 36, iw = W - ml - mr, ih = H - mt - mb;
+  // séries como pontos [x, fatia de B]; no eixo de horário, x é a hora da noite em exibição
+  const base = S.replay ? new Date(S.replay.inicio) : new Date("2026-10-25T17:00:00-03:00");
+  const hora = (c, i) => +base + i * c.passoMin * 60000;
+  const serie = (c, ch) => porHora && ch ? ch.b.slice(0, fimCurva(ch)).map((v, i) => [hora(ch, i), v]).filter((_, i) => ch.q[i] >= MIN_APURADO) : c.q.map((q, i) => [q, c.b[i]]).filter(d => d[0] >= MIN_APURADO);
+  const esperada = serie(pr.curvaEsperada, pr.curvaEsperadaHora), t1 = pr.curva1T ? serie(pr.curva1T, pr.curva1THora) : null;
+  const real = S.hist.filter(h => h.atual != null && h.apurado >= MIN_APURADO).map(h => [porHora ? h.t : h.apurado, h.atual]);
+  const x = porHora ? d3.scaleTime().domain([+base, Math.max(d3.max(esperada, d => d[0]), d3.max(real, d => d[0]) ?? 0)]).range([0, iw]) : d3.scaleLinear().domain([0, 1]).range([0, iw]);
+  const y = escalaSim([...esperada, ...(t1 ?? []), ...real].map(d => d[1]), ih, .06);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Curva esperada e curva real da apuração, para os dois candidatos");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  eixoY(g, y, iw); linha50(g, y, iw);
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  if (porHora) { x.ticks(iw < 420 ? 4 : 6).forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(d3.timeFormat("%Hh%M")(t).replace("h00", "h"))); g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text("horário de Brasília"); }
+  else { [0, .25, .5, .75, 1].forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(pct(t, 0))); g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text("das seções apuradas"); }
+  for (const c of CANDS()) {
+    const cor = css(corN(c.n)), ln = (pts, w, dash, op = 1) => g.append("path").attr("d", d3.line().x(d => x(d[0])).y(d => y(fatia(c.lado, d[1]))).curve(d3.curveMonotoneX)(pts)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", w).attr("stroke-dasharray", dash).attr("opacity", op);
+    if (t1) ln(t1, 1.6, "1 3", .7);
+    ln(esperada, 1.6, "5 4", .75);
+    if (real.length) ln(real, 3, null);
+  }
+  el.replaceChildren(svg.node());
+}
+
+function desenharDist() {
+  const el = document.getElementById("ch-dist"), p = S.proj, a = p.amostras;
+  const W = Math.max(260, el.clientWidth || 400), H = Math.round(Math.min(300, Math.max(200, W * 0.6)));
+  const ml = 10, mr = 10, mt = 14, mb = 36, iw = W - ml - mr, ih = H - mt - mb;
+  const h = Math.max(.03, Math.abs(a[0] - .5) + .003, Math.abs(a[a.length - 1] - .5) + .003);
+  const x = d3.scaleLinear().domain([.5 - h, .5 + h]).range([0, iw]);
+  const bins = d3.bin().domain(x.domain()).thresholds(40)(a);
+  const y = d3.scaleLinear().domain([0, d3.max(bins, b => b.length)]).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Distribuição das simulações do resultado final");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  const [A, B] = CANDS();
+  g.selectAll("rect").data(bins).join("rect").attr("x", b => x(b.x0) + 0.5).attr("width", b => Math.max(0, x(b.x1) - x(b.x0) - 1)).attr("y", b => y(b.length)).attr("height", b => ih - y(b.length))
+    .attr("fill", b => (b.x0 + b.x1) / 2 >= .5 ? css(corN(B.n)) : css(corN(A.n))).attr("rx", 1);
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  g.append("line").attr("x1", x(.5)).attr("x2", x(.5)).attr("y1", -6).attr("y2", ih).attr("stroke", css("--ink")).attr("stroke-dasharray", "2 3");
+  // eixo em "votos do vencedor": a mesma escala lida pelos dois lados
+  x.ticks(4).forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(t === .5 ? "50%" : t < .5 ? `${A.n} ${pct(1 - t, 0)}` : `${B.n} ${pct(t, 0)}`));
+  g.append("text").attr("x", 0).attr("y", ih + 32).text(`← ${A.n} vence (${pct(1 - p.pB, 0)})`);
+  g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text(`${B.n} vence (${pct(p.pB, 0)}) →`);
+  if (S.replay && S.k >= S.replay.passos) g.append("line").attr("x1", x(S.replay.final.b)).attr("x2", x(S.replay.final.b)).attr("y1", 0).attr("y2", ih).attr("stroke", css("--ink")).attr("stroke-width", 2);
+  el.replaceChildren(svg.node());
+}
+
+function tabelaUF() {
+  const p = S.proj, pr = S.prior, [A, B] = CANDS();
+  const ordem = p.ufs.slice().sort((u, v) => REGIOES.indexOf(pr.regiaoUF[u.uf]) - REGIOES.indexOf(pr.regiaoUF[v.uf]) || u.uf.localeCompare(v.uf));
+  const esperadoUF = {};
+  pr.uf.forEach((u, m) => { const e = esperadoUF[u] ??= { b: 0, v: 0 }; const v = pr.te[m] * pr.vpe[m]; e.b += v * pr.p[m]; e.v += v; });
+  const dois = xB => xB == null ? "—" : `<span style="color:var(${corN(A.n)})">${pct(1 - xB)}</span> · <span style="color:var(${corN(B.n)})">${pct(xB)}</span>`;
+  document.querySelector("#tb-uf tbody").innerHTML = ordem.map(u => {
+    const esp = esperadoUF[u.uf].b / esperadoUF[u.uf].v, d = u.projetado - esp, quem = d >= 0 ? B : A;
+    return `<tr><td><b>${u.uf}</b> <span class="ufn">${esc(UFN[u.uf] ?? u.uf)} · ${pr.regiaoUF[u.uf]}</span></td>
+      <td class="r num">${pct(u.apurado, 0)}</td><td class="barra-uf"><div class="mini"><i style="width:${u.apurado * 100}%"></i></div></td>
+      <td class="r num">${dois(u.atual)}</td><td class="r num"><b>${dois(u.projetado)}</b></td>
+      <td class="r num" style="color:${Math.abs(d) < 0.003 ? "var(--muted)" : `var(${corN(quem.n)})`}">${Math.abs(d) < 0.0005 ? "—" : `${(Math.abs(d) * 100).toFixed(1).replace(".", ",")} p.p. a favor do ${quem.n}`}</td></tr>`;
+  }).join("");
+}
+
+const TIP = document.getElementById("tip");
+function mostrarTip(e, html) {
+  TIP.innerHTML = html; TIP.hidden = false;
+  const w = TIP.offsetWidth, h = TIP.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  TIP.style.left = Math.max(8, x) + "px"; TIP.style.top = Math.max(8, y) + "px";
+}
+function esconderTip() { TIP.hidden = true; }
+
+/* ===================== início ===================== */
+async function iniciar() {
+  document.getElementById("barra").hidden = false;
+  document.getElementById("play").innerHTML = ICON_PLAY;
+  document.getElementById("play").addEventListener("click", alternarPlay);
+  document.getElementById("tempo").addEventListener("input", e => { if (S.replay) atualizarReplay(+e.target.value, true); });
+  document.getElementById("vel").addEventListener("change", () => { if (S.tocando) { alternarPlay(); alternarPlay(); } });
+  document.querySelectorAll("#fonte button").forEach(b => b.addEventListener("click", () => usarFonte(b.dataset.fonte)));
+  // ao vivo a partir das 17h de 25/10/2026 (ou com ?fonte=vivo); antes disso, a simulação
+  const pedida = new URLSearchParams(location.search).get("fonte");
+  const noite = Date.now() >= Date.parse("2026-10-25T17:00:00-03:00");
+  await usarFonte(pedida || (noite ? "vivo" : "sim_2026"));
+}
+let tRes, larg = innerWidth;
+addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => { if (S.proj && Math.abs(innerWidth - larg) > 20) { larg = innerWidth; pintar(S.hist.at(-1)?.t ?? Date.now()); } }, 200); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => S.proj && pintar(S.hist.at(-1)?.t ?? Date.now()));
+iniciar().catch(e => { document.getElementById("conteudo").innerHTML = `<div class="loading">Não foi possível carregar: ${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

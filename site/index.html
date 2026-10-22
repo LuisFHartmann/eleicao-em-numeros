@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Eleição em Números</title>
+<meta name="description" content="Um experimento de estatística com a eleição presidencial de 2026 e os dados públicos do TSE: mapa de votos, curva da apuração, simulação do 2º turno e projeção ao vivo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="comum.css">
+<style>
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea; --c22: #2a78d6; --c13: #e34948;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif; --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace; --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335; --c22: #3987e5; --c13: #e66767; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335; --c22: #3987e5; --c13: #e66767; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.topbar svg { width: 28px; height: 28px; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.hero { padding-block: 48px 20px; max-width: 820px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(36px, 6vw, 64px); line-height: 1.0; letter-spacing: -0.015em; margin: 6px 0 14px; text-wrap: balance; }
+.hero p { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 64ch; }
+.nota { border: 1px solid var(--line-strong); border-left: 4px solid var(--accent); background: var(--surface); border-radius: var(--r); padding: 18px 20px 16px; margin-top: 8px; }
+.nota h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 21px; line-height: 1.15; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.nota h2 svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.nota ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 32px; }
+.nota li { font-size: 14.5px; color: var(--ink-2); padding-left: 14px; position: relative; }
+.nota li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.nota li b { color: var(--ink); }
+.nota li.inteira { grid-column: 1 / -1; }
+@media (max-width: 760px) { .nota ul { grid-template-columns: minmax(0, 1fr); } }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; padding-block: 18px 40px; }
+.card { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 18px 16px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s; min-width: 0; }
+.card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.card .k { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.card h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 24px; line-height: 1.1; margin: 0; }
+.card p { margin: 0; color: var(--ink-2); font-size: 14.5px; }
+.card .vai { margin-top: auto; padding-top: 8px; font-size: 14px; font-weight: 600; color: var(--accent); }
+.card.destaque { border-color: var(--accent); background: linear-gradient(0deg, var(--accent-soft), var(--surface) 70%); }
+.princ { border-top: 1px solid var(--line); padding-block: 26px 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; font-size: 14.5px; color: var(--ink-2); }
+.princ h3 { font-size: 15px; color: var(--ink); margin: 0 0 4px; }
+.princ p { margin: 0; }
+.sobre { border-top: 1px solid var(--line); padding-block: 26px 56px; max-width: 760px; }
+.sobre h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; margin: 4px 0 8px; }
+.sobre p { color: var(--ink-2); margin: 0 0 8px; }
+.sobre-links a { font-weight: 600; }
+@media (max-width: 760px) { .princ { grid-template-columns: minmax(0, 1fr); } }
+/* celular: menos espaço vazio no topo e link do GitHub com alvo de toque maior */
+@media (max-width: 560px) {
+  .hero { padding-block: 28px 16px; }
+  .hero p { font-size: 17px; }
+  .nota { padding: 16px 16px 14px; }
+  .nota h2 { font-size: 20px; align-items: flex-start; }
+  .nota h2 svg { margin-top: 2px; }
+  .card { padding: 16px; }
+  .card h2 { font-size: 23px; }
+  .sobre-links a { display: inline-block; padding: 8px 0; }
+}
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+  <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+  <div><div class="brand-name">Eleição em Números</div><div class="brand-sub">Eleições 2026 · Presidente · dados públicos do TSE</div></div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="./" aria-current="page">Início</a><a href="votos/">Mapa de votos</a><a href="segundo-turno/">Simulação do 2º turno</a><a href="ao-vivo/">Ao vivo</a><a href="metodologia/">Metodologia</a><a href="apuracao/">Curva da apuração</a></nav></header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="eyebrow">1º turno em 4 de outubro · 2º turno em 25 de outubro de 2026</div>
+    <h1>Um experimento de estatística com a eleição presidencial</h1>
+    <p>Este site usa os dados públicos do TSE para pôr à prova algumas ferramentas de estatística: como o país votou no 1º turno, por que a apuração parece "virar" durante a noite, o que as eleições passadas sugerem para o 2º turno e, no domingo, para onde a contagem está indo. Código aberto e contas à vista, para quem quiser conferir ou discordar.</p>
+  </section>
+  <aside class="nota" role="note" aria-labelledby="nota-titulo">
+    <h2 id="nota-titulo"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.2" fill="currentColor"/></svg>Antes de começar: o que este site é, e o que não é</h2>
+    <ul>
+      <li><b>É um experimento de estatística.</b> Uma ferramenta de aprendizado pessoal do autor, para experimentar simulação de Monte Carlo (sortear milhares de cenários possíveis), inferência ecológica (estimar como grupos de eleitores mudaram de voto a partir dos totais de cada município), modelos bayesianos (corrigir uma estimativa à medida que chegam dados novos) e as outras ferramentas usadas aqui.</li>
+      <li><b>A eleição é o estudo de caso.</b> Ela serve de caso de teste para entender o poder, e os limites, dessas ferramentas para prever esse tipo de situação.</li>
+      <li><b>Não há preferência por nenhum candidato.</b> O trabalho é puramente estatístico e matemático. As cores seguem a convenção usada pela imprensa (vermelho para o 13, historicamente a cor do PT, partido do Lula; azul para o 22, cor usada em geral para o candidato mais à direita) e não indicam preferência.</li>
+      <li><b>O que fica de fora.</b> Debates, notícias, apoios e outros acontecimentos entre o 1º e o 2º turno mudam o resultado e <b>não</b> são levados em conta neste estudo.</li>
+      <li class="inteira"><b>O resultado oficial é sempre o do TSE.</b> Simulações e projeções daqui são estimativas com margem de erro, não resultado.</li>
+    </ul>
+  </aside>
+  <section class="cards">
+    <a class="card destaque" href="ao-vivo/"><span class="k">25 DE OUTUBRO · A PARTIR DAS 17H</span><h2>Apuração ao vivo</h2><p>Contagem oficial e projeção do resultado final, recalculadas a cada boletim. Antes da noite, dá para ensaiar com a apuração real de 2022 ou com uma noite simulada.</p><span class="vai">Abrir o painel →</span></a>
+    <a class="card" href="votos/"><span class="k">1º E 2º TURNOS</span><h2>Mapa de votos</h2><p>Votação para Presidente por estado e município, no 1º turno e ao vivo no 2º, com a distribuição das seções em 2026 e 2022.</p><span class="vai">Ver o mapa →</span></a>
+    <a class="card" href="apuracao/"><span class="k">1º TURNO</span><h2>A curva da apuração</h2><p>A apuração reconstruída minuto a minuto, e o que acontece com a "virada" quando todos os estados apuram no mesmo ritmo.</p><span class="vai">Ver a curva →</span></a>
+    <a class="card" href="segundo-turno/"><span class="k">2º TURNO</span><h2>Simulação do 2º turno</h2><p>20 mil simulações aplicando ao 1º turno de 2026 a migração de votos de 2014, 2018 e 2022. Os pesos e a classificação dos candidatos podem ser mudados.</p><span class="vai">Simular →</span></a>
+    <a class="card" href="metodologia/"><span class="k">COMO É FEITO</span><h2>Metodologia</h2><p>Dados, premissas, o teste com a noite de 2022 e o que estes números não dizem.</p><span class="vai">Ler →</span></a>
+  </section>
+  <section class="princ">
+    <div><h3>Apartidário</h3><p>Os mesmos métodos valem para qualquer candidato. As cores são a convenção da imprensa (vermelho para o 13, cor histórica do PT; azul para o 22) e não indicam preferência.</p></div>
+    <div><h3>Reproduzível</h3><p>Os programas leem os dados abertos do TSE direto da internet. Qualquer pessoa pode rodar e chegar aos mesmos números.</p></div>
+    <div><h3>Não é o resultado oficial</h3><p>Simulações e projeções são estimativas com margem de erro. O resultado oficial é sempre o do TSE.</p></div>
+  </section>
+  <!-- SOBRE O AUTOR: fatos do handoff do site pessoal (sem oferta de serviços; o site pessoal ainda não está no ar) -->
+  <section class="sobre" id="sobre">
+    <div class="eyebrow">Sobre o autor</div>
+    <h2>Luis Felipe Hartmann</h2>
+    <p class="sobre-texto">Engenheiro de computação em Curitiba. Há dez anos trabalho com P&amp;D de ponta a ponta: hardware, firmware, nuvem, modelos de IA em produção e os dashboards em tempo real que mostram se tudo isso está funcionando. Hoje sou diretor de engenharia numa healthtech, tenho artigos em periódicos internacionais (um deles com redes bayesianas para previsão) e faço mestrado em IA aplicada na PUCPR.</p>
+    <p class="sobre-texto">Este site é um experimento pessoal: eu queria ver até onde uma simulação de Monte Carlo, alimentada pelo 1º turno e pelo histórico das eleições anteriores, consegue chegar, e se um modelo bayesiano consegue projetar o resultado ao vivo, enquanto os boletins chegam. Uso agentes de IA para construir mais rápido; o modelo, as premissas e as checagens são meus.</p>
+    <p class="sobre-links">Comentários e correções são bem-vindos: <a href="https://www.linkedin.com/in/luis-felipe-hartmann/" rel="noopener">LinkedIn</a> · <a href="https://github.com/LuisFHartmann" rel="noopener">GitHub</a></p>
+  </section>
+</main>
+</body>
+</html>

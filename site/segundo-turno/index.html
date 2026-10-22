@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulação do 2º turno · Eleição em Números</title>
+<meta name="description" content="Estudo de caso: simulação de Monte Carlo do 2º turno de 2026 a partir do 1º turno e de como os votos migraram entre turnos em 2014, 2018 e 2022, comparada com as pesquisas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Layout: abas → título e aviso → sumário executivo → simulador → seções do estudo de caso → pesquisas x simulação. */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  --c22: #2a78d6; --c13: #e34948; --bn: #a3a8a0; --ab: #d6d9d2; --mid: #e9e8e3;
+  --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 8px 24px rgba(20, 30, 25, 0.08);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px; --gap: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --bn: #6d736e; --ab: #3c423f; --mid: #3a3d3b;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --bn: #6d736e; --ab: #3c423f; --mid: #3a3d3b;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); text-underline-offset: 2px; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 30px; height: 30px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 21px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+
+.lede { padding-block: 28px 8px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px 48px; align-items: end; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(30px, 4.6vw, 52px); line-height: 1.03; letter-spacing: -0.015em; margin: 4px 0 0; text-wrap: balance; }
+.lede p { margin: 10px 0 0; color: var(--ink-2); max-width: 66ch; }
+.aviso { border: 1px solid var(--line-strong); border-radius: var(--r); padding: 14px 16px; background: var(--surface); font-size: 13.5px; color: var(--ink-2); }
+.aviso b { color: var(--ink); display: block; margin-bottom: 4px; }
+.aviso p { margin: 0 0 10px; }
+.met-link { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; text-decoration: none; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--r); padding: 7px 12px; }
+.met-link:hover { text-decoration: underline; }
+.links-topo { display: flex; flex-wrap: wrap; gap: 8px; }
+.met-link.pdf-link { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+
+/* sumário executivo */
+.sumario { margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px 32px; }
+.sumario h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 24px; line-height: 1.1; margin: 2px 0 10px; }
+.sumario p { margin: 0 0 10px; color: var(--ink-2); max-width: 70ch; }
+.sumario p b { color: var(--ink); }
+.indice { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.grandes { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: var(--r); overflow: hidden; align-self: start; }
+.grande { background: var(--surface); padding: 14px 16px; border-top: 4px solid var(--cor); }
+.grande .k { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.grande .v { font-family: var(--f-display); font-stretch: 85%; font-weight: 750; font-size: 46px; line-height: 1.05; margin-top: 6px; }
+.grande .s { font-size: 13px; color: var(--ink-2); }
+.grande .p { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 26px; line-height: 1.1; margin-top: 10px; }
+.grande .nota { font-size: 12px; color: var(--muted); }
+
+.sim { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; }
+.panel h3 { margin: 0 0 4px; font-size: 16px; }
+.panel .sub { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+.chances { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: var(--r); overflow: hidden; margin-bottom: 16px; }
+.chance { background: var(--surface); padding: 14px 16px; }
+.chance .k { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.chance .v { font-family: var(--f-display); font-stretch: 85%; font-weight: 750; font-size: 44px; line-height: 1.05; margin-top: 4px; }
+.chance .s { font-size: 13px; color: var(--ink-2); }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart .lbl { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.gridline { stroke: var(--line); stroke-width: 1; }
+.baseline { stroke: var(--line-strong); stroke-width: 1; }
+
+.ctl { display: flex; flex-direction: column; gap: 6px; padding-block: 12px; border-top: 1px solid var(--line); }
+.ctl:first-of-type { border-top: 0; padding-top: 0; }
+.ctl > label, .ctl > .lbl { font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
+.ctl > label output, .ctl .lbl output { font-weight: 500; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.ctl small { font-size: 12.5px; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--ink); }
+.pesos { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; font-size: 13px; }
+.cls { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cls td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.cls td:last-child { text-align: right; }
+.cls select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; font-size: 12.5px; }
+.cls .v { color: var(--muted); font-variant-numeric: tabular-nums; }
+.botao { border: 1px solid var(--line-strong); background: var(--surface-2); border-radius: var(--r); padding: 6px 12px; cursor: pointer; font-size: 13px; }
+
+section.block { padding-block: 28px; border-top: 1px solid var(--line); margin-top: 28px; }
+.block-head h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; line-height: 1.1; margin: 2px 0 0; text-wrap: balance; }
+.block-head h2 .n { color: var(--accent); margin-right: 6px; }
+.block-head p { margin: 6px 0 14px; color: var(--ink-2); max-width: 76ch; font-size: 14px; }
+.texto { max-width: 76ch; color: var(--ink-2); font-size: 15px; }
+.texto p { margin: 10px 0; }
+.texto b { color: var(--ink); }
+.texto ul, .texto ol { padding-left: 20px; margin: 10px 0; }
+.texto li { margin: 4px 0; }
+.texto h3 { font-size: 16px; color: var(--ink); margin: 22px 0 4px; }
+.caixa { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 18px 0; max-width: 76ch; color: var(--ink-2); font-size: 14px; }
+.caixa b { color: var(--ink); }
+.ctrls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-bottom: 14px; align-items: flex-end; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.transf { display: flex; flex-direction: column; gap: 10px; }
+.trow { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 14px; align-items: center; font-size: 13.5px; }
+.trow .nm small { display: block; color: var(--muted); font-size: 12px; }
+.stack { display: flex; height: 22px; border-radius: 3px; overflow: hidden; gap: 2px; }
+.stack i { display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11.5px; font-weight: 600; color: #fff; min-width: 0; overflow: hidden; white-space: nowrap; }
+.stack i.cl { color: var(--ink); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 12px; }
+.trow .nm small.apoio { color: var(--muted); font-style: italic; margin-top: 2px; }
+.naoest { font-size: 12.5px; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 3px; padding: 2px 8px; line-height: 1.4; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .anel { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink-2); display: inline-block; }
+.legend .ponto { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend .faixa-sw { width: 18px; height: 10px; border-radius: 2px; display: inline-block; opacity: .35; }
+.legend .linha { width: 18px; height: 0; border-top: 2px solid var(--ink-2); display: inline-block; }
+
+.tscroll { overflow-x: auto; }
+table.dados { border-collapse: collapse; width: 100%; }
+table.dados th, table.dados td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+table.dados th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+table.dados td.r, table.dados th.r { text-align: right; }
+table.dados td small { color: var(--muted); }
+table.dados.estreita { max-width: 820px; }
+table.dados tr.grupo th { text-transform: none; letter-spacing: 0; font-size: 12px; color: var(--ink-2); border-bottom: 0; padding-bottom: 0; }
+.faixa { position: relative; height: 12px; width: 200px; background: var(--surface-2); border-radius: 2px; }
+.faixa i { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.faixa b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+.faixa::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--line-strong); }
+
+details.recolhe { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); margin-top: 16px; }
+details.recolhe > summary { list-style: none; cursor: pointer; padding: 12px 16px; display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+details.recolhe > summary::-webkit-details-marker { display: none; }
+details.recolhe > summary::before { content: ""; flex: none; width: 0; height: 0; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent var(--ink-2); transition: transform .15s; transform: translateY(1px); }
+details.recolhe[open] > summary::before { transform: translateY(1px) rotate(90deg); }
+details.recolhe > summary b { color: var(--ink); }
+details.recolhe > summary span { color: var(--muted); }
+details.recolhe > .corpo { padding: 0 16px 16px; }
+
+.fig { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-top: 8px; }
+.fig .cap { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: 90ch; }
+.fontes { font-size: 13px; color: var(--muted); max-width: 100ch; }
+.fontes a { overflow-wrap: anywhere; }
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); max-width: 280px; }
+.tip b { display: block; }
+.loading { padding: 80px 0; text-align: center; color: var(--muted); }
+footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+@media (max-width: 980px) { .sim, .lede, .sumario { grid-template-columns: minmax(0, 1fr); } .grandes { order: -1; } .trow { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+@media (max-width: 520px) { .chance .v, .grande .v { font-size: 34px; } .grande .p { font-size: 22px; } .faixa { width: 120px; } .grandes { grid-template-columns: 1fr; } }
+/* celular e tablet: controles com alvo de toque maior, tabelas rolando dentro do próprio bloco, números sem quebrar */
+@media (max-width: 760px) {
+  .panel { padding: 14px; }
+  .chances .chance { padding: 12px; }
+  input[type=range] { min-height: 28px; }
+  .cls select { min-height: 32px; font-size: 14px; max-width: 108px; }
+  .cls td { padding: 6px 4px; }
+  .seg button { padding: 8px 12px; }
+  table.dados th, table.dados td { padding: 6px 8px; font-size: 13.5px; }
+  table.dados td.r { white-space: nowrap; }
+  table.dados th { white-space: normal; min-width: 64px; }
+  table.dados td:first-child { min-width: 128px; }
+  .tscroll { margin-inline: -2px; }
+  .fig { padding: 12px; }
+  details.recolhe > summary { flex-wrap: wrap; }
+  .met-link { padding: 9px 12px; }
+}
+@media (max-width: 420px) { .cls td:first-child { font-size: 12.5px; } .chance .v { font-size: 30px; } .sumario { padding: 16px; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="9" width="11" height="7" rx="1" fill="var(--accent)"/><g fill="currentColor"><circle cx="20.5" cy="10.5" r="1.3"/><circle cx="24.5" cy="10.5" r="1.3"/><circle cx="20.5" cy="14.5" r="1.3"/><circle cx="24.5" cy="14.5" r="1.3"/><circle cx="20.5" cy="18.5" r="1.3"/><circle cx="24.5" cy="18.5" r="1.3"/></g></svg>
+      <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Eleições 2026 · exercício exploratório</div></div>
+    </div>
+  </div>
+  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/" aria-current="page">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav>
+</header>
+
+<main class="wrap">
+  <section class="lede">
+    <div>
+      <div class="eyebrow">Estudo de caso · 2º turno de 25 de outubro de 2026 · atualizado em 21/10/2026</div>
+      <h1>Para onde vão os votos de quem ficou de fora?</h1>
+      <p>Um relatório sobre uma simulação do 2º turno presidencial de 2026, entre o 13 (Lula, PT) e o 22 (Flávio Bolsonaro, PL). A simulação parte do 1º turno já contado e supõe que os eleitores dos outros candidatos, os que votaram branco ou nulo e os que não foram votar vão se comportar como em 2014, 2018 e 2022.</p>
+    </div>
+    <div class="aviso">
+      <b>Um estudo estatístico, não uma previsão.</b>
+      <p>Este projeto é um experimento de estatística e de aprendizado do autor; a eleição é o estudo de caso. Não há preferência por candidato. Debates, notícias e apoios entre os turnos <b style="display:inline;margin:0">não entram no modelo</b>.</p>
+      <div class="links-topo"><a class="met-link" href="../metodologia/">Leia a metodologia completa →</a><a class="met-link pdf-link" href="../relatorio/simulacao-segundo-turno-2026.pdf" download>Baixar o relatório (PDF)</a></div>
+    </div>
+  </section>
+  <div id="content"><div class="loading">Carregando e simulando…</div></div>
+</main>
+<footer><div class="wrap">Dados: votação por seção do TSE (2014, 2018, 2022), boletins de urna do 1º turno de 2026 e pesquisas de intenção de voto divulgadas pela imprensa (lista e fontes na última seção). Método completo na <a href="../metodologia/">página de metodologia</a>.</div></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script>
+"use strict";
+const UFS = { AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins" };
+const REGIAO = { AC: "Norte", AM: "Norte", AP: "Norte", PA: "Norte", RO: "Norte", RR: "Norte", TO: "Norte", AL: "Nordeste", BA: "Nordeste", CE: "Nordeste", MA: "Nordeste", PB: "Nordeste", PE: "Nordeste", PI: "Nordeste", RN: "Nordeste", SE: "Nordeste", DF: "Centro-Oeste", GO: "Centro-Oeste", MS: "Centro-Oeste", MT: "Centro-Oeste", ES: "Sudeste", MG: "Sudeste", RJ: "Sudeste", SP: "Sudeste", PR: "Sul", RS: "Sul", SC: "Sul" };
+const NOME = { "13": "Lula", "22": "Flávio Bolsonaro" };
+const fmt = new Intl.NumberFormat("pt-BR");
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const num = (x, d = 1) => x == null || !isFinite(x) ? "—" : x.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const sinal = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x > 0.04 ? "+" : x < -0.04 ? "−" : "") + num(Math.abs(x), d);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const getJSON = url => fetch(url).then(r => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+const dataBR = iso => iso ? `${+iso.slice(8, 10)}/${+iso.slice(5, 7)}` : "—";
+const COR2 = { E: "--c13", D: "--c22", BN: "--bn", AB: "--ab" };
+
+let T, B, C, UFDADOS, P, PRIMEIRO, RESUMO = {};
+const PESOS_PADRAO = { "2014": 15, "2018": 35, "2022": 50 };
+const state = { pesos: { ...PESOS_PADRAO }, extra: 0, comp: 0, erroHist: true, classif: {}, ano: "2022", regiao: "Brasil", N: 20000, resultado: null };
+
+/* --------- números aleatórios reprodutíveis (para a mesma configuração dar o mesmo resultado) --------- */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function normal(r) { let u = 0, v = 0; while (u === 0) u = r(); while (v === 0) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function gama(k, r) {  // Marsaglia–Tsang
+  if (k < 1) return gama(k + 1, r) * Math.pow(r(), 1 / k);
+  const d = k - 1 / 3, c = 1 / Math.sqrt(9 * d);
+  for (;;) { let x, v; do { x = normal(r); v = 1 + c * x; } while (v <= 0); v = v * v * v; const u = r(); if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v; }
+}
+function dirichlet(alfa, r) { const g = alfa.map(a => gama(Math.max(a, 1e-3), r)); const s = g.reduce((a, b) => a + b, 0); return g.map(x => x / s); }
+
+// erro que o método teve ao prever eleições passadas (raiz da média dos quadrados), em fração
+const sigmaHist = () => Math.sqrt(T.validacao.reduce((a, v) => a + v.erroPP ** 2, 0) / T.validacao.length) / 100;
+const classifPadrao = () => Object.fromEntries(C.filter(c => !["95", "96"].includes(c.n)).map(c => [c.n, T.classif2026[c.n] ?? "OD"]));
+const configPadrao = () => ({ pesos: { ...PESOS_PADRAO }, extra: 0, comp: 0, sigma: sigmaHist(), classif: classifPadrao(), N: 20000 });
+
+async function iniciar() {
+  [T, B, P] = await Promise.all([getJSON("../dados/transferencia.json"), getJSON("../dados/votos.json"), getJSON("../dados/pesquisas.json").catch(() => null)]);
+  C = B.candidatos;
+  state.classif = classifPadrao();
+  // 1º turno de 2026 por UF: votos por candidato, brancos+nulos, aptos, comparecimento
+  const M = B.municipios;
+  UFDADOS = {};
+  M.cod.forEach((_, i) => {
+    const u = M.uf[i], d = (UFDADOS[u] ??= { aptos: 0, comp: 0, v: C.map(() => 0) });
+    d.aptos += M.aptos[i]; d.comp += M.comp[i];
+    M.pres[i].forEach((x, k) => d.v[k] += x || 0);
+  });
+  // totais do 1º turno no país
+  const tot = k => Object.values(UFDADOS).reduce((s, d) => s + d.v[k], 0);
+  const iv = n => C.findIndex(c => c.n === n);
+  const validos = C.reduce((s, c, k) => ["95", "96"].includes(c.n) ? s : s + tot(k), 0);
+  PRIMEIRO = { validos, v13: tot(iv("13")) / validos, v22: tot(iv("22")) / validos, bn: tot(iv("95")) + tot(iv("96")),
+    aptos: Object.values(UFDADOS).reduce((s, d) => s + d.aptos, 0), comp: Object.values(UFDADOS).reduce((s, d) => s + d.comp, 0) };
+  // sumário: sempre com as escolhas-padrão
+  const base = configPadrao();
+  RESUMO.padrao = rodar(base);
+  RESUMO.sens = [["±" + num(base.sigma * 100) + " ponto (o erro dos testes)", base.sigma, RESUMO.padrao], ["±2 pontos", 0.02], ["±3 pontos (perto do erro das pesquisas)", 0.03]]
+    .map(([rot, s, R]) => ({ rot, sigma: s, R: R ?? rodar({ ...base, sigma: s }) }));
+  RESUMO.anos = ["2014", "2018", "2022"].map(a => ({ ano: a, R: rodar({ ...base, pesos: { [a]: 100 } }) }));
+  montar();
+  simular();
+}
+
+function gruposUF(u, classif) {
+  const d = UFDADOS[u], g = { E: 0, D: 0, OE: 0, OC: 0, OD: 0, BN: 0, AB: d.aptos - d.comp };
+  C.forEach((c, k) => { if (["95", "96"].includes(c.n)) g.BN += d.v[k]; else g[classif[c.n]] += d.v[k]; });
+  return T.g1.map(x => g[x]);
+}
+
+/* Uma rodada completa de Monte Carlo. cfg: pesos, extra, comp, sigma (fração), classif, N. */
+function rodar(cfg) {
+  const anos = Object.keys(cfg.pesos).filter(a => cfg.pesos[a] > 0);
+  const tot = anos.reduce((s, a) => s + cfg.pesos[a], 0);
+  if (!tot) return null;
+  const r = mulberry32(20261025);
+  const ufs = Object.keys(UFDADOS), G = Object.fromEntries(ufs.map(u => [u, gruposUF(u, cfg.classif)]));
+  const kappa = cfg.extra > 0 ? 400 / cfg.extra : null;  // concentração da Dirichlet: menor = mais incerteza
+  const nac = [], porUF = Object.fromEntries(ufs.map(u => [u, []]));
+  const sigma = cfg.sigma;
+  for (let s = 0; s < cfg.N; s++) {
+    let x = r() * tot, ano = anos[0];
+    for (const a of anos) { if (x < cfg.pesos[a]) { ano = a; break; } x -= cfg.pesos[a]; }
+    const Bs = {};
+    for (const reg of T.regioes) {
+      const R = T.anos[ano].regioes[reg];
+      const base = R.draws[Math.floor(r() * R.draws.length)].map(l => l.slice());
+      // grupo pequeno demais naquele ano: usa um ano em que ele foi medido (ou, se nenhum, a linha "outros")
+      for (let k = 0; k < base.length; k++) {
+        if (R.ok[k]) continue;
+        // 1) mesma região, outro ano; 2) mesmo grupo medido em outra região; 3) linha "outros" agregada
+        let pares = anos.filter(a => T.anos[a].regioes[reg].ok[k]).map(a => [a, reg, cfg.pesos[a]]);
+        if (!pares.length) pares = anos.flatMap(a => T.regioes.filter(g => T.anos[a].regioes[g].ok[k]).map(g => [a, g, cfg.pesos[a] * T.anos[a].regioes[g].parte[k]]));
+        if (!pares.length) { base[k] = R.outros.slice(); continue; }
+        const tp = pares.reduce((x, p) => x + p[2], 0);
+        let y = r() * tp, esc = pares[0];
+        for (const p of pares) { if (y < p[2]) { esc = p; break; } y -= p[2]; }
+        const d2 = T.anos[esc[0]].regioes[esc[1]].draws;
+        base[k] = d2[Math.floor(r() * d2.length)][k].slice();
+      }
+      Bs[reg] = kappa ? base.map(linha => dirichlet(linha.map(p => p * kappa + 0.05), r)) : base;
+    }
+    const choqueComp = cfg.comp / 100 + (kappa ? normal(r) * 0.004 * cfg.extra / 10 : 0);
+    let E = 0, D = 0;
+    const choque = sigma ? normal(r) * sigma : 0;
+    for (const u of ufs) {
+      const Bm = Bs[REGIAO[u]], g = G[u];
+      const y = [0, 0, 0, 0];
+      for (let i = 0; i < g.length; i++) for (let j = 0; j < 4; j++) y[j] += g[i] * Bm[i][j];
+      // mudança de comparecimento: tira (ou põe) gente da abstenção e reparte entre os destinos de quem vota
+      const desloca = choqueComp * UFDADOS[u].aptos, votantes = y[0] + y[1] + y[2];
+      if (votantes > 0) { const f = desloca / votantes; y[0] += y[0] * f; y[1] += y[1] * f; y[2] += y[2] * f; }
+      porUF[u].push(Math.min(1, Math.max(0, y[1] / (y[0] + y[1]) + choque)));
+      E += y[0]; D += y[1];
+    }
+    nac.push(D / (E + D) + choque);
+  }
+  nac.sort(d3.ascending);
+  return {
+    nac, p22: nac.filter(v => v > 0.5).length / nac.length,
+    mediana: d3.quantile(nac, 0.5), q05: d3.quantile(nac, 0.05), q95: d3.quantile(nac, 0.95),
+    ufs: ufs.map(u => { const a = porUF[u].sort(d3.ascending); return { u, med: d3.quantile(a, 0.5), q05: d3.quantile(a, 0.05), q95: d3.quantile(a, 0.95), p22: a.filter(v => v > 0.5).length / a.length, aptos: UFDADOS[u].aptos }; }),
+  };
+}
+
+function simular() {
+  const R = rodar({ pesos: state.pesos, extra: state.extra, comp: state.comp, sigma: state.erroHist ? sigmaHist() : 0, classif: state.classif, N: state.N });
+  if (!R) return;
+  state.resultado = R;
+  desenharResultado();
+  desenharEstados();
+}
+
+/* ---------------- pesquisas ---------------- */
+function resumoPesquisas() {
+  if (!P) return null;
+  const L = P.segundoTurno2026, rec = L.filter(p => (p.divulgacao || "") >= "2026-10-18");
+  const res = P.resultados, err = e => e.v22 - res[e.eleicao].v22, err13 = e => e.v13 == null ? null : e.v13 - res[e.eleicao].v13;
+  const E = P.erros.map(e => ({ ...e, e22: err(e), e13: err13(e) }));
+  const faixa = el => d3.extent(E.filter(e => e.eleicao === el), e => e.e22);
+  return { L, rec, mediaRec: d3.mean(rec, p => p.v22), minRec: d3.min(rec, p => p.v22), maxRec: d3.max(rec, p => p.v22), mediaTodas: d3.mean(L, p => p.v22),
+    E, f1t26: faixa("1t2026"), f1t26_13: d3.extent(E.filter(e => e.eleicao === "1t2026" && e.e13 != null), e => e.e13), f1t22: faixa("1t2022"), f2t22: faixa("2t2022"), m1t26: d3.mean(E.filter(e => e.eleicao === "1t2026"), e => e.e22) };
+}
+
+function montar() {
+  const R0 = RESUMO.padrao, PS = resumoPesquisas();
+  const outros = C.map((c, k) => ({ c, v: Object.values(UFDADOS).reduce((s, d) => s + d.v[k], 0) })).filter(x => !["95", "96", "13", "22"].includes(x.c.n)).sort((a, b) => b.v - a.v);
+  const totVal = PRIMEIRO.validos;
+  const s2 = RESUMO.sens[1].R, s3 = RESUMO.sens[2].R;
+  const anosTxt = RESUMO.anos.map(a => `${pct(a.R.mediana)} (${a.ano})`).join(", ").replace(/, ([^,]*)$/, " e $1");
+  const nac22 = mediaNacional("2022"), iOC = T.g1.indexOf("OC"), iAB = T.g1.indexOf("AB"), iBN = T.g1.indexOf("BN");
+  const fora = 1 - PRIMEIRO.v13 - PRIMEIRO.v22;
+  const vOC = PRIMEIRO.validos ? outros.filter(x => state.classif[x.c.n] === "OC").reduce((s, x) => s + x.v, 0) / totVal : 0;
+  const vOD = outros.filter(x => state.classif[x.c.n] === "OD").reduce((s, x) => s + x.v, 0) / totVal;
+  const vOE = outros.filter(x => state.classif[x.c.n] === "OE").reduce((s, x) => s + x.v, 0) / totVal;
+  const nomesGrupo = g => outros.filter(x => state.classif[x.c.n] === g).slice(0, 4).map(x => x.c.nome.replace(/^ESCRITOR /, "").toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase())).join(", ");
+  const valid = T.validacao.map(v => `${v.treino}→${v.teste}: ${sinal(v.erroPP)} p.p.`).join("; ");
+  const caixaGrande = (n, med, q05, q95, p, cor) => `<div class="grande" style="--cor:var(${cor})"><div class="k"><i class="sw" style="background:var(${cor})"></i>${n} · ${NOME[n]}</div>
+      <div class="v num">${pct(med)}</div><div class="s">dos votos válidos na mediana<br>90% das simulações entre <b class="num">${pct(q05)}</b> e <b class="num">${pct(q95)}</b></div>
+      <div class="p num">${pct(p, 0)}</div><div class="nota">das simulações com mais de 50% dos válidos</div></div>`;
+
+  document.getElementById("content").innerHTML = `
+    <section class="sumario" aria-labelledby="h-sumario">
+      <div>
+        <div class="eyebrow">Sumário executivo</div>
+        <h2 id="h-sumario">O que a simulação projeta com as escolhas-padrão</h2>
+        <p>Na mediana de ${fmt.format(R0.nac.length)} 2º turnos simulados, o <b>13 (Lula)</b> fica com <b>${pct(1 - R0.mediana)}</b> dos votos válidos e o <b>22 (Flávio Bolsonaro)</b>, com <b>${pct(R0.mediana)}</b>. Em 90% das simulações, o 13 fica entre ${pct(1 - R0.q95)} e ${pct(1 - R0.q05)}, e o 22 entre ${pct(R0.q05)} e ${pct(R0.q95)}.</p>
+        <p>O 13 passa de 50% em <b>${pct(1 - R0.p22, 0)}</b> das simulações e o 22 em <b>${pct(R0.p22, 0)}</b>. A vantagem vem sobretudo do 1º turno, em que o 22 teve ${pct(PRIMEIRO.v22)} dos válidos e o 13, ${pct(PRIMEIRO.v13)}, e de como os outros eleitores migraram no passado.</p>
+        <p>O número que mais muda o quadro é o tamanho do erro somado a cada simulação: com <b>±2 pontos</b>, as proporções passam a ${pct(1 - s2.p22, 0)} (13) e ${pct(s2.p22, 0)} (22); com <b>±3 pontos</b>, a ${pct(1 - s3.p22, 0)} e ${pct(s3.p22, 0)}.</p>
+        ${PS ? `<p>Para comparação, as ${PS.rec.length} pesquisas divulgadas de 18 a 21/10 dão ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% dos válidos (média de ${num(PS.mediaRec)}%) e ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% (média de ${num(100 - PS.mediaRec)}%). <a href="#pesquisas">Veja a comparação</a>.</p>` : ""}
+        <div class="indice"><span>Neste relatório:</span><a href="#simulador">simulador</a><a href="#pergunta">a pergunta</a><a href="#dados">os dados</a><a href="#migracao">migração</a><a href="#validacao">validação</a><a href="#simulacao">a simulação</a><a href="#resultado">resultado</a><a href="#limites">limitações</a><a href="#pesquisas">pesquisas x simulação</a></div>
+      </div>
+      <div class="grandes">
+        ${caixaGrande("13", 1 - R0.mediana, 1 - R0.q95, 1 - R0.q05, 1 - R0.p22, "--c13")}
+        ${caixaGrande("22", R0.mediana, R0.q05, R0.q95, R0.p22, "--c22")}
+      </div>
+    </section>
+
+    <section class="block" id="simulador">
+      <div class="block-head"><div class="eyebrow">Simulador</div><h2>Mude as escolhas e veja o efeito</h2>
+        <p>O sumário acima usa sempre as escolhas-padrão. Aqui você pode mudar o peso de cada eleição passada, o erro somado, a incerteza extra, o comparecimento e o campo político de cada candidato do 1º turno.</p></div>
+      <div class="sim">
+        <div class="panel">
+          <h3>Resultado das simulações</h3><p class="sub" id="res-sub"></p>
+          <div class="chances" id="chances"></div>
+          <div class="chart" id="ch-dist"></div>
+        </div>
+        <div class="panel">
+          <div class="ctl"><div class="lbl">Peso de cada eleição passada</div>
+            <div class="pesos">${["2014", "2018", "2022"].map(a => `<span>${a}</span><input type="range" min="0" max="100" step="5" value="${state.pesos[a]}" data-ano="${a}" aria-label="Peso de ${a}"><output data-o="${a}">${state.pesos[a]}</output>`).join("")}</div>
+            <small>Quanto cada eleição conta no sorteio. 2014 opôs PT e PSDB; 2018 e 2022, PT e Bolsonaro.</small></div>
+          <div class="ctl"><label for="i-erro" style="justify-content:flex-start;gap:8px;font-weight:600"><input type="checkbox" id="i-erro" checked> Somar o erro que o método teve no passado <output id="o-erro"></output></label>
+            <small>Aplicado às eleições anteriores, o método errou o 2º turno seguinte em até ${Math.max(...T.validacao.map(v => Math.abs(v.erroPP))).toLocaleString("pt-BR")} pontos. Com esta opção, cada simulação sorteia um erro desse tamanho para o país inteiro.</small></div>
+          <div class="ctl"><label for="i-extra">Incerteza extra <output id="o-extra">nenhuma</output></label>
+            <input type="range" id="i-extra" min="0" max="10" step="1" value="0">
+            <small>Embaralha as transferências além do que variou no passado. Use para representar o quanto 2026 pode ser diferente.</small></div>
+          <div class="ctl"><label for="i-comp">Mudança no comparecimento <output id="o-comp">igual ao histórico</output></label>
+            <input type="range" id="i-comp" min="-4" max="4" step="0.5" value="0">
+            <small>Pontos percentuais a mais ou a menos de eleitores votando no 2º turno, além do que as transferências já preveem.</small></div>
+          <div class="ctl"><div class="lbl">Em que campo cada candidato do 1º turno entra</div>
+            <table class="cls">${outros.map(x => `<tr><td>${esc(x.c.nome)} <span class="v">${x.c.n}${x.c.partido ? " · " + esc(x.c.partido) : ""}</span></td><td class="v">${pct(x.v / totVal)}</td><td><select data-n="${x.c.n}" aria-label="Campo de ${esc(x.c.nome)}">${["OE", "OC", "OD"].map(g => `<option value="${g}"${state.classif[x.c.n] === g ? " selected" : ""}>${{ OE: "Esquerda", OC: "Centro", OD: "Direita" }[g]}</option>`).join("")}</select></td></tr>`).join("")}</table>
+            <small>Os eleitores de cada candidato seguem o comportamento histórico do grupo escolhido. A classificação inicial é uma proposta; mude à vontade.</small>
+            <div><button type="button" class="botao" id="b-reset">Voltar ao padrão</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="pergunta">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">1</span>A pergunta</h2></div>
+      <div class="texto">
+        <p>No 1º turno de 4 de outubro de 2026, o 22 teve ${pct(PRIMEIRO.v22)} dos votos válidos e o 13, ${pct(PRIMEIRO.v13)}. Os outros ${outros.length} candidatos somaram ${pct(fora)}. Além deles, ${fmt.format(Math.round(PRIMEIRO.bn / 1e5) / 10)} milhões de eleitores votaram branco ou nulo e ${fmt.format(Math.round((PRIMEIRO.aptos - PRIMEIRO.comp) / 1e5) / 10)} milhões não foram votar.</p>
+        <p>A diferença entre os dois finalistas é pequena perto do tamanho desses grupos. A pergunta deste estudo é: <b>se esses eleitores se comportarem no 2º turno como eleitores parecidos se comportaram em 2014, 2018 e 2022, qual seria o resultado, e com quanta incerteza?</b></p>
+        <p>É uma pergunta condicional. Ela não diz o que vai acontecer; diz o que aconteceria se o padrão do passado se repetisse.</p>
+      </div>
+    </section>
+
+    <section class="block" id="dados">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">2</span>Os dados</h2></div>
+      <div class="texto">
+        <ul>
+          <li><b>1º turno de 2026:</b> boletins de urna publicados pelo TSE, com os votos de cada candidato, os brancos, os nulos, os eleitores aptos e o comparecimento de cada seção. Aqui eles entram somados por estado.</li>
+          <li><b>2014, 2018 e 2022:</b> resultados por seção nos dois turnos, também do TSE. É deles que sai a estimativa de como os votos migraram de um turno para o outro.</li>
+          <li><b>Pesquisas de intenção de voto</b> para o 2º turno de 2026, como divulgadas pela imprensa. Elas <b>não entram na simulação</b>; aparecem só no fim, para comparação.</li>
+        </ul>
+        <p>Os detalhes de cada arquivo estão na <a href="../metodologia/#dados">metodologia</a>.</p>
+      </div>
+    </section>
+
+    <section class="block" id="migracao">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">3</span>Como os eleitores migraram em 2014, 2018 e 2022</h2>
+        <p>O voto é secreto, então ninguém sabe em quem votou no 2º turno quem escolheu um candidato no 1º. Mas cada seção tem os dois resultados. Comparando as seções de um mesmo município entre si, dá para estimar, por <b>inferência ecológica</b>, para onde foi cada grupo de eleitores. A esquerda principal é o PT nos três anos; a direita principal foi Aécio Neves em 2014 e Jair Bolsonaro em 2018 e 2022. São estimativas estatísticas de médias de grupos. Grupos com menos de ${pct(T.minGrupo, 1)} dos eleitores da região têm pouca informação própria; a estimativa deles combina os próprios dados com o comportamento do mesmo campo político em outras eleições e regiões, em proporção ao tamanho do grupo.</p>
+        <p>${nac22[iOC] ? `Um exemplo: em 2022, de cada 100 eleitores dos candidatos de centro no 1º turno, cerca de ${Math.round(nac22[iOC][0] * 100)} votaram no 13 no 2º turno, ${Math.round(nac22[iOC][1] * 100)} no 22, ${Math.round(nac22[iOC][2] * 100)} em branco ou nulo e ${Math.round(nac22[iOC][3] * 100)} não foram votar.` : ""} ${nac22[iAB] ? `De quem não votou no 1º turno, cerca de ${Math.round((1 - nac22[iAB][3]) * 100)} em cada 100 votaram no 2º.` : ""} Em 2026, os candidatos fora da disputa somaram ${pct(vOC)} de centro${nomesGrupo("OC") ? ` (${esc(nomesGrupo("OC"))})` : ""}, ${pct(vOD)} de direita${nomesGrupo("OD") ? ` (${esc(nomesGrupo("OD"))})` : ""} e ${pct(vOE)} de esquerda, pela classificação-padrão.</p></div>
+      <div class="ctrls">
+        <div class="seg" id="s-ano">${["2014", "2018", "2022"].map(a => `<button type="button" data-v="${a}">${a}</button>`).join("")}</div>
+        <div class="seg" id="s-reg">${["Brasil", ...T.regioes].map(r => `<button type="button" data-v="${r}">${r}</button>`).join("")}</div>
+      </div>
+      <div class="legend">${T.g2.map(g => `<span><i class="sw" style="background:var(${COR2[g]})"></i>${T.nomesG2[g]}</span>`).join("")}</div>
+      <div class="transf" id="transf"></div>
+      <p style="font-size:13px;color:var(--muted);margin:12px 0 0" id="transf-nota"></p>
+    </section>
+
+    <section class="block" id="validacao">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">4</span>Como o método foi testado</h2>
+        <p>O teste é usar só as migrações de uma eleição para prever o 2º turno da eleição seguinte, a partir do 1º turno real dela, e comparar com o resultado. É a medida mais honesta de quanto confiar na simulação.</p></div>
+      <div class="tscroll"><table class="dados estreita" id="valid"><thead><tr><th>Migração de</th><th>Aplicada a</th><th class="r">Previsto para a esquerda</th><th class="r">Resultado real</th><th class="r">Erro</th></tr></thead><tbody></tbody></table></div>
+      <div class="texto">
+        <p>Os erros foram de ${valid}. A raiz da média dos quadrados é ${num(sigmaHist() * 100)} ponto, e esse é o erro somado em cada simulação. São só três testes, e eleições diferentes têm candidatos diferentes; por isso a seção 6 mostra o que acontece com um erro maior.</p>
+      </div>
+      <div class="caixa"><b>Uma conferência independente.</b> A pesquisa Datafolha feita logo depois do 1º turno de 2022 (<a href="https://static.poder360.com.br/2022/10/pesquisa-presidente-datafolha-5-7-out-2022.pdf">5 a 7 de outubro de 2022</a>) perguntou aos eleitores de Simone Tebet e de Ciro Gomes em quem votariam no 2º turno. Para os de Tebet, a divisão confere com a estimada aqui. Para os de Ciro, não: a pesquisa mediu 31% Lula e 42% Bolsonaro, e a estimativa dá 44% e 35%. A subamostra de Ciro era pequena e a pesquisa é do começo da campanha, mas a divergência fica registrada.</div>
+    </section>
+
+    <section class="block" id="simulacao">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">5</span>A simulação</h2></div>
+      <div class="texto">
+        <p>A simulação de Monte Carlo repete ${fmt.format(state.N)} vezes o mesmo sorteio:</p>
+        <ol>
+          <li><b>Sorteia uma eleição passada</b>, com pesos 2014 = 15, 2018 = 35 e 2022 = 50. A de 2022 tem os candidatos mais parecidos com os de 2026; a de 2014, os mais diferentes.</li>
+          <li><b>Sorteia uma matriz de migração por região</b>, entre as ${fmt.format(T.anos["2022"].regioes[T.regioes[0]].draws.length)} estimativas feitas reamostrando municípios (bootstrap). Essa parte da incerteza é pequena, porque há centenas de milhares de seções.</li>
+          <li><b>Aplica a matriz ao 1º turno de 2026</b> em cada estado e soma os estados.</li>
+          <li><b>Soma um erro nacional</b>, sorteado de uma curva normal com o tamanho do erro dos testes (±${num(sigmaHist() * 100)} ponto). Essa é a maior fonte de incerteza.</li>
+        </ol>
+        <p>A chance de cada candidato é a fração das simulações em que ele passa de 50% dos válidos. O sorteio usa sempre a mesma semente, para que a mesma configuração dê sempre o mesmo resultado. Detalhes e fórmulas na <a href="../metodologia/#montecarlo">metodologia</a>.</p>
+      </div>
+    </section>
+
+    <section class="block" id="resultado">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">6</span>O resultado e a sensibilidade</h2></div>
+      <div class="texto">
+        <p>Com as escolhas-padrão, a mediana é de ${pct(1 - R0.mediana)} para o 13 e ${pct(R0.mediana)} para o 22. Mudando só a eleição de referência, a mediana do 22 seria ${anosTxt}. A diferença entre os anos é menor que o erro somado, então a escolha dos pesos importa menos que o tamanho desse erro.</p>
+        <p>Três testes não fixam com segurança o tamanho do erro. A tabela mostra o mesmo cálculo com erros maiores. A mediana quase não muda; o que muda é a largura da faixa e, com ela, a chance de cada um.</p>
+      </div>
+      <div class="tscroll"><table class="dados estreita">
+        <thead><tr><th>Erro somado</th><th class="r">Mediana 13</th><th class="r">Mediana 22</th><th class="r">Faixa de 90% do 22</th><th class="r">13 passa de 50%</th><th class="r">22 passa de 50%</th></tr></thead>
+        <tbody>${RESUMO.sens.map(s => `<tr><td>${s.rot}</td><td class="r num">${pct(1 - s.R.mediana)}</td><td class="r num">${pct(s.R.mediana)}</td><td class="r num">${pct(s.R.q05)} a ${pct(s.R.q95)}</td><td class="r num">${pct(1 - s.R.p22, 0)}</td><td class="r num">${pct(s.R.p22, 0)}</td></tr>`).join("")}</tbody>
+      </table></div>
+      <details class="recolhe" id="det-ufs">
+        <summary><b>A simulação estado por estado</b><span>mediana, faixa de 90% e chance em cada um dos 27 estados (abre a tabela)</span></summary>
+        <div class="corpo">
+          <p style="font-size:13.5px;color:var(--ink-2);max-width:76ch;margin:4px 0 12px">Fatia dos votos válidos do 22 no 2º turno simulado, com as escolhas atuais do simulador. A barra mostra o intervalo onde caem 90% das simulações; o traço é a mediana. A linha do meio marca 50%: à esquerda dela, o 13 tem mais votos no estado.</p>
+          <div class="tscroll"><table class="dados" id="ufs"><thead><tr><th>Estado</th><th class="r">Eleitores</th><th>22 no 2º turno</th><th class="r">Mediana do 22</th><th class="r">22 passa de 50% no estado</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="block" id="limites">
+      <div class="block-head"><div class="eyebrow">Estudo de caso</div><h2><span class="n">7</span>Limitações</h2></div>
+      <div class="texto"><ul>
+        <li><b>Não é pesquisa nem previsão.</b> A simulação supõe que os eleitores de 2026 migram como os de eleições passadas. Debates, notícias, apoios e qualquer fato da campanha do 2º turno ficam de fora.</li>
+        <li><b>Os candidatos mudam.</b> Em 2014 a direita principal era Aécio Neves; em 2018 e 2022, Jair Bolsonaro; em 2026, Flávio Bolsonaro. Os candidatos de fora da disputa também são outros.</li>
+        <li><b>Inferência ecológica estima médias.</b> Ela erra quando eleitores do mesmo grupo se comportam de formas muito diferentes dentro das seções. A divergência com o Datafolha nos eleitores de Ciro em 2022 é um lembrete disso.</li>
+        <li><b>A classificação dos candidatos é uma escolha.</b> Mudá-la altera o resultado, e o simulador permite testar isso.</li>
+        <li><b>O tamanho do erro vem de só três testes.</b> Por isso a sensibilidade acima importa tanto quanto o resultado central.</li>
+        <li><b>Comparecimento.</b> A simulação redistribui a abstenção como no passado. Uma mudança grande de comparecimento pode ser explorada à mão no simulador.</li>
+        <li><b>Pesquisas.</b> Foram usadas como divulgadas pela imprensa, sem acesso aos microdados. Algumas só publicaram votos totais; nesses casos os válidos foram calculados aqui.</li>
+      </ul>
+      <p>Outras limitações estão na <a href="../metodologia/#limites">metodologia</a>.</p></div>
+    </section>
+
+    <section class="block" id="pesquisas">
+      <div class="block-head"><div class="eyebrow">Comparação</div><h2><span class="n">8</span>Pesquisas x simulação</h2>
+        <p>As pesquisas perguntam ao eleitor hoje; a simulação aplica ao 1º turno o comportamento de eleições passadas. São métodos independentes, com erros diferentes.</p></div>
+      ${PS ? `
+      <div class="fig">
+        <div class="legend">
+          <span><i class="ponto" style="background:var(--c13)"></i>13 · Lula</span>
+          <span><i class="ponto" style="background:var(--c22)"></i>22 · Flávio Bolsonaro</span>
+          <span><i class="anel"></i>votos totais convertidos em válidos</span>
+          <span><i class="linha"></i>média das pesquisas dos últimos 7 dias</span>
+          <span><i class="faixa-sw" style="background:var(--c22)"></i><i class="faixa-sw" style="background:var(--c13);margin-left:-4px"></i>faixa de 90% da simulação</span>
+        </div>
+        <div class="chart" id="ch-pesq"></div>
+        <p class="cap">Cada ponto é uma pesquisa, na data do último dia de campo, em % dos votos válidos. As faixas sombreadas são a faixa de 90% da simulação com as escolhas-padrão (a linha tracejada é a mediana); elas não mudam com o tempo porque a simulação não usa nada da campanha. Passe o mouse sobre os pontos para ver os detalhes.</p>
+      </div>
+      <details class="recolhe">
+        <summary><b>Lista das ${PS.L.length} pesquisas</b><span>instituto, campo, votos válidos e fonte</span></summary>
+        <div class="corpo"><div class="tscroll"><table class="dados" id="t-pesq"></table></div></div>
+      </details>
+
+      <div class="block-head" style="margin-top:28px"><h2 style="font-size:20px">Quanto as pesquisas erraram antes</h2>
+        <p>Erro = pesquisa de véspera menos o resultado, em pontos percentuais dos válidos. Negativo: a pesquisa deu menos do que o candidato teve. Em 2022, o 22 era Jair Bolsonaro. No 1º turno o erro é sobre a fatia de cada um entre todos os candidatos, então não é diretamente comparável ao 2º turno.</p></div>
+      <div class="tscroll"><table class="dados estreita" id="t-erros"></table></div>
+
+      <div class="texto" style="margin-top:18px" id="p-comp"></div>
+      <div class="fontes" id="fontes"></div>` : `<p class="texto">Não foi possível carregar os dados das pesquisas.</p>`}
+    </section>`;
+
+  document.querySelectorAll("[data-ano]").forEach(inp => inp.addEventListener("input", () => {
+    state.pesos[inp.dataset.ano] = +inp.value; document.querySelector(`[data-o="${inp.dataset.ano}"]`).textContent = inp.value; agendar();
+  }));
+  const extra = document.getElementById("i-extra"), comp = document.getElementById("i-comp"), erro = document.getElementById("i-erro");
+  document.getElementById("o-erro").textContent = `±${(sigmaHist() * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`;
+  erro.addEventListener("change", () => { state.erroHist = erro.checked; agendar(); });
+  extra.addEventListener("input", () => { state.extra = +extra.value; document.getElementById("o-extra").textContent = state.extra ? ["", "muito pouca", "pouca", "pouca", "média", "média", "média", "alta", "alta", "muito alta", "muito alta"][state.extra] : "nenhuma"; agendar(); });
+  comp.addEventListener("input", () => { state.comp = +comp.value; document.getElementById("o-comp").textContent = state.comp ? `${state.comp > 0 ? "+" : ""}${state.comp.toLocaleString("pt-BR")} p.p.` : "igual ao histórico"; agendar(); });
+  document.querySelectorAll(".cls select").forEach(s => s.addEventListener("change", () => { state.classif[s.dataset.n] = s.value; agendar(); }));
+  document.getElementById("b-reset").addEventListener("click", () => {
+    Object.keys(state.classif).forEach(n => state.classif[n] = T.classif2026[n] ?? "OD");
+    document.querySelectorAll(".cls select").forEach(s => s.value = state.classif[s.dataset.n]);
+    agendar();
+  });
+  const seg = (id, key) => {
+    const el = document.getElementById(id);
+    const marcar = () => el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state[key]));
+    el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { state[key] = b.dataset.v; marcar(); desenharTransf(); }));
+    marcar();
+  };
+  seg("s-ano", "ano"); seg("s-reg", "regiao");
+  desenharTransf();
+  desenharValidacao();
+  if (PS) { desenharPesquisas(); tabelasPesquisas(PS); }
+}
+let tSim;
+function agendar() { clearTimeout(tSim); tSim = setTimeout(simular, 120); }
+
+function desenharResultado() {
+  const R = state.resultado;
+  const anos = Object.entries(state.pesos).filter(([, p]) => p > 0).map(([a]) => a).join(", ");
+  document.getElementById("res-sub").textContent = `${fmt.format(state.N)} 2º turnos sorteados com as transferências de ${anos}.`;
+  const caixa = (n, p, cor, med, q05, q95) => `<div class="chance"><div class="k"><i class="sw" style="background:var(${cor})"></i>${NOME[n]} · ${n}</div><div class="v num">${pct(p, 0)}</div><div class="s">das simulações com mais de 50% · mediana ${pct(med)} dos válidos (90% entre ${pct(q05)} e ${pct(q95)})</div></div>`;
+  document.getElementById("chances").innerHTML =
+    caixa("13", 1 - R.p22, "--c13", 1 - R.mediana, 1 - R.q95, 1 - R.q05) + caixa("22", R.p22, "--c22", R.mediana, R.q05, R.q95);
+  // distribuição da fatia do 22
+  const el = document.getElementById("ch-dist");
+  const W = Math.max(280, el.clientWidth || 600), estreito = W < 480, H = estreito ? 236 : 220, ml = estreito ? 30 : 40, mr = 10, mt = 10, mb = estreito ? 48 : 34, iw = W - ml - mr, ih = H - mt - mb;
+  const lo = Math.min(0.45, R.q05 - 0.01), hi = Math.max(0.55, R.q95 + 0.01);
+  const x = d3.scaleLinear().domain([lo, hi]).range([0, iw]);
+  const bins = d3.bin().domain([lo, hi]).thresholds(d3.range(lo, hi, 0.0025))(R.nac);
+  const y = d3.scaleLinear().domain([0, d3.max(bins, b => b.length) || 1]).nice(3).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Distribuição da fatia de votos válidos do 22 nas simulações");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  bins.forEach(b => {
+    if (!b.length) return;
+    const meio = (b.x0 + b.x1) / 2;
+    g.append("rect").attr("x", x(b.x0) + 1).attr("width", Math.max(0, x(b.x1) - x(b.x0) - 2)).attr("y", y(b.length)).attr("height", ih - y(b.length))
+      .attr("rx", 1.5).attr("fill", css(meio > 0.5 ? "--c22" : "--c13"));
+  });
+  g.append("line").attr("x1", x(0.5)).attr("x2", x(0.5)).attr("y1", -4).attr("y2", ih).attr("stroke", css("--ink")).attr("stroke-width", 1.2);
+  g.append("text").attr("x", x(0.5)).attr("y", -1).attr("dy", "-0.2em").attr("text-anchor", "middle").attr("class", "lbl").text("50%");
+  x.ticks(6).forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 16).attr("text-anchor", "middle").text(pct(t, 0)));
+  // em tela estreita o rótulo do eixo vai em duas linhas, para não passar da borda
+  const rot = g.append("text").attr("x", iw / 2).attr("y", ih + 30).attr("text-anchor", "middle");
+  (estreito ? ["votos válidos do 22 no 2º turno", "(à esquerda da linha, o 13 tem mais votos)"] : ["votos válidos do 22 no 2º turno (à esquerda da linha, o 13 tem mais votos)"])
+    .forEach((t, i) => rot.append("tspan").attr("x", iw / 2).attr("dy", i ? "1.25em" : 0).text(t));
+  el.replaceChildren(svg.node());
+}
+
+function mediaNacional(ano) {
+  // média das regiões em que o grupo foi estimável, ponderada pelo tamanho do grupo em cada uma; null se em nenhuma
+  const regs = T.anos[ano].regioes;
+  return T.g1.map((_, i) => {
+    const rs = T.regioes.filter(r => regs[r].ok[i]);
+    if (!rs.length) return null;
+    const p = rs.map(r => regs[r].parte[i] * regs[r].totalReal.reduce((a, b) => a + b, 0)), tp = p.reduce((a, b) => a + b, 0);
+    return T.g2.map((_, j) => rs.reduce((s, r, k) => s + regs[r].media[i][j] * p[k] / tp, 0));
+  });
+}
+function pesoGrupo(ano, i) {
+  // quanto da linha nacional vem dos próprios dados (média dos pesos regionais, ponderada pelo tamanho do grupo)
+  const regs = T.anos[ano].regioes;
+  const p = T.regioes.map(r => regs[r].parte[i] * regs[r].totalReal.reduce((a, b) => a + b, 0)), tp = p.reduce((a, b) => a + b, 0);
+  return T.regioes.reduce((s, r, k) => s + (regs[r].peso?.[i] ?? 1) * p[k] / tp, 0);
+}
+function parteGrupo(ano, i) {
+  const regs = T.anos[ano].regioes, tot = T.regioes.reduce((s, r) => s + regs[r].totalReal.reduce((a, b) => a + b, 0), 0);
+  return T.regioes.reduce((s, r) => s + regs[r].parte[i] * regs[r].totalReal.reduce((a, b) => a + b, 0), 0) / tot;
+}
+function desenharTransf() {
+  const R = state.regiao === "Brasil" ? null : T.anos[state.ano].regioes[state.regiao];
+  const Bm = R ? R.media.map((l, i) => R.ok[i] ? l : null) : mediaNacional(state.ano);
+  const parte = i => R ? R.parte[i] : parteGrupo(state.ano, i);
+  const peso = i => R ? (R.peso?.[i] ?? 1) : pesoGrupo(state.ano, i);
+  const nota = i => peso(i) < 0.9 ? `<small class="apoio">grupo pequeno (${pct(parte(i))} dos eleitores): ${pct(peso(i), 0)} da estimativa vem dos próprios dados, o resto do mesmo campo em outras eleições e regiões</small>` : "";
+  const cl = T.classif[state.ano];
+  const quem = g => Object.values(cl).filter(x => x.grupo === g).map(x => x.nome).join(", ");
+  document.getElementById("transf").innerHTML = T.g1.map((g, i) => `<div class="trow"><div class="nm">${esc(T.nomesG1[g])}<small>${esc(quem(g) || (g === "BN" ? "votos em branco e nulos" : g === "AB" ? "não foram votar no 1º turno" : ""))}</small>${nota(i)}</div>
+    ${Bm[i] ? `<div class="stack" role="img" aria-label="${T.g2.map((d, j) => `${T.nomesG2[d]} ${pct(Bm[i][j], 0)}`).join(", ")}">${T.g2.map((d, j) => Bm[i][j] > 0.005 ? `<i style="width:${Bm[i][j] * 100}%;background:var(${COR2[d]})" class="${d === "AB" || d === "BN" ? "cl" : ""}" title="${T.nomesG2[d]}: ${pct(Bm[i][j])}">${Bm[i][j] >= 0.07 ? pct(Bm[i][j], 0) : ""}</i>` : "").join("")}</div>`
+      : `<div class="naoest">Não estimável: o grupo teve só ${pct(parte(i))} dos eleitores${R ? " nesta região" : ""}, pouco para separar o comportamento dele do lugar onde mora. A simulação usa os anos em que ele foi medido.</div>`}</div>`).join("");
+  const reg = state.regiao === "Brasil" ? null : T.anos[state.ano].regioes[state.regiao];
+  document.getElementById("transf-nota").textContent = reg ? `Erro médio do ajuste por seção: ${pct(reg.rmse)} dos aptos.` : "Média das cinco regiões, ponderada pelo eleitorado. A metodologia traz a mesma informação em forma de tabela.";
+}
+
+function desenharValidacao() {
+  document.querySelector("#valid tbody").innerHTML = T.validacao.map(v => `<tr><td>${v.treino}</td><td>${v.teste}</td><td class="r num">${pct(v.previstoE)}</td><td class="r num">${pct(v.realE)}</td><td class="r num"><b>${sinal(v.erroPP, 2)} p.p.</b></td></tr>`).join("");
+}
+
+function desenharEstados() {
+  const L = state.resultado.ufs.slice().sort((a, b) => b.med - a.med);
+  const x = v => Math.max(0, Math.min(100, (v - 0.2) / 0.6 * 100));
+  document.querySelector("#ufs tbody").innerHTML = L.map(s => `<tr><td>${esc(UFS[s.u])}</td><td class="r num">${fmt.format(s.aptos)}</td>
+    <td><div class="faixa"><i style="left:${x(s.q05)}%;width:${Math.max(1, x(s.q95) - x(s.q05))}%;background:var(${s.med > 0.5 ? "--c22" : "--c13"});opacity:.55"></i><b style="left:${x(s.med)}%"></b></div></td>
+    <td class="r num">${pct(s.med)}</td><td class="r num">${pct(s.p22, 0)}</td></tr>`).join("");
+}
+
+/* ---------- pesquisas x simulação ---------- */
+const tip = document.getElementById("tip");
+function mostrarTip(ev, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let lx = ev.clientX + 14, ly = ev.clientY + 14;
+  if (lx + w > innerWidth - 8) lx = ev.clientX - w - 14;
+  if (ly + h > innerHeight - 8) ly = ev.clientY - h - 14;
+  tip.style.left = `${Math.max(8, lx)}px`; tip.style.top = `${Math.max(8, ly)}px`;
+}
+const esconderTip = () => { tip.hidden = true; };
+
+function desenharPesquisas() {
+  const el = document.getElementById("ch-pesq");
+  if (!el || !P) return;
+  const R0 = RESUMO.padrao, L = P.segundoTurno2026;
+  const dia = iso => new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+  const W = Math.max(320, el.clientWidth || 800), estreito = W < 600;
+  const H = Math.round(Math.min(420, Math.max(300, W * 0.42)));
+  const ml = 40, mr = estreito ? 12 : 128, mt = 14, mb = 30, iw = W - ml - mr, ih = H - mt - mb;
+  const x = d3.scaleTime().domain([new Date(2026, 9, 7), new Date(2026, 9, 26)]).range([0, iw]);
+  const y = d3.scaleLinear().domain([44, 56]).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Pesquisas do 2º turno de 2026 ao longo do tempo, em % dos votos válidos, com a faixa de 90% da simulação");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  y.ticks(6).forEach(v => {
+    g.append("line").attr("class", v === 50 ? "baseline" : "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(v)).attr("y2", y(v)).attr("stroke-width", v === 50 ? 1.4 : 1);
+    g.append("text").attr("x", -6).attr("y", y(v)).attr("dy", ".32em").attr("text-anchor", "end").text(`${v}%`);
+  });
+  const ticks = [7, 11, 15, 19, 21, 25].map(d => new Date(2026, 9, d));
+  ticks.forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(`${t.getDate()}/10`));
+  // faixas da simulação (escolhas-padrão)
+  const faixas = [["--c22", R0.q05 * 100, R0.q95 * 100, R0.mediana * 100], ["--c13", (1 - R0.q95) * 100, (1 - R0.q05) * 100, (1 - R0.mediana) * 100]];
+  faixas.forEach(([cor, a, b, m]) => {
+    g.append("rect").attr("x", 0).attr("width", iw).attr("y", y(b)).attr("height", y(a) - y(b)).attr("fill", css(cor)).attr("opacity", 0.13);
+    g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(m)).attr("y2", y(m)).attr("stroke", css(cor)).attr("stroke-width", 1.2).attr("stroke-dasharray", "5 4").attr("opacity", 0.9);
+  });
+  // dia da eleição
+  const xe = x(new Date(2026, 9, 25));
+  g.append("line").attr("x1", xe).attr("x2", xe).attr("y1", 0).attr("y2", ih).attr("stroke", css("--line-strong")).attr("stroke-dasharray", "2 3");
+  g.append("text").attr("x", xe).attr("y", 10).attr("text-anchor", "end").attr("dx", "-4").text("2º turno");
+  // média móvel de 7 dias (por data do fim do campo), a partir de 3 pesquisas na janela
+  const dias = d3.timeDay.range(dia(d3.min(L, p => p.fim)), d3.timeDay.offset(dia(d3.max(L, p => p.fim)), 1));
+  const media = dias.map(d => { const j = L.filter(p => { const f = dia(p.fim); return f <= d && f > d3.timeDay.offset(d, -7); }); return { d, n: j.length, v22: d3.mean(j, p => p.v22) }; }).filter(m => m.n >= 3);
+  [["--c22", m => m.v22], ["--c13", m => 100 - m.v22]].forEach(([cor, f]) =>
+    g.append("path").attr("d", d3.line().x(m => x(m.d)).y(m => y(f(m))).curve(d3.curveMonotoneX)(media)).attr("fill", "none").attr("stroke", css(cor)).attr("stroke-width", 2));
+  // pontos: pesquisas no mesmo dia ficam lado a lado
+  const porDia = d3.group(L, p => p.fim);
+  const sup = css("--surface");
+  const pontos = [];
+  for (const [f, grupo] of porDia) grupo.forEach((p, k) => pontos.push({ p, cx: x(dia(f)) + (k - (grupo.length - 1) / 2) * 5 }));
+  [["13", "--c13", p => p.v13], ["22", "--c22", p => p.v22]].forEach(([n, cor, f]) => {
+    pontos.forEach(({ p, cx }) => {
+      const conv = p.base !== "válidos";
+      g.append("circle").attr("cx", cx).attr("cy", y(f(p))).attr("r", 4.2)
+        .attr("fill", conv ? sup : css(cor)).attr("stroke", conv ? css(cor) : sup).attr("stroke-width", conv ? 2 : 1.5);
+    });
+  });
+  // rótulos diretos à direita
+  if (!estreito) {
+    const lab = (cor, v, txt) => { const t = g.append("text").attr("x", iw + 8).attr("y", y(v)).attr("dy", ".32em").style("fill", css("--ink")).style("font-size", "11.5px"); t.append("tspan").style("font-weight", 600).style("fill", css(cor)).text("■ "); t.append("tspan").text(txt); };
+    lab("--c22", R0.mediana * 100, `22: simulação ${pct(R0.mediana)}`);
+    lab("--c13", (1 - R0.mediana) * 100, `13: simulação ${pct(1 - R0.mediana)}`);
+  }
+  // camada de interação: alvo maior que o ponto
+  pontos.forEach(({ p, cx }) => {
+    const html = `<b>${esc(p.instituto)}</b>campo: ${esc(p.campo)}${p.divulgacao ? ` · divulgada em ${dataBR(p.divulgacao)}` : ""}<br><span style="color:var(--c13)">●</span> 13 · Lula: <b style="display:inline">${num(p.v13)}%</b><br><span style="color:var(--c22)">●</span> 22 · Flávio Bolsonaro: <b style="display:inline">${num(p.v22)}%</b><br><span style="color:var(--muted)">${p.base === "válidos" ? "votos válidos divulgados" : `convertido de votos totais (${num(p.totais.v13)}% × ${num(p.totais.v22)}%)`}</span>`;
+    [p.v13, p.v22].forEach(v => g.append("circle").attr("cx", cx).attr("cy", y(v)).attr("r", 9).attr("fill", "transparent").style("cursor", "default")
+      .on("mousemove", ev => mostrarTip(ev, html)).on("mouseleave", esconderTip));
+  });
+  el.replaceChildren(svg.node());
+}
+
+function tabelasPesquisas(PS) {
+  const fonteLinks = fs => fs.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.nome)}</a>`).join(", ");
+  document.getElementById("t-pesq").innerHTML = `<thead><tr><th>Instituto</th><th>Campo</th><th>Divulgação</th><th class="r">13 · Lula</th><th class="r">22 · Flávio</th><th>Base</th><th>Fonte</th></tr></thead><tbody>` +
+    PS.L.slice().sort((a, b) => b.fim.localeCompare(a.fim) || a.instituto.localeCompare(b.instituto)).map(p => `<tr><td>${esc(p.instituto)}</td><td class="num">${esc(p.campo)}</td><td class="num">${p.divulgacao ? dataBR(p.divulgacao) : "—"}</td><td class="r num">${num(p.v13)}%</td><td class="r num">${num(p.v22)}%</td><td><small>${p.base === "válidos" ? "válidos" : `totais ${num(p.totais.v13)} × ${num(p.totais.v22)}, convertidos`}</small></td><td><small>${fonteLinks(p.fontes)}</small></td></tr>`).join("") + "</tbody>";
+  // tabela de erros por instituto
+  const insts = [...new Set(PS.E.map(e => e.instituto))];
+  const acha = (i, el) => PS.E.find(e => e.instituto === i && e.eleicao === el);
+  const cel = (e, k) => e && e[k] != null ? `<td class="r num">${sinal(e[k])}</td>` : `<td class="r" style="color:var(--muted)">—</td>`;
+  const ordem = insts.sort((a, b) => (acha(a, "1t2026") ? 0 : 1) - (acha(b, "1t2026") ? 0 : 1) || a.localeCompare(b));
+  const res = P.resultados;
+  document.getElementById("t-erros").innerHTML = `<thead>
+    <tr class="grupo"><th></th><th colspan="2" class="r">1º turno 2026</th><th class="r">1º turno 2022</th><th colspan="2" class="r">2º turno 2022</th></tr>
+    <tr><th>Instituto</th><th class="r">Erro no 13</th><th class="r">Erro no 22</th><th class="r">Erro no 22</th><th class="r">Erro no 13</th><th class="r">Erro no 22</th></tr></thead><tbody>` +
+    ordem.map(i => `<tr><td>${esc(i)}${acha(i, "2t2022")?.campo?.startsWith("pesquisa") ? ` <small>(2º turno 2022: ${esc(acha(i, "2t2022").campo)})</small>` : ""}</td>${cel(acha(i, "1t2026"), "e13")}${cel(acha(i, "1t2026"), "e22")}${cel(acha(i, "1t2022"), "e22")}${cel(acha(i, "2t2022"), "e13")}${cel(acha(i, "2t2022"), "e22")}</tr>`).join("") +
+    `<tr><td><small>Resultado (% dos válidos)</small></td><td class="r num"><small>${num(res["1t2026"].v13)}</small></td><td class="r num"><small>${num(res["1t2026"].v22)}</small></td><td class="r num"><small>${num(res["1t2022"].v22)}</small></td><td class="r num"><small>${num(res["2t2022"].v13)}</small></td><td class="r num"><small>${num(res["2t2022"].v22)}</small></td></tr></tbody>`;
+  // parágrafo de comparação
+  const R0 = RESUMO.padrao, med = R0.mediana * 100, dif = med - PS.mediaRec;
+  const dentro = PS.mediaRec >= R0.q05 * 100 && PS.mediaRec <= R0.q95 * 100;
+  const fx = ([a, b]) => `de ${num(Math.abs(b))} a ${num(Math.abs(a))} pontos a menos`;
+  const f2 = PS.f2t22;
+  document.getElementById("p-comp").innerHTML = `<h3>O que cada fonte indica</h3>
+    <p>As ${PS.rec.length} pesquisas divulgadas de 18 a 21 de outubro dão ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% dos votos válidos (média de ${num(100 - PS.mediaRec)}%) e ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% (média de ${num(PS.mediaRec)}%). A simulação, com as escolhas-padrão, dá ${pct(1 - R0.mediana)} ao 13 e ${pct(R0.mediana)} ao 22 na mediana. A diferença entre as duas fontes é de ${num(Math.abs(dif))} ponto${Math.abs(dif) >= 2 ? "s" : ""}, e a média das pesquisas fica ${dentro ? "dentro" : "fora"} da faixa de 90% da simulação (${pct(R0.q05)} a ${pct(R0.q95)} para o 22).</p>
+    <p>As duas fontes erram, e o tamanho dos erros passados é parecido com essa diferença. Na véspera do 1º turno de 2026, as pesquisas da tabela deram ao 22 ${fx(PS.f1t26)} do que ele teve, e ao 13 de ${num(Math.abs(PS.f1t26_13[0]))} ponto a menos a ${num(PS.f1t26_13[1])} pontos a mais. Em 2022, o padrão foi o mesmo no 1º turno (${fx(PS.f1t22)} para o 22), mas no 2º turno o erro foi menor: de ${num(Math.abs(f2[0]))} ponto${Math.abs(f2[0]) >= 2 ? "s" : ""} a menos a ${num(Math.abs(f2[1]))} ponto a mais para o 22. Não há garantia de que um erro do 1º turno se repita no 2º. A simulação, por sua vez, errou de ${num(d3.min(T.validacao, v => Math.abs(v.erroPP)))} a ${num(d3.max(T.validacao, v => Math.abs(v.erroPP)))} ponto nos três testes, e não vê nada do que aconteceu na campanha depois de 4 de outubro, como os debates; as pesquisas veem.</p>
+    <p>Em resumo: nas pesquisas recentes, a diferença entre os dois vai de ${num(2 * (50 - PS.minRec))} pontos a favor do 13 a ${num(2 * (PS.maxRec - 50))} pontos a favor do 22 (média de ${num(2 * (PS.mediaRec - 50))} pontos a favor do 22); a simulação mostra o que aconteceria se os eleitores repetissem o comportamento de 2014 a 2022. A diferença entre as duas é menor que a incerteza de cada uma. Nenhuma delas é uma previsão do resultado de 25 de outubro.</p>`;
+  const fontes = new Map();
+  const anota = (u, nome, extra) => { const f = fontes.get(u) ?? { nome, extras: new Set() }; f.extras.add(extra); fontes.set(u, f); };
+  const ROT = { "1t2026": "1º turno 2026", "1t2022": "1º turno 2022", "2t2022": "2º turno 2022" };
+  PS.L.forEach(p => p.fontes.forEach(f => anota(f.url, f.nome, f.nome.includes("compilação") ? "2º turno 2026" : p.instituto + ", 2º turno 2026")));
+  PS.E.forEach(e => anota(e.fonte.url, e.fonte.nome, `${e.instituto}, ${ROT[e.eleicao]}`));
+  document.getElementById("fontes").innerHTML = `<h3 style="font-size:14px;color:var(--ink-2);margin:20px 0 4px">Fontes das pesquisas</h3><p style="margin:0">${[...fontes].map(([u, f]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.nome)}</a> <span>(${esc([...f.extras].join("; "))})</span>`).join(" · ")}. Pesquisas de 9 a 18/10 a partir da compilação do Poder360; as divulgadas de 17 a 21/10, das reportagens indicadas (consulta em 21/10/2026). Quando só os votos totais foram divulgados, os válidos foram calculados como candidato ÷ (13 + 22).</p>`;
+}
+
+const redesenhar = () => { if (state.resultado) desenharResultado(); if (RESUMO.padrao) desenharPesquisas(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redesenhar);
+new MutationObserver(redesenhar).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+let tRes, larg = innerWidth;
+addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => { if (Math.abs(innerWidth - larg) > 20 && state.resultado) { larg = innerWidth; redesenhar(); } }, 200); });
+iniciar().catch(err => { document.getElementById("content").innerHTML = `<div class="loading">Não foi possível carregar os dados (${esc(err.message)}).</div>`; console.error(err); });
+</script>
+</body>
+</html>

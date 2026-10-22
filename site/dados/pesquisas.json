@@ -1,0 +1,715 @@
+{
+ "atualizado": "2026-10-21",
+ "descricao": "Pesquisas de intenção de voto para o 2º turno presidencial de 2026 (% dos votos válidos) e erro das pesquisas de véspera em 2026 e 2022. 'totais convertidos': o veículo publicou só os votos totais; os válidos foram calculados aqui como candidato / (13 + 22). Erro = pesquisa − resultado, em pontos percentuais.",
+ "resultados": {
+  "1t2026": {
+   "v13": 45.16,
+   "v22": 47.03
+  },
+  "1t2022": {
+   "v13": 48.43,
+   "v22": 43.2
+  },
+  "2t2022": {
+   "v13": 50.9,
+   "v22": 49.1
+  }
+ },
+ "candidatos": {
+  "2026": {
+   "13": "Lula (PT)",
+   "22": "Flávio Bolsonaro (PL)"
+  },
+  "2022": {
+   "13": "Lula (PT)",
+   "22": "Jair Bolsonaro (PL)"
+  }
+ },
+ "segundoTurno2026": [
+  {
+   "instituto": "AtlasIntel",
+   "campo": "3-8/10",
+   "inicio": "2026-10-03",
+   "fim": "2026-10-08",
+   "divulgacao": null,
+   "v13": 47.2,
+   "v22": 52.8,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "DataTrends",
+   "campo": "7-9/10",
+   "inicio": "2026-10-07",
+   "fim": "2026-10-09",
+   "divulgacao": null,
+   "v13": 46.9,
+   "v22": 53.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "BTG/Nexus",
+   "campo": "10-12/10",
+   "inicio": "2026-10-10",
+   "fim": "2026-10-12",
+   "divulgacao": null,
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Palver",
+   "campo": "10-13/10",
+   "inicio": "2026-10-10",
+   "fim": "2026-10-13",
+   "divulgacao": null,
+   "v13": 49.49,
+   "v22": 50.51,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Quaest",
+   "campo": "10-13/10",
+   "inicio": "2026-10-10",
+   "fim": "2026-10-13",
+   "divulgacao": null,
+   "v13": 48.9,
+   "v22": 51.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    },
+    {
+     "nome": "O Povo",
+     "url": "https://www.opovo.com.br/noticias/politica/eleicoes/2026/10/14/datafolha-e-quaest-divulgam-novas-pesquisas-sobre-2-turno-entre-lula-e-flavio.html"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Datafolha",
+   "campo": "13-14/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-14",
+   "divulgacao": null,
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    },
+    {
+     "nome": "O Povo",
+     "url": "https://www.opovo.com.br/noticias/politica/eleicoes/2026/10/14/datafolha-e-quaest-divulgam-novas-pesquisas-sobre-2-turno-entre-lula-e-flavio.html"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Indexa/Broadcast",
+   "campo": "13-14/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-14",
+   "divulgacao": null,
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "CNT/MDA",
+   "campo": "13-15/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-15",
+   "divulgacao": null,
+   "v13": 49.5,
+   "v22": 50.5,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Futura",
+   "campo": "14-15/10",
+   "inicio": "2026-10-14",
+   "fim": "2026-10-15",
+   "divulgacao": null,
+   "v13": 49.2,
+   "v22": 50.8,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Ipespe/Abrapel",
+   "campo": "13-15/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-15",
+   "divulgacao": null,
+   "v13": 48.8,
+   "v22": 51.2,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "PoderData/Aya",
+   "campo": "13-15/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-15",
+   "divulgacao": null,
+   "v13": 50.0,
+   "v22": 50.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Gerp",
+   "campo": "14-16/10",
+   "inicio": "2026-10-14",
+   "fim": "2026-10-16",
+   "divulgacao": null,
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)"
+  },
+  {
+   "instituto": "Veritá",
+   "campo": "12-16/10",
+   "inicio": "2026-10-12",
+   "fim": "2026-10-16",
+   "divulgacao": "2026-10-17",
+   "v13": 48.93,
+   "v22": 51.07,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Bahia Notícias",
+     "url": "https://www.bahianoticias.com.br/noticia/322563-pesquisa-verita-aponta-flavio-vencendo-com-511-e-lula-ficando-em-489-na-simulacao-de-segundo-turno"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "registroTSE": "BR-01107/2026"
+  },
+  {
+   "instituto": "DataTrends",
+   "campo": "15-17/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-17",
+   "divulgacao": "2026-10-19",
+   "v13": 48.5,
+   "v22": 51.5,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Blog do Robson Pires",
+     "url": "https://robsonpiresxerife.com/pesquisa-datatrends-flavio-bolsonaro-tem-515-dos-votos-validos-contra-485-de-lula/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 46,
+    "v22": 49
+   },
+   "registroTSE": "BR-04454/2026"
+  },
+  {
+   "instituto": "Futura",
+   "campo": "16-17/10",
+   "inicio": "2026-10-16",
+   "fim": "2026-10-17",
+   "divulgacao": "2026-10-19",
+   "v13": 49.6,
+   "v22": 50.4,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Exame",
+     "url": "https://exame.com/brasil/pesquisa-futura-para-presidente-flavio-bolsonaro-tem-504-e-lula-496-no-2o-turno/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 47.5,
+    "v22": 48.3
+   },
+   "registroTSE": "BR-06715/2026"
+  },
+  {
+   "instituto": "Vox Brasil",
+   "campo": "15-17/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-17",
+   "divulgacao": "2026-10-18",
+   "v13": 51.0,
+   "v22": 49.0,
+   "base": "totais convertidos",
+   "fontes": [
+    {
+     "nome": "Poder360 (compilação)",
+     "url": "https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/"
+    },
+    {
+     "nome": "Metrópoles",
+     "url": "https://www.metropoles.com/brasil/vox-brasil-com-empate-tecnico-lula-tem-464-e-flavio-bolsonaro-446"
+    }
+   ],
+   "origem": "levantamento anterior (9 a 18/10)",
+   "totais": {
+    "v13": 46.4,
+    "v22": 44.6
+   }
+  },
+  {
+   "instituto": "AtlasIntel",
+   "campo": "13-18/10",
+   "inicio": "2026-10-13",
+   "fim": "2026-10-18",
+   "divulgacao": "2026-10-19",
+   "v13": 48.9,
+   "v22": 51.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/atlas-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "registroTSE": "BR-02418/2026"
+  },
+  {
+   "instituto": "BTG/Nexus",
+   "campo": "16-18/10",
+   "inicio": "2026-10-16",
+   "fim": "2026-10-18",
+   "divulgacao": "2026-10-19",
+   "v13": 49.7,
+   "v22": 50.3,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Nexus",
+     "url": "https://www.nexus.fsb.com.br/estudos-divulgados/pesquisa-btg-nexus-de-intencao-de-votos-para-presidente-do-brasil-19-de-outubro-de-2026/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 45.9,
+    "v22": 46.5
+   },
+   "registroTSE": "BR-04499/2026"
+  },
+  {
+   "instituto": "PoderData/Aya",
+   "campo": "16-18/10",
+   "inicio": "2026-10-16",
+   "fim": "2026-10-18",
+   "divulgacao": "2026-10-19",
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360",
+     "url": "https://www.poder360.com.br/poderdata/pesquisa-poderdata-aya-leia-os-resultados-de-lula-e-flavio-no-2o-turno-19out2026/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "registroTSE": "BR-02586/2026"
+  },
+  {
+   "instituto": "Alfa Inteligência",
+   "campo": "15-19/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-19",
+   "divulgacao": "2026-10-20",
+   "v13": 48.5,
+   "v22": 51.5,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/alfa-flavio-tem-515-dos-votos-validos-no-2o-turno-lula-485/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "registroTSE": "BR-00820/2026"
+  },
+  {
+   "instituto": "Meio/Ideia",
+   "campo": "15-19/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-19",
+   "divulgacao": "2026-10-21",
+   "v13": 48.9,
+   "v22": 51.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/meio-ideia-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "registroTSE": "BR-08251/2026"
+  },
+  {
+   "instituto": "Real Time Big Data",
+   "campo": "15-19/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-19",
+   "divulgacao": "2026-10-20",
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "The Rio Times",
+     "url": "https://www.riotimesonline.com/real-time-big-data-poll-flavio-52-lula-48-runoff-2026/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 45,
+    "v22": 48
+   },
+   "registroTSE": "BR-02952/2026"
+  },
+  {
+   "instituto": "Veritá",
+   "campo": "15-19/10",
+   "inicio": "2026-10-15",
+   "fim": "2026-10-19",
+   "divulgacao": "2026-10-21",
+   "v13": 49.3,
+   "v22": 50.7,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/verita-flavio-tem-507-dos-votos-validos-no-2o-turno-lula-493/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 48.2,
+    "v22": 49.7
+   },
+   "registroTSE": "BR-06396/2026"
+  },
+  {
+   "instituto": "Futura",
+   "campo": "19-20/10",
+   "inicio": "2026-10-19",
+   "fim": "2026-10-20",
+   "divulgacao": "2026-10-21",
+   "v13": 48.9,
+   "v22": 51.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CartaCapital",
+     "url": "https://www.cartacapital.com.br/politica/flavio-e-lula-seguem-tecnicamente-empatados-mostra-pesquisa-futura/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 46.8,
+    "v22": 48.9
+   },
+   "registroTSE": "BR-06614/2026"
+  },
+  {
+   "instituto": "Palver",
+   "campo": "18-20/10",
+   "inicio": "2026-10-18",
+   "fim": "2026-10-20",
+   "divulgacao": "2026-10-21",
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "totais convertidos",
+   "fontes": [
+    {
+     "nome": "Terra",
+     "url": "https://www.terra.com.br/noticias/eleicoes/pesquisas/pesquisa-palver-flavio-bolsonaro-tem-50-e-lula-48-no-2-turno-candidatos-estao-em-empate-tecnico,6e99d76af4651a537219166fa78a4183lmte1cxs.html"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 48,
+    "v22": 50
+   },
+   "registroTSE": "BR-04612/2026"
+  },
+  {
+   "instituto": "Quaest",
+   "campo": "17-20/10",
+   "inicio": "2026-10-17",
+   "fim": "2026-10-20",
+   "divulgacao": "2026-10-21",
+   "v13": 49.4,
+   "v22": 50.6,
+   "base": "totais convertidos",
+   "fontes": [
+    {
+     "nome": "Folha de Londrina",
+     "url": "https://www.folhadelondrina.com.br/politica/a-4-dias-do-pleito-lula-e-flavio-seguem-em-empate-tecnico-3328718e.html"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 44,
+    "v22": 45
+   },
+   "registroTSE": "BR-08535/2026"
+  },
+  {
+   "instituto": "Gerp",
+   "campo": "19-21/10",
+   "inicio": "2026-10-19",
+   "fim": "2026-10-21",
+   "divulgacao": "2026-10-21",
+   "v13": 47.0,
+   "v22": 53.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/gerp-flavio-tem-53-dos-votos-validos-no-2o-turno-lula-47-2/"
+    }
+   ],
+   "origem": "busca de 21/10/2026",
+   "totais": {
+    "v13": 45,
+    "v22": 50
+   },
+   "registroTSE": "BR-03835/2026"
+  }
+ ],
+ "erros": [
+  {
+   "eleicao": "1t2026",
+   "instituto": "Datafolha",
+   "campo": "3/10/2026",
+   "v13": 45,
+   "v22": 42,
+   "fonte": {
+    "nome": "Exame",
+    "url": "https://exame.com/brasil/pesquisa-datafolha-para-presidente-lula-tem-45-e-flavio-bolsonaro-42-dos-votos-validos-no-1o-turno/"
+   }
+  },
+  {
+   "eleicao": "1t2026",
+   "instituto": "Quaest",
+   "campo": "2-3/10/2026",
+   "v13": 46,
+   "v22": 45,
+   "fonte": {
+    "nome": "CNN Brasil",
+    "url": "https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-46-dos-votos-validos-no-1o-turno-flavio-45/"
+   }
+  },
+  {
+   "eleicao": "1t2026",
+   "instituto": "AtlasIntel",
+   "campo": "27/9-2/10/2026",
+   "v13": 47.0,
+   "v22": 44.1,
+   "fonte": {
+    "nome": "Diario de Pernambuco",
+    "url": "https://www.diariodepernambuco.com.br/politica/2026/10/11725710-atlasintel-lula-tem-47-e-flavio-bolsonaro-441-de-votos-validos-no-primeiro-turno.html"
+   }
+  },
+  {
+   "eleicao": "1t2026",
+   "instituto": "PoderData/Aya",
+   "campo": "30/9-2/10/2026",
+   "v13": 45,
+   "v22": 43,
+   "fonte": {
+    "nome": "BNews",
+    "url": "https://www.bnewssaopaulo.com.br/noticias/politica/poderdataaya-lula-tem-45-dos-votos-validos-no-1-turno-flavio-43.html"
+   }
+  },
+  {
+   "eleicao": "1t2026",
+   "instituto": "CNT/MDA",
+   "campo": "30/9-2/10/2026",
+   "v13": 47.8,
+   "v22": 42.1,
+   "fonte": {
+    "nome": "Diário do Grande ABC",
+    "url": "https://www.dgabc.com.br/Noticia/4350555/cnt-mda-lula-tem-47-8-dos-votos-validos-flavio-soma-42-1-e-cury-3-6"
+   }
+  },
+  {
+   "eleicao": "1t2022",
+   "instituto": "Datafolha",
+   "v13": null,
+   "v22": 36,
+   "fonte": {
+    "nome": "Fundação Perseu Abramo",
+    "url": "https://fpabramo.org.br/onde-as-pesquisas-podem-ter-errado/"
+   }
+  },
+  {
+   "eleicao": "1t2022",
+   "instituto": "Ipec",
+   "v13": null,
+   "v22": 37,
+   "fonte": {
+    "nome": "Fundação Perseu Abramo",
+    "url": "https://fpabramo.org.br/onde-as-pesquisas-podem-ter-errado/"
+   }
+  },
+  {
+   "eleicao": "1t2022",
+   "instituto": "Quaest",
+   "v13": null,
+   "v22": 38,
+   "fonte": {
+    "nome": "Fundação Perseu Abramo",
+    "url": "https://fpabramo.org.br/onde-as-pesquisas-podem-ter-errado/"
+   }
+  },
+  {
+   "eleicao": "1t2022",
+   "instituto": "AtlasIntel",
+   "v13": 50.3,
+   "v22": 41.1,
+   "fonte": {
+    "nome": "Congresso em Foco",
+    "url": "https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022"
+   }
+  },
+  {
+   "eleicao": "1t2022",
+   "instituto": "Paraná Pesquisas",
+   "v13": 47.1,
+   "v22": 40.0,
+   "fonte": {
+    "nome": "Congresso em Foco",
+    "url": "https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022"
+   }
+  },
+  {
+   "eleicao": "2t2022",
+   "instituto": "Datafolha",
+   "campo": "28-29/10/2022",
+   "v13": 52,
+   "v22": 48,
+   "fonte": {
+    "nome": "Tribuna PR",
+    "url": "https://www.tribunapr.com.br/eleicoes/2022/pesquisa-datafolha-lula-tem-52-contra-48-de-bolsonaro-na-vespera-da-eleicao/"
+   }
+  },
+  {
+   "eleicao": "2t2022",
+   "instituto": "Ipec",
+   "campo": "27-29/10/2022",
+   "v13": 54,
+   "v22": 46,
+   "fonte": {
+    "nome": "A Gazeta",
+    "url": "https://www.agazeta.com.br/brasil/pesquisa-ipec-lula-tem-54-dos-votos-validos-e-bolsonaro-46-1022"
+   }
+  },
+  {
+   "eleicao": "2t2022",
+   "instituto": "CNT/MDA",
+   "v13": 51.1,
+   "v22": 48.9,
+   "fonte": {
+    "nome": "Congresso em Foco",
+    "url": "https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022"
+   }
+  },
+  {
+   "eleicao": "2t2022",
+   "instituto": "Paraná Pesquisas",
+   "v13": 50.4,
+   "v22": 49.6,
+   "fonte": {
+    "nome": "Congresso em Foco",
+    "url": "https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022"
+   }
+  },
+  {
+   "eleicao": "2t2022",
+   "instituto": "AtlasIntel",
+   "campo": "pesquisa divulgada em 27/10/2022",
+   "v13": 53.2,
+   "v22": 46.8,
+   "fonte": {
+    "nome": "O Povo",
+    "url": "https://www.opovo.com.br/eleicoes-2022/2022/10/27/pesquisa-atlas-intel-lula-vai-a-532-e-bolsonaro-recua-a-468.html"
+   }
+  }
+ ]
+}

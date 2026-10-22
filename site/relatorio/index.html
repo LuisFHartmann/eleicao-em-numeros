@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulação do 2º turno: relatório · Eleição em Números</title>
+<meta name="description" content="Relatório técnico sobre a simulação de Monte Carlo do 2º turno presidencial de 2026: dados, inferência ecológica da migração de votos, validação, resultados, sensibilidade e comparação com as pesquisas.">
+<meta name="author" content="Luis Felipe Hartmann">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Relatório em formato de artigo: coluna de leitura na tela e A4 na impressão (o PDF é gerado pelo Chrome a partir desta página). */
+@font-face { font-family: "Public Sans"; font-weight: 400; font-style: normal; src: url("fontes/PublicSans-400.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Public Sans"; font-weight: 600; font-style: normal; src: url("fontes/PublicSans-600.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Public Sans"; font-weight: 700; font-style: normal; src: url("fontes/PublicSans-700.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Archivo Condensed"; font-weight: 700; font-style: normal; src: url("fontes/Archivo-Cond-700.ttf") format("truetype"); font-display: swap; }
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #3f4541; --muted: #6f756f;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  --c22: #2a78d6; --c13: #e34948; --heat: 15, 90, 97;
+  --f-display: "Archivo Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif;
+  --f-mono: ui-monospace, "DejaVu Sans Mono", Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --heat: 108, 193, 200; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --heat: 108, 193, 200; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.62; -webkit-text-size-adjust: 100%; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+
+/* barra do site (só na tela) */
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; padding: 10px max(16px, env(safe-area-inset-left, 0px)); max-width: 1240px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 700; font-size: 21px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.botao { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: var(--r); padding: 7px 12px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-soft); }
+.botao.sec { background: transparent; border-color: var(--line-strong); color: var(--ink-2); font-weight: 600; }
+.botao:hover { text-decoration: underline; }
+.botao svg { width: 16px; height: 16px; flex: none; }
+
+/* artigo */
+main.artigo { max-width: 760px; margin: 0 auto; padding: 32px max(16px, env(safe-area-inset-left, 0px)) 56px max(16px, env(safe-area-inset-right, 0px)); }
+.cabeca { padding-bottom: 18px; border-bottom: 2px solid var(--ink); margin-bottom: 22px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .03em; }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 6vw, 46px); line-height: 1.05; letter-spacing: -0.01em; margin: 6px 0 10px; text-wrap: balance; }
+.subtitulo { font-size: 18px; line-height: 1.45; color: var(--ink-2); margin: 0 0 14px; text-wrap: pretty; }
+.autoria { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; color: var(--ink-2); }
+.autoria b { color: var(--ink); }
+.resumo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; margin: 0 0 16px; }
+.resumo h2, .aviso h2 { font-family: var(--f-body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 6px; padding: 0; border: 0; }
+.resumo p { margin: 0 0 8px; color: var(--ink); }
+.resumo p:last-child { margin-bottom: 0; }
+.palavras { font-size: 13.5px; color: var(--muted); }
+.aviso { border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--r) var(--r) 0; padding: 12px 16px; margin: 0 0 8px; font-size: 14.5px; }
+.aviso p { margin: 0; color: var(--ink); }
+.aviso h2 { color: var(--accent); }
+
+h2 { font-family: var(--f-display); font-weight: 700; font-size: 28px; line-height: 1.12; margin: 40px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); text-wrap: balance; }
+h2 .n { color: var(--accent); margin-right: 8px; }
+h3 { font-size: 17px; margin: 24px 0 4px; line-height: 1.3; }
+h3 .n { color: var(--accent); margin-right: 4px; }
+p, li { color: var(--ink-2); }
+p b, li b, td b { color: var(--ink); }
+main p { text-wrap: pretty; }
+ol, ul { padding-left: 22px; }
+li { margin: 4px 0; }
+.cite { font-size: .82em; vertical-align: baseline; white-space: nowrap; }
+.cite a { text-decoration: none; }
+.sw { display: inline-block; width: .7em; height: .7em; border-radius: 2px; vertical-align: baseline; margin-right: 3px; }
+.v13 { color: var(--c13); font-weight: 600; } .v22 { color: var(--c22); font-weight: 600; }
+
+/* equações: rolam dentro do próprio bloco em telas estreitas */
+.eq { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 16px; margin: 14px 0; overflow-x: auto; font-size: 15px; line-height: 1.7; color: var(--ink); max-width: 100%; }
+.eq .l { white-space: nowrap; }
+.eq i { font-family: var(--f-body); }
+.eq .com { color: var(--muted); font-size: 13.5px; white-space: normal; display: block; margin-top: 2px; }
+.algo { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 16px 12px 14px; margin: 14px 0; font-size: 14.5px; }
+.algo ol { margin: 6px 0 0; padding-left: 24px; }
+.algo li { color: var(--ink); }
+.algo .t { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* figuras */
+figure.fig { margin: 20px 0 22px; }
+figure.fig .tela { background: #fff; border: 1px solid var(--line); border-radius: var(--r); padding: 10px; }
+figure.fig img { display: block; width: 100%; height: auto; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+figcaption b { color: var(--ink); }
+.legenda { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: #3f4541; padding: 2px 4px 8px; }
+.legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.legenda .ponto { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legenda .anel { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 2px solid #4a504c; }
+.legenda .linha { width: 18px; border-top: 2px solid #4a504c; display: inline-block; }
+.legenda .trac { width: 18px; border-top: 2px dashed #4a504c; display: inline-block; }
+.legenda .faixa { width: 18px; height: 10px; border-radius: 2px; display: inline-block; opacity: .3; }
+
+/* tabelas: rolam dentro do próprio bloco em telas estreitas */
+.tabela { margin: 18px 0 20px; }
+.tabela .tit { font-size: 13.5px; color: var(--muted); margin: 0 0 6px; line-height: 1.45; }
+.tabela .tit b { color: var(--ink); }
+.tabela .nota-tab { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
+.tscroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+table.dados { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.dados th, table.dados td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.dados thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; border-bottom: 1.5px solid var(--line-strong); vertical-align: bottom; }
+table.dados td.r, table.dados th.r { text-align: right; }
+table.dados td small { color: var(--muted); font-size: 12px; }
+table.dados .vazio { color: var(--muted); }
+table.dados .nowrap, table.dados td.r { white-space: nowrap; }
+table.dados tr.grupo th { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); font-weight: 700; padding-top: 12px; border-bottom: 1px solid var(--line-strong); }
+table.dados thead tr.grupo th { font-size: 11.5px; color: var(--ink-2); font-weight: 600; padding-top: 4px; border-bottom: 0; }
+table.dados tr.total td { border-top: 1.5px solid var(--line-strong); color: var(--ink); font-weight: 600; }
+table.dados tr.nota td { color: var(--muted); font-size: 12.5px; border-bottom: 0; }
+table.dados tr.destaque td { background: var(--surface-2); }
+table.dados td.heat { background: rgba(var(--heat), calc(var(--v) * 0.0045)); color: var(--ink); min-width: 52px; }
+table.matriz td:first-child { min-width: 190px; }
+table.conta td:first-child { color: var(--muted); width: 1.5em; }
+
+.refs { padding-left: 26px; font-size: 14px; }
+.refs li { margin: 6px 0; }
+.refs a { word-break: break-all; }
+.apendice { font-size: 15px; }
+footer.pe { max-width: 760px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left, 0px)) 48px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 560px) {
+  body { font-size: 15.5px; }
+  .subtitulo { font-size: 16.5px; }
+  h2 { font-size: 24px; margin-top: 32px; }
+  table.dados { font-size: 13px; }
+  table.dados th, table.dados td { padding: 5px 6px; }
+  table.matriz td:first-child { min-width: 150px; }
+  .eq { font-size: 14px; padding: 10px 12px; }
+  figure.fig .tela { padding: 4px; }
+  .eq .l { white-space: normal; }
+  table.dados td.heat { min-width: 44px; }
+  table.matriz td:first-child { min-width: 132px; }
+  table.dados thead th { white-space: normal; }
+  table.sens td { white-space: nowrap; }
+  .grupos2026 td:nth-child(2) { min-width: 150px; }
+  .legenda { font-size: 12px; }
+  .brand-sub { display: none; }
+}
+
+/* ---------------- impressão A4 (o PDF) ---------------- */
+@page {
+  size: A4; margin: 17mm 17mm 18mm;
+  @bottom-left { content: "Luis Felipe Hartmann · Simulação de Monte Carlo do 2º turno de 2026"; font-family: "Public Sans", sans-serif; font-size: 7.5pt; color: #7d837d; }
+  @bottom-right { content: counter(page) " / " counter(pages); font-family: "Public Sans", sans-serif; font-size: 7.5pt; color: #7d837d; }
+}
+@media print {
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+    --bg: #fff; --surface: #fff; --surface-2: #f1f2ee; --ink: #15181a; --ink-2: #33393a; --muted: #6a706a;
+    --line: #dcdfd7; --line-strong: #b9bdb4; --accent: #0f5a61; --accent-soft: #eef5f4; --c22: #2a78d6; --c13: #e34948; --heat: 15, 90, 97;
+    color-scheme: light;
+  }
+  html { font-size: 9.6pt; }
+  body { background: #fff; font-size: 9.6pt; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .topbar, .so-tela { display: none !important; }
+  main.artigo { max-width: none; padding: 0; }
+  .cabeca { padding-bottom: 10pt; margin-bottom: 12pt; }
+  h1 { font-size: 26pt; margin: 4pt 0 6pt; }
+  .subtitulo { font-size: 11.5pt; margin-bottom: 8pt; }
+  .autoria { font-size: 9pt; }
+  .eyebrow { font-size: 7.5pt; }
+  .resumo { padding: 9pt 12pt; margin-bottom: 9pt; break-inside: avoid; }
+  .resumo h2, .aviso h2 { font-size: 7.5pt; }
+  .palavras { font-size: 8.5pt; }
+  .aviso { font-size: 9pt; padding: 7pt 11pt; break-inside: avoid; }
+  h2 { font-size: 17pt; margin: 18pt 0 4pt; padding-top: 8pt; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 2pt; break-after: avoid; }
+  p { margin: 0 0 6pt; orphans: 3; widows: 3; }
+  li { margin: 2pt 0; }
+  a { color: inherit; text-decoration: none; }
+  .cite a { color: var(--accent); }
+  .refs a, .apendice a { color: var(--accent); }
+  .eq { font-size: 10pt; padding: 6pt 10pt; margin: 8pt 0; overflow: visible; break-inside: avoid; }
+  .eq .com { font-size: 8.5pt; }
+  .algo { font-size: 9.3pt; padding: 6pt 10pt; margin: 8pt 0; break-inside: avoid; }
+  figure.fig { margin: 10pt 0 12pt; break-inside: avoid; }
+  figure.fig .tela { padding: 4pt; border-color: #e3e5df; }
+  figcaption { font-size: 8.5pt; margin-top: 4pt; }
+  .legenda { font-size: 8.3pt; padding-bottom: 4pt; }
+  .tabela { margin: 10pt 0 12pt; break-inside: avoid; }
+  .tabela.longa { break-inside: auto; }
+  .tabela .tit { font-size: 8.5pt; }
+  .tabela .nota-tab { font-size: 8pt; }
+  .tscroll { overflow: visible; }
+  table.dados { font-size: 8.5pt; }
+  table.dados th, table.dados td { padding: 2.5pt 5pt; }
+  table.dados thead th { font-size: 7pt; }
+  table.dados tr { break-inside: avoid; }
+  table.dados thead { display: table-header-group; }
+  table.dados td small { font-size: 7.5pt; }
+  table.dados tr.nota td { font-size: 7.5pt; }
+  figure.fig.alta img { max-height: 76mm; width: auto; max-width: 100%; margin: 0 auto; }
+  table.matriz td:first-child { min-width: 0; }
+  .refs { font-size: 8.5pt; }
+  .quebra { break-before: page; }
+  .apendice { font-size: 9.3pt; }
+  footer.pe { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="9" width="11" height="7" rx="1" fill="var(--accent)"/><g fill="currentColor"><circle cx="20.5" cy="10.5" r="1.3"/><circle cx="24.5" cy="10.5" r="1.3"/><circle cx="20.5" cy="14.5" r="1.3"/><circle cx="24.5" cy="14.5" r="1.3"/><circle cx="20.5" cy="18.5" r="1.3"/><circle cx="24.5" cy="18.5" r="1.3"/></g></svg>
+      <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Relatório técnico</div></div>
+    </div>
+    <div class="acoes">
+      <a class="botao" href="simulacao-segundo-turno-2026.pdf" download><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Baixar o PDF</a>
+      <a class="botao sec" href="../segundo-turno/">Simulador interativo</a>
+    </div>
+  </div>
+  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav>
+</header>
+
+<main class="artigo">
+<header class="cabeca">
+  <div class="eyebrow">Eleição em Números · Relatório técnico · versão de 21 de outubro de 2026</div>
+  <h1>Simulação de Monte Carlo do 2º turno presidencial de 2026</h1>
+  <p class="subtitulo">A migração de votos entre turnos em 2014, 2018 e 2022, estimada por inferência ecológica, aplicada ao 1º turno de 2026, com validação fora da amostra e comparação com as pesquisas</p>
+  <div class="autoria"><span><b>Luis Felipe Hartmann</b></span><span>21 de outubro de 2026</span><span>2º turno em 25 de outubro de 2026</span></div>
+</header>
+
+<section class="resumo" aria-labelledby="h-resumo">
+  <h2 id="h-resumo">Resumo</h2>
+  <p>Este relatório descreve uma simulação de Monte Carlo do 2º turno da eleição presidencial de 2026, entre o 13 (Lula, PT) e o 22 (Flávio Bolsonaro, PL). O ponto de partida é o 1º turno de 4 de outubro, em que o 22 teve 47,0% dos votos válidos e o 13, 45,2%. Para onde vão os eleitores dos outros candidatos, os votos brancos e nulos e a abstenção é estimado por inferência ecológica com os resultados por seção de 2014, 2018 e 2022 e aplicado aos votos de 2026, estado por estado.</p>
+  <p>Em 20 mil sorteios com as escolhas-padrão, a mediana é de <b>47,3%</b> dos válidos para o 13 e <b>52,7%</b> para o 22. Em 90% das simulações, o 22 fica entre 50,2% e 54,8%. O 13 passa de 50% em <b>4%</b> das simulações e o 22, em <b>96%</b>. Esse resultado depende sobretudo do tamanho do erro somado a cada sorteio, medido em só três testes fora da amostra (erros de −0,8, +0,8 e +1,8 ponto). Com erro de ±2 pontos, as proporções passam a 11% e 89%; com ±3 pontos, a 20% e 80%.</p>
+  <p>A média das 14 pesquisas divulgadas de 18 a 21 de outubro dá 51,1% dos válidos ao 22. Somada ao erro típico das pesquisas de véspera no 1º turno de 2026 e no 2º turno de 2022, ela forma uma faixa de 47,2% a 55,0%, que contém a faixa de 90% da simulação. A concordância entre dois métodos independentes é um sinal de coerência, não uma prova. Nenhum dos dois é uma previsão do resultado.</p>
+  <p class="palavras"><b>Palavras-chave:</b> inferência ecológica; matriz de transição; bootstrap; Monte Carlo; validação fora da amostra; pesquisas eleitorais.</p>
+</section>
+
+<aside class="aviso" aria-labelledby="h-aviso">
+  <h2 id="h-aviso">Antes de ler</h2>
+  <p>Este é um experimento de estatística e de aprendizado pessoal do autor, com a eleição de 2026 como estudo de caso. Não há preferência por candidato: os dois são tratados da mesma forma em todo o texto. As cores seguem a convenção da imprensa: vermelho para o 13, azul para o 22. Debates, notícias, apoios e qualquer outro acontecimento entre os turnos <b>não estão no modelo</b>. Não é pesquisa nem previsão oficial. O resultado oficial é o da totalização do TSE.</p>
+</aside>
+
+<h2 id="introducao"><span class="n">1</span>Introdução e pergunta</h2>
+<p>No 1º turno de 4 de outubro de 2026, o 22 teve 47,0% dos votos válidos e o 13, 45,2%: uma diferença de 1,9 ponto. Os outros onze candidatos somaram 7,8% dos válidos. Além deles, 6,0 milhões de eleitores votaram em branco ou anularam o voto, e 32,9 milhões (20,8% dos aptos) não foram votar. Perto do tamanho desses grupos, a diferença entre os dois finalistas é pequena. O 2º turno depende de como eles vão se comportar.</p>
+<p>O voto é secreto, então não se sabe diretamente o que fizeram no 2º turno, em eleições passadas, os eleitores de quem ficou de fora. Mas os resultados por seção eleitoral dos dois turnos permitem estimar esse comportamento médio. A pergunta deste estudo é condicional:</p>
+<p style="padding-left:16px;border-left:3px solid var(--line-strong)"><b>Se os eleitores de 2026 se comportarem no 2º turno como eleitores parecidos se comportaram em 2014, 2018 e 2022, qual seria o resultado, e com quanta incerteza?</b></p>
+<p>A simulação de Monte Carlo é a ferramenta para a segunda metade da pergunta. Ela junta três fontes de incerteza: qual eleição passada é a melhor referência para 2026, a imprecisão das estimativas de migração e o erro que o método teve quando foi testado em eleições passadas. O resultado é uma distribuição de resultados possíveis, não um número.</p>
+<p>O relatório segue a ordem do cálculo: os dados (seção 2), a estimação da migração (3), o teste do método em eleições passadas (4), o desenho da simulação (5), os resultados e a sensibilidade (6) e a comparação com as pesquisas (7). A seção 8 reúne as limitações. Todo o cálculo pode ser refeito no <a href="../segundo-turno/">simulador interativo</a>, que permite mudar cada escolha descrita aqui.</p>
+
+<h2 id="dados"><span class="n">2</span>Dados</h2>
+<ul>
+  <li><b>1º turno de 2026.</b> Boletins de urna publicados pelo TSE <span class="cite">[<a href="#ref-1">1</a>]</span>, com os votos de cada candidato, brancos, nulos, eleitores aptos e comparecimento de cada seção (157,8 milhões de aptos). Na simulação, entram somados por estado. Os votos do exterior não fazem parte desses arquivos.</li>
+  <li><b>2014, 2018 e 2022.</b> Votação por seção eleitoral nos dois turnos e o detalhe de cada seção (aptos, comparecimento, brancos e nulos), também do TSE <span class="cite">[<a href="#ref-2">2</a>, <a href="#ref-3">3</a>]</span>: 427.920 seções em 2014, 453.701 em 2018 e 471.010 em 2022. É deles que sai a estimativa da migração.</li>
+  <li><b>Pesquisas de intenção de voto.</b> 27 pesquisas do 2º turno de 2026 e 15 pesquisas de véspera (1º turno de 2026, 1º e 2º turnos de 2022), como divulgadas pela imprensa <span class="cite">[<a href="#ref-11">11</a>–<a href="#ref-37">37</a>]</span>. Elas <b>não entram na simulação</b>; aparecem só na seção 7, para comparação.</li>
+</ul>
+<p>Em cada eleição, os eleitores aptos do 1º turno são divididos em sete grupos: o principal candidato da esquerda (E), o principal da direita (D), os outros candidatos de esquerda (OE), de centro (OC) e de direita (OD), brancos e nulos (BN) e abstenção (AB). No 2º turno, há quatro destinos: E, D, BN e AB. Em 2026, E é o 13 e D é o 22. A Tabela 1 mostra o 1º turno de 2026 nesses grupos.</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela 1.</b> O 1º turno de 2026 nos sete grupos usados pelo modelo, com a classificação-padrão dos demais candidatos.</p>
+  <div class="tscroll grupos2026"><!-- gerado:grupos2026 --><table class="dados"><thead><tr><th>Grupo</th><th>Quem está no grupo</th><th class="r">Eleitores</th><th class="r">% dos aptos</th><th class="r">% dos válidos</th></tr></thead><tbody><tr><td><b>E</b></td><td>Candidato principal da esquerda<br><small>Lula (13)</small></td><td class="r">53.722.151</td><td class="r">34,0%</td><td class="r">45,2%</td></tr><tr><td><b>D</b></td><td>Candidato principal da direita<br><small>Flávio Bolsonaro (22)</small></td><td class="r">55.960.603</td><td class="r">35,5%</td><td class="r">47,0%</td></tr><tr><td><b>OE</b></td><td>Outros de esquerda e centro-esquerda<br><small>Samara (80), Hertz Dias (16), Edmilson Costa (21), Rui Costa Pimenta (29)</small></td><td class="r">201.685</td><td class="r">0,1%</td><td class="r">0,2%</td></tr><tr><td><b>OC</b></td><td>Outros de centro<br><small>Augusto Cury (70)</small></td><td class="r">3.438.835</td><td class="r">2,2%</td><td class="r">2,9%</td></tr><tr><td><b>OD</b></td><td>Outros de direita<br><small>Renan Santos (14), Ronaldo Caiado (55), Zema (30), Clariana Barao (27) e mais 2</small></td><td class="r">5.651.755</td><td class="r">3,6%</td><td class="r">4,8%</td></tr><tr><td><b>BN</b></td><td>Brancos e nulos<br><small>votos em branco e nulos</small></td><td class="r">5.959.040</td><td class="r">3,8%</td><td class="r">—</td></tr><tr><td><b>AB</b></td><td>Abstenção<br><small>eleitores aptos que não votaram</small></td><td class="r">32.894.899</td><td class="r">20,8%</td><td class="r">—</td></tr><tr class="total"><td></td><td>Total de eleitores aptos</td><td class="r">157.828.968</td><td class="r">100,0%</td><td></td></tr></tbody></table><!-- /gerado:grupos2026 --></div>
+  <p class="nota-tab">A classificação dos outros candidatos em esquerda, centro e direita é uma escolha do autor, feita pelo campo do partido; o simulador permite mudá-la. Fonte: TSE, boletins de urna do 1º turno de 2026.</p>
+</div>
+
+<h2 id="inferencia"><span class="n">3</span>Inferência ecológica da migração de votos</h2>
+<h3><span class="n">3.1</span>Modelo</h3>
+<p>Para cada seção <i>s</i>, seja <i>x</i>(<i>s</i>) o vetor com a fração dos aptos em cada um dos sete grupos do 1º turno e <i>y</i>(<i>s</i>) o vetor com a fração em cada um dos quatro destinos do 2º turno. O modelo supõe que existe uma matriz de transição <i>B</i>, de 7 linhas e 4 colunas, comum às seções de uma região:</p>
+<div class="eq" role="math" aria-label="y de s igual a x de s vezes B, com B de 7 por 4, linhas não negativas que somam 1">
+  <div class="l"><i>y</i>(<i>s</i>) ≈ <i>x</i>(<i>s</i>) · <i>B</i>,&nbsp;&nbsp;&nbsp; <i>B</i><sub><i>kj</i></sub> ≥ 0,&nbsp;&nbsp;&nbsp; Σ<sub><i>j</i></sub> <i>B</i><sub><i>kj</i></sub> = 1&nbsp;&nbsp; para cada grupo <i>k</i></div>
+  <span class="com">A linha <i>k</i> diz para onde foi o grupo <i>k</i>: por exemplo, que fração dos eleitores de centro votou em E, em D, em branco ou nulo, ou deixou de votar no 2º turno.</span>
+</div>
+<p>É a ideia da regressão ecológica de Goodman <span class="cite">[<a href="#ref-7">7</a>]</span>: se nas seções em que um grupo é maior o candidato A cresce mais no 2º turno, é sinal de que os eleitores desse grupo foram para A. As restrições (linhas no simplex: sem negativos e somando 1) impedem os resultados impossíveis que a regressão sem restrições costuma produzir <span class="cite">[<a href="#ref-8">8</a>]</span>. Há uma matriz por eleição e por região (Norte, Nordeste, Centro-Oeste, Sudeste e Sul), porque os eleitores de um mesmo candidato não migram da mesma forma em todo o país.</p>
+
+<h3><span class="n">3.2</span>Estimador dentro do município</h3>
+<p>O risco clássico da inferência ecológica é atribuir a um grupo o comportamento do lugar onde ele mora (a falácia ecológica). Bairros e cidades diferentes votam diferente por muitas razões, e essa diferença se confunde com a migração. Para reduzir o problema, o ajuste compara principalmente seções do mesmo município: cada variável é medida como desvio da média do seu município, e só 10% da variação entre municípios entra, para fixar a direção que a comparação interna não determina. A estimativa resolve mínimos quadrados ponderados pelos eleitores aptos:</p>
+<div class="eq" role="math" aria-label="minimizar a soma ponderada dos quadrados dentro do município mais 0,1 vezes a soma entre municípios">
+  <div class="l">min<sub><i>B</i></sub>&nbsp; Σ<sub><i>s</i></sub> <i>w<sub>s</sub></i> ‖ <i>ỹ</i>(<i>s</i>) − <i>x̃</i>(<i>s</i>) <i>B</i> ‖² &nbsp;+&nbsp; μ Σ<sub><i>m</i></sub> <i>W<sub>m</sub></i> ‖ <i>ȳ<sub>m</sub></i> − <i>x̄<sub>m</sub></i> <i>B</i> ‖²,&nbsp;&nbsp; μ = 0,1</div>
+  <span class="com"><i>x̃</i>, <i>ỹ</i>: desvios em relação à média do município <i>m</i> da seção; <i>x̄<sub>m</sub></i>, <i>ȳ<sub>m</sub></i>: médias do município; <i>w</i>, <i>W</i>: eleitores aptos.</span>
+</div>
+<p>O problema é convexo e é resolvido por gradiente projetado acelerado (FISTA) <span class="cite">[<a href="#ref-10">10</a>]</span>, projetando cada linha de <i>B</i> no simplex a cada passo.</p>
+
+<h3><span class="n">3.3</span>Efeito de contexto</h3>
+<p>A migração dos grupos grandes que não são os finalistas pode depender da inclinação política do lugar. Em 2014, por exemplo, os eleitores de Marina Silva foram muito mais para Aécio Neves nas seções em que Aécio já era forte. Se o modelo ignora isso, joga essa variação sobre os grupos pequenos, que costumam se concentrar em certos bairros. Por isso as linhas de centro (OC), brancos e nulos (BN) e abstenção (AB) podem variar linearmente com a inclinação da seção, <i>z</i>(<i>s</i>) = D / (E + D) no 1º turno, medida como desvio da média da região. Os termos de interação somam zero em cada linha, para que as linhas continuem somando 1 em qualquer contexto. A matriz usada na simulação é a do contexto médio.</p>
+
+<h3><span class="n">3.4</span>Grupos pequenos</h3>
+<p>Um grupo com poucos eleitores numa região tem pouco sinal próprio nos dados, e a estimativa da sua linha fica instável. Nas linhas OE, OC, OD e BN, a estimativa final combina os dados do próprio grupo com o comportamento do mesmo campo político em todas as eleições e regiões (agregação parcial):</p>
+<div class="eq" role="math" aria-label="linha final igual a p vezes a própria mais 1 menos p vezes o campo, com p igual ao mínimo entre 1 e a parte do grupo dividida por 2,5 por cento">
+  <div class="l"><i>B̂<sub>k</sub></i> = <i>p</i> · <i>B<sub>k</sub></i><sup>(própria)</sup> + (1 − <i>p</i>) · <i>B<sub>k</sub></i><sup>(campo)</sup>,&nbsp;&nbsp;&nbsp; <i>p</i> = min(1; parte do grupo na região / 2,5%)</div>
+  <span class="com">O "campo" é a média da mesma linha em todas as eleições e regiões, ponderada pelo tamanho do grupo e por <i>p</i>. Um grupo com 1% dos eleitores da região usa 40% dos próprios dados.</span>
+</div>
+<p>Isso importa para 2026. Os candidatos de direita que ficaram de fora (OD) somaram 4,8% dos válidos, muito mais que o mesmo grupo em 2022. Naquele ano, o grupo OD era tão pequeno que só cerca de 20% da sua linha nacional vem dos próprios dados (Tabela 2); o resto vem do mesmo campo em outras eleições e regiões.</p>
+
+<h3><span class="n">3.5</span>Incerteza por bootstrap</h3>
+<p>A incerteza das matrizes é medida por bootstrap <span class="cite">[<a href="#ref-9">9</a>]</span>: os municípios de cada região são reamostrados com reposição 120 vezes, e todo o ajuste (incluindo a agregação parcial) é refeito em cada reamostra. Reamostrar municípios, e não seções, respeita a dependência entre seções do mesmo município. O resultado são 120 matrizes por eleição e região, que a simulação sorteia. Como há centenas de milhares de seções, essa parte da incerteza é pequena perto das outras.</p>
+
+<h3><span class="n">3.6</span>As matrizes estimadas</h3>
+<p>A Tabela 2 resume as matrizes nacionais. Elas mostram algumas regularidades: os eleitores dos dois finalistas repetem o voto em mais de 90% dos casos; quem se absteve no 1º turno quase sempre se abstém de novo; e o grupo de centro se divide de forma diferente a cada eleição. Em 2014 e 2018 ele pendeu para a direita (cerca de 58% e 56% para D); em 2022, dividiu-se quase ao meio (43% para E e 38% para D).</p>
+<div class="tabela longa">
+  <p class="tit"><b>Tabela 2.</b> Para onde foi cada grupo do 1º turno no 2º turno, em % dos eleitores do grupo. Média das cinco regiões, ponderada pelo tamanho do grupo em cada uma. A cor da célula acompanha o valor.</p>
+  <div class="tscroll"><!-- gerado:matrizes --><table class="dados matriz"><thead><tr><th>Grupo no 1º turno</th><th class="r">Esquerda</th><th class="r">Direita</th><th class="r">Brancos e nulos</th><th class="r">Abstenção</th></tr></thead><tbody><tr class="grupo"><th colspan="5">2014</th></tr><tr><td>Candidato principal da esquerda<br><small>Dilma Rousseff</small></td><td class="r heat" style="--v:97">97</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:2">2</td></tr><tr><td>Candidato principal da direita<br><small>Aécio Neves</small></td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:96">96</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:3">3</td></tr><tr><td>Outros de esquerda e centro-esquerda *<br><small>Luciana Genro, Eduardo Jorge, Zé Maria e outros</small></td><td class="r heat" style="--v:55">55</td><td class="r heat" style="--v:24">24</td><td class="r heat" style="--v:11">11</td><td class="r heat" style="--v:10">10</td></tr><tr><td>Outros de centro<br><small>Marina Silva</small></td><td class="r heat" style="--v:30">30</td><td class="r heat" style="--v:58">58</td><td class="r heat" style="--v:7">7</td><td class="r heat" style="--v:5">5</td></tr><tr><td>Outros de direita *<br><small>Pastor Everaldo, Levy Fidelix, Eymael</small></td><td class="r heat" style="--v:34">34</td><td class="r heat" style="--v:35">35</td><td class="r heat" style="--v:24">24</td><td class="r heat" style="--v:7">7</td></tr><tr><td>Brancos e nulos</td><td class="r heat" style="--v:36">36</td><td class="r heat" style="--v:19">19</td><td class="r heat" style="--v:42">42</td><td class="r heat" style="--v:4">4</td></tr><tr><td>Abstenção</td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:5">5</td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:94">94</td></tr><tr class="grupo"><th colspan="5">2018</th></tr><tr><td>Candidato principal da esquerda<br><small>Fernando Haddad</small></td><td class="r heat" style="--v:92">92</td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:3">3</td><td class="r heat" style="--v:4">4</td></tr><tr><td>Candidato principal da direita<br><small>Jair Bolsonaro</small></td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:97">97</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:2">2</td></tr><tr><td>Outros de esquerda e centro-esquerda<br><small>Ciro Gomes, Guilherme Boulos, Marina Silva e outros</small></td><td class="r heat" style="--v:77">77</td><td class="r heat" style="--v:11">11</td><td class="r heat" style="--v:8">8</td><td class="r heat" style="--v:4">4</td></tr><tr><td>Outros de centro<br><small>Geraldo Alckmin, Henrique Meirelles, Alvaro Dias</small></td><td class="r heat" style="--v:23">23</td><td class="r heat" style="--v:56">56</td><td class="r heat" style="--v:20">20</td><td class="r heat" style="--v:2">2</td></tr><tr><td>Outros de direita<br><small>João Amoêdo, Cabo Daciolo, Eymael</small></td><td class="r heat" style="--v:24">24</td><td class="r heat" style="--v:48">48</td><td class="r heat" style="--v:22">22</td><td class="r heat" style="--v:6">6</td></tr><tr><td>Brancos e nulos</td><td class="r heat" style="--v:31">31</td><td class="r heat" style="--v:14">14</td><td class="r heat" style="--v:55">55</td><td class="r heat" style="--v:0">0</td></tr><tr><td>Abstenção</td><td class="r heat" style="--v:3">3</td><td class="r heat" style="--v:3">3</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:94">94</td></tr><tr class="grupo"><th colspan="5">2022</th></tr><tr><td>Candidato principal da esquerda<br><small>Lula</small></td><td class="r heat" style="--v:94">94</td><td class="r heat" style="--v:2">2</td><td class="r heat" style="--v:2">2</td><td class="r heat" style="--v:3">3</td></tr><tr><td>Candidato principal da direita<br><small>Jair Bolsonaro</small></td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:99">99</td><td class="r heat" style="--v:0">0</td><td class="r heat" style="--v:1">1</td></tr><tr><td>Outros de esquerda e centro-esquerda<br><small>Ciro Gomes, Léo Péricles, Sofia Manzano e outros</small></td><td class="r heat" style="--v:44">44</td><td class="r heat" style="--v:35">35</td><td class="r heat" style="--v:14">14</td><td class="r heat" style="--v:7">7</td></tr><tr><td>Outros de centro<br><small>Simone Tebet, Soraya Thronicke</small></td><td class="r heat" style="--v:43">43</td><td class="r heat" style="--v:38">38</td><td class="r heat" style="--v:18">18</td><td class="r heat" style="--v:1">1</td></tr><tr><td>Outros de direita *<br><small>Felipe d'Avila, Padre Kelmon, Eymael</small></td><td class="r heat" style="--v:27">27</td><td class="r heat" style="--v:45">45</td><td class="r heat" style="--v:21">21</td><td class="r heat" style="--v:6">6</td></tr><tr><td>Brancos e nulos</td><td class="r heat" style="--v:20">20</td><td class="r heat" style="--v:26">26</td><td class="r heat" style="--v:52">52</td><td class="r heat" style="--v:2">2</td></tr><tr><td>Abstenção</td><td class="r heat" style="--v:4">4</td><td class="r heat" style="--v:4">4</td><td class="r heat" style="--v:1">1</td><td class="r heat" style="--v:91">91</td></tr></tbody></table><!-- /gerado:matrizes --></div>
+  <p class="nota-tab">* Grupo pequeno: menos de 90% da linha vem dos próprios dados; o resto, do mesmo campo político em outras eleições e regiões (seção 3.4). E e D são, em 2014, Dilma Rousseff e Aécio Neves; em 2018, Fernando Haddad e Jair Bolsonaro; em 2022, Lula e Jair Bolsonaro.</p>
+</div>
+<p>Uma conferência independente vem da pesquisa Datafolha feita logo depois do 1º turno de 2022 <span class="cite">[<a href="#ref-6">6</a>]</span>, que perguntou aos eleitores de Simone Tebet e de Ciro Gomes em quem votariam no 2º turno. Para os eleitores de Tebet, a divisão confere com a estimada aqui. Para os de Ciro, não: a pesquisa mediu 31% para Lula e 42% para Bolsonaro, e a estimativa dá 44% e 35%. A subamostra de Ciro era pequena e a pesquisa foi feita no começo da campanha, mas a divergência fica registrada.</p>
+
+<h2 id="validacao"><span class="n">4</span>Validação fora da amostra</h2>
+<p>A melhor medida de quanto confiar no método é usá-lo para prever uma eleição que ele não viu. O teste aplica as matrizes de uma eleição ao 1º turno real da eleição seguinte e compara o 2º turno previsto com o real. Há três combinações possíveis com os dados disponíveis (Tabela 3).</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela 3.</b> Validação fora da amostra: fatia da esquerda (E) nos votos válidos e comparecimento no 2º turno, previstos e reais. Erro = previsto − real, em pontos percentuais.</p>
+  <div class="tscroll"><!-- gerado:validacao --><table class="dados"><thead><tr><th>Migração de</th><th>Aplicada a</th><th class="r">Esquerda prevista</th><th class="r">Esquerda real</th><th class="r">Erro (p.p.)</th><th class="r">Compar. previsto</th><th class="r">Compar. real</th></tr></thead><tbody><tr><td>2014</td><td>2018</td><td class="r">44,1%</td><td class="r">44,9%</td><td class="r"><b>−0,75</b></td><td class="r">77,5%</td><td class="r">78,8%</td></tr><tr><td>2018</td><td>2022</td><td class="r">51,7%</td><td class="r">50,9%</td><td class="r"><b>+0,83</b></td><td class="r">78,1%</td><td class="r">79,6%</td></tr><tr><td>2014</td><td>2022</td><td class="r">52,7%</td><td class="r">50,9%</td><td class="r"><b>+1,77</b></td><td class="r">77,5%</td><td class="r">79,6%</td></tr><tr class="total"><td colspan="4">Raiz da média dos quadrados dos erros</td><td class="r"><b>1,21</b></td><td colspan="2"></td></tr></tbody></table><!-- /gerado:validacao --></div>
+</div>
+<p>Os erros na fatia da esquerda foram de −0,8 ponto (2014→2018), +0,8 (2018→2022) e +1,8 (2014→2022). A raiz da média dos quadrados é 1,2 ponto, e esse é o desvio-padrão do erro somado a cada simulação (seção 5). Três observações merecem cuidado:</p>
+<ul>
+  <li><b>São só três testes</b>, e dois deles usam a mesma eleição de origem (2014). Uma estimativa de desvio-padrão com três pontos é muito imprecisa; por isso a seção 6 mostra o resultado com erros maiores.</li>
+  <li><b>O erro cresce com a distância</b> entre as eleições: 2014→2022 errou mais que os testes entre eleições vizinhas. Para 2026, a referência mais próxima é 2022.</li>
+  <li><b>O comparecimento foi subestimado</b> nos três testes, em 1,4 a 2,0 pontos: no 2º turno vota um pouco mais gente do que as matrizes preveem. O efeito disso sobre a divisão dos válidos não tem sinal conhecido.</li>
+</ul>
+
+<h2 id="montecarlo"><span class="n">5</span>Desenho do Monte Carlo</h2>
+<p>A simulação repete <i>N</i> = 20.000 vezes o sorteio descrito abaixo. Cada repetição é um 2º turno possível; o conjunto delas é a distribuição dos resultados.</p>
+<div class="algo">
+  <div class="t">Uma simulação</div>
+  <ol>
+    <li><b>Sorteia uma eleição de referência</b> <i>a</i> ∈ {2014, 2018, 2022}, com probabilidades 0,15, 0,35 e 0,50. A de 2022 tem os candidatos mais parecidos com os de 2026; a de 2014, que opôs PT e PSDB, os mais diferentes.</li>
+    <li><b>Sorteia uma matriz por região</b>, ao acaso entre as 120 do bootstrap da eleição <i>a</i> (seção 3.5). As cinco regiões usam a mesma eleição de referência.</li>
+    <li><b>Aplica as matrizes ao 1º turno de 2026</b>, estado por estado: os votos de cada grupo do estado vão para E, D, BN e AB conforme a matriz da sua região. Somam-se os estados.</li>
+    <li><b>Soma um erro nacional</b> ε ~ Normal(0; σ), com σ = 1,2 ponto (o erro dos testes da seção 4), à fatia do 22 nos válidos.</li>
+  </ol>
+</div>
+<div class="eq" role="math" aria-label="fatia do 22 na simulação s igual à soma dos votos D nos estados dividida pela soma de E mais D, mais o erro">
+  <div class="l"><i>v</i><sub>22</sub>(<i>s</i>) = Σ<sub><i>u</i></sub> <i>D<sub>u</sub></i>(<i>s</i>) / Σ<sub><i>u</i></sub> [<i>E<sub>u</sub></i>(<i>s</i>) + <i>D<sub>u</sub></i>(<i>s</i>)] + ε(<i>s</i>),&nbsp;&nbsp;&nbsp; <i>v</i><sub>13</sub>(<i>s</i>) = 1 − <i>v</i><sub>22</sub>(<i>s</i>)</div>
+  <div class="l">P(22 passa de 50%) ≈ (1/<i>N</i>) · #{ <i>s</i> : <i>v</i><sub>22</sub>(<i>s</i>) &gt; 0,5 }</div>
+  <span class="com"><i>u</i>: estados; <i>E<sub>u</sub></i>, <i>D<sub>u</sub></i>: votos projetados para o 13 e o 22 no estado, pela matriz sorteada para a sua região.</span>
+</div>
+<p>Algumas escolhas desse desenho merecem justificativa:</p>
+<ul>
+  <li><b>Os pesos 15/35/50 são subjetivos.</b> Eles expressam o quanto cada eleição parece com a de 2026. A seção 6 mostra o resultado com cada eleição sozinha.</li>
+  <li><b>O erro é um só para o país.</b> Ele representa o que muda entre eleições e atinge todos os estados ao mesmo tempo, como uma mudança de humor do eleitorado. É a maior fonte de incerteza da simulação, bem maior que a do bootstrap.</li>
+  <li><b>O erro é normal</b>, sem caudas pesadas. Com três testes, não há como estimar a forma da cauda.</li>
+  <li><b>O sorteio é reprodutível.</b> O simulador usa um gerador pseudoaleatório com semente fixa (mulberry32, semente 20261025), e a mesma configuração dá sempre o mesmo resultado. Com 20 mil sorteios, o erro de Monte Carlo de uma probabilidade perto de 96% é de cerca de 0,14 ponto, desprezível perto das outras incertezas.</li>
+  <li><b>Opções fora do padrão.</b> O simulador também permite somar incerteza extra às matrizes (sorteio de Dirichlet em torno de cada linha) e mudar o comparecimento. Elas não entram nos resultados deste relatório.</li>
+</ul>
+<p>As figuras deste relatório foram feitas com uma reimplementação em Python do mesmo algoritmo, com o mesmo gerador e a mesma semente. Ela reproduz os números da página com diferença máxima de 0,04 ponto (Apêndice A).</p>
+
+<h2 id="resultados"><span class="n">6</span>Resultados</h2>
+<p>Com as escolhas-padrão, a mediana das 20 mil simulações dá <b class="v13">47,3%</b> dos válidos ao 13 e <b class="v22">52,7%</b> ao 22. Em 90% delas, o 22 fica entre 50,2% e 54,8% (e o 13, entre 45,2% e 49,8%). O 13 passa de 50% em <b>4%</b> das simulações e o 22, em <b>96%</b> (Figura 1).</p>
+<figure class="fig" id="fig1">
+  <div class="tela"><picture><source media="(max-width: 560px)" srcset="fig/fig1-distribuicao-estreita.svg" width="430" height="350"><img src="fig/fig1-distribuicao.svg" width="700" height="290" alt="Histograma da fatia do 22 nos votos válidos em 20 mil simulações. A distribuição vai de cerca de 47% a 58%, com mediana de 52,7%; 90% das simulações ficam entre 50,2% e 54,8%. As barras à esquerda de 50%, em que o 13 tem mais votos, somam 4% das simulações."></picture></div>
+  <figcaption><b>Figura 1.</b> Distribuição da fatia do 22 nos votos válidos em 20 mil 2º turnos simulados, com as escolhas-padrão (pesos 15/35/50 e erro de ±1,2 ponto). A fatia do 13 é o complemento. Barras em vermelho: simulações em que o 13 tem mais votos; em azul, o 22.</figcaption>
+</figure>
+<p>A vantagem do 22 na simulação vem de duas partes. A primeira é o próprio 1º turno: o 22 começou 1,9 ponto à frente. A segunda é a migração. Os grupos que mais pesam são os de direita fora da disputa (OD, 4,8% dos válidos), que em 2018 e 2022 foram bem mais para a direita do que para a esquerda (em 2014 se dividiram), e o de centro (2,9%), cuja divisão variou entre as eleições.</p>
+<p>A distribuição é uma mistura das três eleições de referência. Sozinha, cada uma dá uma mediana diferente para o 22: 51,0% com 2014, 52,8% com 2018 e 53,0% com 2022. A diferença entre os anos (dois pontos) é menor que a largura da faixa produzida pelo erro somado, então a escolha dos pesos importa menos que o tamanho desse erro.</p>
+<p>E o tamanho do erro está mal determinado, porque vem de três testes. A Tabela 4 e a Figura 2 mostram o mesmo cálculo com erros de ±2 e ±3 pontos, este último perto do erro que as pesquisas costumam ter (seção 7). A mediana quase não muda; o que muda é a largura da faixa e, com ela, a chance de cada um.</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela 4.</b> Sensibilidade ao erro somado e à eleição de referência. "13 &gt; 50%" e "22 &gt; 50%": fração das simulações em que cada um passa de 50% dos válidos. Linha destacada: escolhas-padrão.</p>
+  <div class="tscroll"><!-- gerado:sensibilidade --><table class="dados sens"><thead><tr><th>Pesos 2014/18/22</th><th>Erro somado</th><th class="r">Mediana 13</th><th class="r">Mediana 22</th><th class="r">Faixa de 90% do 22</th><th class="r">13 &gt; 50%</th><th class="r">22 &gt; 50%</th></tr></thead><tbody><tr class="destaque"><td>15 / 35 / 50</td><td>±1,2 ponto (erro dos testes)</td><td class="r">47,3%</td><td class="r">52,7%</td><td class="r">50,2% a 54,8%</td><td class="r">4%</td><td class="r">96%</td></tr><tr><td>15 / 35 / 50</td><td>±2 pontos</td><td class="r">47,4%</td><td class="r">52,6%</td><td class="r">49,1% a 56,1%</td><td class="r">11%</td><td class="r">89%</td></tr><tr><td>15 / 35 / 50</td><td>±3 pontos</td><td class="r">47,4%</td><td class="r">52,6%</td><td class="r">47,5% a 57,7%</td><td class="r">20%</td><td class="r">80%</td></tr><tr><td>só 2014</td><td>±1,2 ponto</td><td class="r">49,0%</td><td class="r">51,0%</td><td class="r">48,9% a 53,0%</td><td class="r">22%</td><td class="r">78%</td></tr><tr><td>só 2018</td><td>±1,2 ponto</td><td class="r">47,2%</td><td class="r">52,8%</td><td class="r">50,7% a 54,8%</td><td class="r">1%</td><td class="r">99%</td></tr><tr><td>só 2022</td><td>±1,2 ponto</td><td class="r">47,0%</td><td class="r">53,0%</td><td class="r">51,0% a 55,0%</td><td class="r">1%</td><td class="r">99%</td></tr></tbody></table><!-- /gerado:sensibilidade --></div>
+</div>
+<figure class="fig" id="fig2">
+  <div class="tela"><picture><source media="(max-width: 560px)" srcset="fig/fig2-sensibilidade-estreita.svg" width="430" height="360"><img src="fig/fig2-sensibilidade.svg" width="700" height="270" alt="Faixas de 90% da fatia do 22 para seis configurações. Padrão: 50,2 a 54,8. Erro de 2 pontos: 49,1 a 56,1. Erro de 3 pontos: 47,5 a 57,7. Só 2014: 49,0 a 53,0. Só 2018: 50,7 a 54,8. Só 2022: 51,0 a 55,0."></picture></div>
+  <figcaption><b>Figura 2.</b> Faixa de 90% e mediana (○) da fatia do 22 em cada configuração. O trecho da faixa abaixo de 50% (vermelho) corresponde a simulações em que o 13 tem mais votos; o trecho acima (azul), ao 22.</figcaption>
+</figure>
+<p>A leitura honesta é: <b>com o comportamento do eleitor de 2014 a 2022, o 22 fica 2,7 pontos acima de 50% na mediana (de 1,0 a 3,0, conforme a eleição de referência), e a chance de o 13 passar de 50% vai de 4% a 20%, conforme o tamanho do erro que se aceite</b> (22% se só 2014 servir de referência). Nenhuma dessas chances é desprezível.</p>
+
+<h2 id="pesquisas"><span class="n">7</span>Comparação com as pesquisas</h2>
+<p>As pesquisas e a simulação respondem a perguntas diferentes e erram por motivos diferentes. As pesquisas perguntam ao eleitor hoje e captam a campanha do 2º turno; a simulação ignora a campanha e supõe que o comportamento de 2014 a 2022 se repete. Por isso a comparação é uma conferência de coerência, não uma validação.</p>
+
+<h3><span class="n">7.1</span>As pesquisas do 2º turno</h3>
+<p>Foram reunidas 27 pesquisas com campo entre 3 e 21 de outubro, 14 delas divulgadas de 18 a 21. Nessas 14, o 22 tem de 49,0% a 53,0% dos válidos (média de 51,1%) e o 13, de 47,0% a 51,0% (média de 48,9%). A média fica dentro da faixa de 90% da simulação, 1,6 ponto abaixo da sua mediana (Figura 3).</p>
+<figure class="fig alta" id="fig3">
+  <div class="tela">
+    <div class="legenda" aria-hidden="true"><span><i class="ponto" style="background:#e34948"></i>13 · Lula</span><span><i class="ponto" style="background:#2a78d6"></i>22 · Flávio Bolsonaro</span><span><i class="anel"></i>votos totais convertidos em válidos</span><span><i class="linha"></i>média de 7 dias</span><span><i class="faixa" style="background:#2a78d6"></i><i class="faixa" style="background:#e34948;margin-left:-4px"></i>faixa de 90% da simulação</span><span><i class="trac"></i>mediana da simulação</span></div>
+    <picture><source media="(max-width: 560px)" srcset="fig/fig3-pesquisas-estreita.svg" width="430" height="400"><img src="fig/fig3-pesquisas.svg" width="700" height="340" alt="Pesquisas do 2º turno de 7 a 21 de outubro, em % dos votos válidos. O 22 aparece entre 49% e 53,1% e o 13 entre 46,9% e 51%. A média de sete dias do 22 fica perto de 51% no fim do período. As faixas da simulação vão de 50,2% a 54,8% para o 22 e de 45,2% a 49,8% para o 13."></picture>
+  </div>
+  <figcaption><b>Figura 3.</b> Pesquisas do 2º turno de 2026 na data do último dia de campo, em % dos votos válidos. Pesquisas do mesmo dia aparecem lado a lado. As faixas sombreadas são a faixa de 90% da simulação com as escolhas-padrão, e as linhas tracejadas, as medianas; elas não mudam com o tempo porque a simulação não usa nada da campanha. A média de 7 dias aparece quando há ao menos três pesquisas na janela. Fontes: <a href="#ref-11">[11–37]</a>.</figcaption>
+</figure>
+
+<h3><span class="n">7.2</span>Quanto as pesquisas erraram antes</h3>
+<p>A Tabela 5 compara as pesquisas de véspera com o resultado em três ocasiões. O erro é a pesquisa menos o resultado: negativo quer dizer que a pesquisa deu menos do que o candidato teve.</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela 5.</b> Erro das pesquisas de véspera, em pontos percentuais dos votos válidos (pesquisa − resultado). "22 a dois": erro na fatia do 22 entre os votos do 13 e do 22, a medida comparável com o 2º turno. Em 2022, o 22 era Jair Bolsonaro.</p>
+  <div class="tscroll"><!-- gerado:erros --><table class="dados"><thead><tr class="grupo"><th></th><th colspan="3" class="r">1º turno de 2026</th><th class="r">1º turno 2022</th><th colspan="2" class="r">2º turno de 2022</th></tr><tr><th>Instituto</th><th class="r">13</th><th class="r">22</th><th class="r">22 a dois</th><th class="r">22</th><th class="r">13</th><th class="r">22</th></tr></thead><tbody><tr><td>AtlasIntel</td><td class="r">+1,8</td><td class="r">−2,9</td><td class="r">−2,6</td><td class="r">−2,1</td><td class="r">+2,3</td><td class="r">−2,3</td></tr><tr><td>CNT/MDA</td><td class="r">+2,6</td><td class="r">−4,9</td><td class="r">−4,2</td><td class="r vazio">—</td><td class="r">+0,2</td><td class="r">−0,2</td></tr><tr><td>Datafolha</td><td class="r">−0,2</td><td class="r">−5,0</td><td class="r">−2,7</td><td class="r">−7,2</td><td class="r">+1,1</td><td class="r">−1,1</td></tr><tr><td>PoderData/Aya</td><td class="r">−0,2</td><td class="r">−4,0</td><td class="r">−2,2</td><td class="r vazio">—</td><td class="r vazio">—</td><td class="r vazio">—</td></tr><tr><td>Quaest</td><td class="r">+0,8</td><td class="r">−2,0</td><td class="r">−1,6</td><td class="r">−5,2</td><td class="r vazio">—</td><td class="r vazio">—</td></tr><tr><td>Ipec</td><td class="r vazio">—</td><td class="r vazio">—</td><td class="r vazio">—</td><td class="r">−6,2</td><td class="r">+3,1</td><td class="r">−3,1</td></tr><tr><td>Paraná Pesquisas</td><td class="r vazio">—</td><td class="r vazio">—</td><td class="r vazio">—</td><td class="r">−3,2</td><td class="r">−0,5</td><td class="r">+0,5</td></tr><tr class="total"><td>Média</td><td class="r">+1,0</td><td class="r">−3,8</td><td class="r">−2,6</td><td class="r">−4,8</td><td class="r">+1,2</td><td class="r">−1,2</td></tr><tr class="nota"><td>Resultado (% dos válidos)</td><td class="r">45,2</td><td class="r">47,0</td><td class="r">51,0</td><td class="r">43,2</td><td class="r">50,9</td><td class="r">49,1</td></tr></tbody></table><!-- /gerado:erros --></div>
+  <p class="nota-tab">No 1º turno de 2022, a fonte usada não registra o número do 13 para três dos cinco institutos; por isso a tabela mostra só o erro no 22 nessa eleição. Fontes: <a href="#ref-11">[11–37]</a>.</p>
+</div>
+<p>No 1º turno de 2026, as cinco pesquisas da tabela <b>subestimaram o 22 em 2 a 5 pontos</b>, enquanto o erro no 13 ficou entre −0,2 e +2,6 pontos. O padrão foi o mesmo no 1º turno de 2022 (de 2,1 a 7,2 pontos a menos para Jair Bolsonaro). No 2º turno de 2022, os erros foram menores, de −3,1 a +0,5 ponto no 22, com média de −1,2.</p>
+<p>O erro do 1º turno é sobre a fatia de cada candidato entre todos os candidatos, e parte dele vem dos outros nomes. Para comparar com um 2º turno, a medida adequada é a fatia do 22 só entre os votos do 13 e do 22 ("22 a dois"). Nessa medida, o erro do 1º turno de 2026 foi menor: de −1,6 a −4,2 pontos, com média de −2,6.</p>
+
+<h3><span class="n">7.3</span>Uma conta simples</h3>
+<p>Se as pesquisas de hoje errarem como as de véspera erraram antes, onde deve estar o resultado? A conta mais simples soma à média atual o erro típico das pesquisas, medido como a raiz da média dos quadrados dos dez erros na disputa a dois disponíveis (cinco do 1º turno de 2026 e cinco do 2º turno de 2022), e supõe um erro normal (Tabela 6).</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela 6.</b> Faixa construída com as pesquisas comparada com a faixa da simulação (fatia do 22 nos votos válidos).</p>
+  <div class="tscroll"><!-- gerado:conta --><table class="dados conta"><thead><tr><th></th><th>Passo</th><th class="r">Valor</th></tr></thead><tbody><tr><td>1</td><td>Média das 14 pesquisas divulgadas de 18 a 21/10 (fatia do 22 nos válidos)</td><td class="r nowrap"><b>51,09%</b></td></tr><tr><td>2</td><td>Erro típico das pesquisas de véspera: raiz da média dos quadrados dos 10 erros na disputa a dois (1º turno de 2026 e 2º turno de 2022)</td><td class="r nowrap"><b>2,35 p.p.</b></td></tr><tr><td>3</td><td>Faixa de 90% supondo erro normal: média ± 1,645 × erro típico</td><td class="r nowrap"><b>47,2% a 55,0%</b></td></tr><tr><td>4</td><td>Faixa de 90% da simulação, escolhas-padrão</td><td class="r nowrap"><b>50,2% a 54,8%</b></td></tr><tr><td>5</td><td>Faixa de 90% da simulação com erro de ±3 pontos</td><td class="r nowrap"><b>47,5% a 57,7%</b></td></tr><tr><td>6</td><td>Média das pesquisas corrigida pelo viés médio do 1º turno de 2026 na disputa a dois</td><td class="r nowrap"><b>53,7%</b></td></tr><tr><td>7</td><td>Média das pesquisas corrigida pelo viés médio do 2º turno de 2022</td><td class="r nowrap"><b>52,3%</b></td></tr></tbody></table><!-- /gerado:conta --></div>
+</div>
+<figure class="fig" id="fig4">
+  <div class="tela"><picture><source media="(max-width: 560px)" srcset="fig/fig4-comparacao-estreita.svg" width="430" height="380"><img src="fig/fig4-comparacao.svg" width="700" height="280" alt="Comparação de faixas da fatia do 22. Simulação padrão: 50,2 a 54,8, mediana 52,7. Simulação com erro de 3 pontos: 47,5 a 57,7. Pesquisas de 18 a 21 de outubro: 49,0 a 53,0, média 51,1. Média mais ou menos o erro típico: 47,2 a 55,0. Média sem o viés do 1º turno de 2026: 53,7. Média sem o viés do 2º turno de 2022: 52,3."></picture></div>
+  <figcaption><b>Figura 4.</b> A simulação e as pesquisas na mesma escala. As duas primeiras linhas são faixas de 90% da simulação; a terceira, a menor e a maior das pesquisas recentes; a quarta, a média das pesquisas ± 1,645 erro típico (90% se o erro for normal); as duas últimas, a média corrigida pelo viés médio de cada eleição (Tabela 5).</figcaption>
+</figure>
+<p>A faixa das pesquisas, de 47,2% a 55,0%, contém inteira a faixa de 90% da simulação (50,2% a 54,8%). Ela tem largura parecida com a da simulação de erro de ±3 pontos (47,5% a 57,7%), deslocada cerca de um ponto e meio na direção do 13. E a média das pesquisas, 51,1%, cai dentro da faixa padrão da simulação. Dois métodos independentes, um que olha o eleitor de hoje e outro que olha o comportamento do eleitor no passado, chegam a faixas compatíveis.</p>
+<p>Isso <b>reforça a coerência do método, mas não prova nada</b>. A amostra de erros é pequena (dez pesquisas, de duas eleições); os erros dos institutos andam juntos, como mostra a Tabela 5, e por isso a faixa não é um intervalo de confiança com cobertura garantida; e os dois métodos podem errar na mesma direção.</p>
+
+<h3><span class="n">7.4</span>O que implica o erro do 1º turno de 2026</h3>
+<p>O fato mais relevante da Tabela 5 é o viés na mesma direção. No 1º turno de 2026, as pesquisas subestimaram o 22 em 2 a 5 pontos, e na disputa a dois, em 2,6 pontos em média. Há três leituras possíveis, e os dados disponíveis não permitem escolher entre elas:</p>
+<ul>
+  <li><b>O viés se repete inteiro.</b> A média corrigida seria 53,7% para o 22, perto da mediana da simulação (52,7%).</li>
+  <li><b>O viés se repete como no 2º turno de 2022</b>, menor. A média corrigida seria 52,3%.</li>
+  <li><b>O viés não se repete.</b> Os institutos podem ter ajustado seus métodos depois do 1º turno. O erro do 1º turno também pode ter vindo de algo que não existe numa disputa a dois, como a migração de última hora de eleitores de outros candidatos. Nesse caso, vale a média atual, 51,1%.</li>
+</ul>
+<p>Nos três casos, o valor fica dentro da faixa de 90% da simulação. Nenhum deles permite tratar o resultado como decidido. A faixa construída com as pesquisas tem valores dos dois lados de 50%, e a simulação também, quando se usa um erro do tamanho do das pesquisas (com ±3 pontos, o 13 passa de 50% em 20% das simulações). Um viés passado não garante um viés futuro, nem a sua direção.</p>
+
+<h2 id="limitacoes"><span class="n">8</span>Limitações</h2>
+<ul>
+  <li><b>Não é pesquisa nem previsão.</b> A simulação supõe que os eleitores de 2026 migram como os de eleições passadas. Debates, notícias, apoios e qualquer fato da campanha do 2º turno ficam de fora.</li>
+  <li><b>Os candidatos mudam.</b> A direita principal foi Aécio Neves em 2014, Jair Bolsonaro em 2018 e 2022, e é Flávio Bolsonaro em 2026. Os candidatos fora da disputa também são outros, e o grupo de direita de 2026 é muito maior que os de antes (seção 3.4).</li>
+  <li><b>A inferência ecológica estima médias de grupos.</b> O estimador dentro do município e as restrições reduzem a falácia ecológica, mas não a eliminam. A divergência com o Datafolha nos eleitores de Ciro em 2022 é um lembrete disso.</li>
+  <li><b>A classificação dos candidatos é uma escolha.</b> Mudá-la altera o resultado, e o simulador permite testar isso.</li>
+  <li><b>O tamanho do erro vem de três testes</b>, dois deles com a mesma eleição de origem. Por isso a sensibilidade da seção 6 importa tanto quanto o resultado central.</li>
+  <li><b>Erro normal e nacional.</b> A simulação não tem erros regionais próprios nem caudas mais pesadas que as da normal. Uma surpresa grande em uma região só, ou maior que as já vistas, fica subestimada.</li>
+  <li><b>Comparecimento.</b> A abstenção é redistribuída como no passado. Nos testes, o comparecimento real foi 1,4 a 2,0 pontos maior que o previsto.</li>
+  <li><b>Votos do exterior</b> não estão nos dados do 1º turno usados aqui. São menos de 1% do eleitorado.</li>
+  <li><b>Pesquisas.</b> Foram usadas como divulgadas pela imprensa, sem acesso aos microdados. Algumas só publicaram votos totais; nesses casos, os válidos foram calculados como candidato ÷ (13 + 22). A lista de erros de véspera não inclui todos os institutos.</li>
+</ul>
+
+<h2 id="referencias">Referências e fontes</h2>
+<h3>Dados do TSE</h3>
+<ol class="refs">
+  <li id="ref-1">Tribunal Superior Eleitoral. Resultados 2026: boletim de urna (1º turno). Portal de Dados Abertos. <a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna</a></li>
+  <li id="ref-2">Tribunal Superior Eleitoral. Votação por seção eleitoral, 2014, 2018 e 2022. <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_2022_BR.zip">https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_2022_BR.zip</a> (idem para 2014 e 2018)</li>
+  <li id="ref-3">Tribunal Superior Eleitoral. Detalhe da votação por seção, 2014, 2018 e 2022. <a href="https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2022.zip">https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2022.zip</a> (idem para 2014 e 2018)</li>
+  <li id="ref-4">Tribunal Superior Eleitoral. Portal de Dados Abertos. <a href="https://dadosabertos.tse.jus.br/">https://dadosabertos.tse.jus.br/</a></li>
+  <li id="ref-5">Tribunal Superior Eleitoral. Divulgação de resultados. <a href="https://resultados.tse.jus.br/oficial/app/index.html">https://resultados.tse.jus.br/oficial/app/index.html</a></li>
+</ol>
+<h3>Métodos e conferência</h3>
+<ol class="refs" start="6">
+  <li id="ref-6">Datafolha. Pesquisa de intenção de voto para presidente, 5 a 7 de outubro de 2022 (publicada pelo Poder360). <a href="https://static.poder360.com.br/2022/10/pesquisa-presidente-datafolha-5-7-out-2022.pdf">https://static.poder360.com.br/2022/10/pesquisa-presidente-datafolha-5-7-out-2022.pdf</a></li>
+  <li id="ref-7">Goodman, L. A. (1953). Ecological regressions and behavior of individuals. <i>American Sociological Review</i>, 18(6), 663–664.</li>
+  <li id="ref-8">King, G. (1997). <i>A Solution to the Ecological Inference Problem: Reconstructing Individual Behavior from Aggregate Data</i>. Princeton University Press.</li>
+  <li id="ref-9">Efron, B.; Tibshirani, R. J. (1993). <i>An Introduction to the Bootstrap</i>. Chapman &amp; Hall.</li>
+  <li id="ref-10">Beck, A.; Teboulle, M. (2009). A fast iterative shrinkage-thresholding algorithm for linear inverse problems. <i>SIAM Journal on Imaging Sciences</i>, 2(1), 183–202.</li>
+</ol>
+<h3>Pesquisas de intenção de voto</h3>
+<!-- gerado:fontes --><ol class="refs" start="11"><li id="ref-11">Poder360 (compilação) (2º turno de 2026). <a href="https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/">https://www.poder360.com.br/poder-eleicoes-2026/saiba-como-estao-lula-e-flavio-nas-pesquisas-a-7-dias-do-2o-turno/</a></li><li id="ref-12">O Povo (Quaest, 2º turno de 2026; Datafolha, 2º turno de 2026). <a href="https://www.opovo.com.br/noticias/politica/eleicoes/2026/10/14/datafolha-e-quaest-divulgam-novas-pesquisas-sobre-2-turno-entre-lula-e-flavio.html">https://www.opovo.com.br/noticias/politica/eleicoes/2026/10/14/datafolha-e-quaest-divulgam-novas-pesquisas-sobre-2-turno-entre-lula-e-flavio.html</a></li><li id="ref-13">Bahia Notícias (Veritá, 2º turno de 2026). <a href="https://www.bahianoticias.com.br/noticia/322563-pesquisa-verita-aponta-flavio-vencendo-com-511-e-lula-ficando-em-489-na-simulacao-de-segundo-turno">https://www.bahianoticias.com.br/noticia/322563-pesquisa-verita-aponta-flavio-vencendo-com-511-e-lula-ficando-em-489-na-simulacao-de-segundo-turno</a></li><li id="ref-14">Blog do Robson Pires (DataTrends, 2º turno de 2026). <a href="https://robsonpiresxerife.com/pesquisa-datatrends-flavio-bolsonaro-tem-515-dos-votos-validos-contra-485-de-lula/">https://robsonpiresxerife.com/pesquisa-datatrends-flavio-bolsonaro-tem-515-dos-votos-validos-contra-485-de-lula/</a></li><li id="ref-15">Exame (Futura, 2º turno de 2026). <a href="https://exame.com/brasil/pesquisa-futura-para-presidente-flavio-bolsonaro-tem-504-e-lula-496-no-2o-turno/">https://exame.com/brasil/pesquisa-futura-para-presidente-flavio-bolsonaro-tem-504-e-lula-496-no-2o-turno/</a></li><li id="ref-16">Metrópoles (Vox Brasil, 2º turno de 2026). <a href="https://www.metropoles.com/brasil/vox-brasil-com-empate-tecnico-lula-tem-464-e-flavio-bolsonaro-446">https://www.metropoles.com/brasil/vox-brasil-com-empate-tecnico-lula-tem-464-e-flavio-bolsonaro-446</a></li><li id="ref-17">CNN Brasil (AtlasIntel, 2º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/atlas-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/">https://www.cnnbrasil.com.br/eleicoes/atlas-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/</a></li><li id="ref-18">Nexus (BTG/Nexus, 2º turno de 2026). <a href="https://www.nexus.fsb.com.br/estudos-divulgados/pesquisa-btg-nexus-de-intencao-de-votos-para-presidente-do-brasil-19-de-outubro-de-2026/">https://www.nexus.fsb.com.br/estudos-divulgados/pesquisa-btg-nexus-de-intencao-de-votos-para-presidente-do-brasil-19-de-outubro-de-2026/</a></li><li id="ref-19">Poder360 (PoderData/Aya, 2º turno de 2026). <a href="https://www.poder360.com.br/poderdata/pesquisa-poderdata-aya-leia-os-resultados-de-lula-e-flavio-no-2o-turno-19out2026/">https://www.poder360.com.br/poderdata/pesquisa-poderdata-aya-leia-os-resultados-de-lula-e-flavio-no-2o-turno-19out2026/</a></li><li id="ref-20">CNN Brasil (Alfa Inteligência, 2º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/alfa-flavio-tem-515-dos-votos-validos-no-2o-turno-lula-485/">https://www.cnnbrasil.com.br/eleicoes/alfa-flavio-tem-515-dos-votos-validos-no-2o-turno-lula-485/</a></li><li id="ref-21">CNN Brasil (Meio/Ideia, 2º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/meio-ideia-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/">https://www.cnnbrasil.com.br/eleicoes/meio-ideia-flavio-tem-511-dos-votos-validos-no-2o-turno-lula-489/</a></li><li id="ref-22">The Rio Times (Real Time Big Data, 2º turno de 2026). <a href="https://www.riotimesonline.com/real-time-big-data-poll-flavio-52-lula-48-runoff-2026/">https://www.riotimesonline.com/real-time-big-data-poll-flavio-52-lula-48-runoff-2026/</a></li><li id="ref-23">CNN Brasil (Veritá, 2º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/verita-flavio-tem-507-dos-votos-validos-no-2o-turno-lula-493/">https://www.cnnbrasil.com.br/eleicoes/verita-flavio-tem-507-dos-votos-validos-no-2o-turno-lula-493/</a></li><li id="ref-24">CartaCapital (Futura, 2º turno de 2026). <a href="https://www.cartacapital.com.br/politica/flavio-e-lula-seguem-tecnicamente-empatados-mostra-pesquisa-futura/">https://www.cartacapital.com.br/politica/flavio-e-lula-seguem-tecnicamente-empatados-mostra-pesquisa-futura/</a></li><li id="ref-25">Terra (Palver, 2º turno de 2026). <a href="https://www.terra.com.br/noticias/eleicoes/pesquisas/pesquisa-palver-flavio-bolsonaro-tem-50-e-lula-48-no-2-turno-candidatos-estao-em-empate-tecnico,6e99d76af4651a537219166fa78a4183lmte1cxs.html">https://www.terra.com.br/noticias/eleicoes/pesquisas/pesquisa-palver-flavio-bolsonaro-tem-50-e-lula-48-no-2-turno-candidatos-estao-em-empate-tecnico,6e99d76af4651a537219166fa78a4183lmte1cxs.html</a></li><li id="ref-26">Folha de Londrina (Quaest, 2º turno de 2026). <a href="https://www.folhadelondrina.com.br/politica/a-4-dias-do-pleito-lula-e-flavio-seguem-em-empate-tecnico-3328718e.html">https://www.folhadelondrina.com.br/politica/a-4-dias-do-pleito-lula-e-flavio-seguem-em-empate-tecnico-3328718e.html</a></li><li id="ref-27">CNN Brasil (Gerp, 2º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/gerp-flavio-tem-53-dos-votos-validos-no-2o-turno-lula-47-2/">https://www.cnnbrasil.com.br/eleicoes/gerp-flavio-tem-53-dos-votos-validos-no-2o-turno-lula-47-2/</a></li><li id="ref-28">Exame (Datafolha, 1º turno de 2026). <a href="https://exame.com/brasil/pesquisa-datafolha-para-presidente-lula-tem-45-e-flavio-bolsonaro-42-dos-votos-validos-no-1o-turno/">https://exame.com/brasil/pesquisa-datafolha-para-presidente-lula-tem-45-e-flavio-bolsonaro-42-dos-votos-validos-no-1o-turno/</a></li><li id="ref-29">CNN Brasil (Quaest, 1º turno de 2026). <a href="https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-46-dos-votos-validos-no-1o-turno-flavio-45/">https://www.cnnbrasil.com.br/eleicoes/quaest-lula-tem-46-dos-votos-validos-no-1o-turno-flavio-45/</a></li><li id="ref-30">Diario de Pernambuco (AtlasIntel, 1º turno de 2026). <a href="https://www.diariodepernambuco.com.br/politica/2026/10/11725710-atlasintel-lula-tem-47-e-flavio-bolsonaro-441-de-votos-validos-no-primeiro-turno.html">https://www.diariodepernambuco.com.br/politica/2026/10/11725710-atlasintel-lula-tem-47-e-flavio-bolsonaro-441-de-votos-validos-no-primeiro-turno.html</a></li><li id="ref-31">BNews (PoderData/Aya, 1º turno de 2026). <a href="https://www.bnewssaopaulo.com.br/noticias/politica/poderdataaya-lula-tem-45-dos-votos-validos-no-1-turno-flavio-43.html">https://www.bnewssaopaulo.com.br/noticias/politica/poderdataaya-lula-tem-45-dos-votos-validos-no-1-turno-flavio-43.html</a></li><li id="ref-32">Diário do Grande ABC (CNT/MDA, 1º turno de 2026). <a href="https://www.dgabc.com.br/Noticia/4350555/cnt-mda-lula-tem-47-8-dos-votos-validos-flavio-soma-42-1-e-cury-3-6">https://www.dgabc.com.br/Noticia/4350555/cnt-mda-lula-tem-47-8-dos-votos-validos-flavio-soma-42-1-e-cury-3-6</a></li><li id="ref-33">Fundação Perseu Abramo (Datafolha, 1º turno de 2022; Ipec, 1º turno de 2022; Quaest, 1º turno de 2022). <a href="https://fpabramo.org.br/onde-as-pesquisas-podem-ter-errado/">https://fpabramo.org.br/onde-as-pesquisas-podem-ter-errado/</a></li><li id="ref-34">Congresso em Foco (AtlasIntel, 1º turno de 2022; Paraná Pesquisas, 1º turno de 2022; CNT/MDA, 2º turno de 2022; Paraná Pesquisas, 2º turno de 2022). <a href="https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022">https://www.congressoemfoco.com.br/noticia/121840/veja-previsoes-eleitorais-de-pesquisas-que-acertaram-resultado-em-2022</a></li><li id="ref-35">Tribuna PR (Datafolha, 2º turno de 2022). <a href="https://www.tribunapr.com.br/eleicoes/2022/pesquisa-datafolha-lula-tem-52-contra-48-de-bolsonaro-na-vespera-da-eleicao/">https://www.tribunapr.com.br/eleicoes/2022/pesquisa-datafolha-lula-tem-52-contra-48-de-bolsonaro-na-vespera-da-eleicao/</a></li><li id="ref-36">A Gazeta (Ipec, 2º turno de 2022). <a href="https://www.agazeta.com.br/brasil/pesquisa-ipec-lula-tem-54-dos-votos-validos-e-bolsonaro-46-1022">https://www.agazeta.com.br/brasil/pesquisa-ipec-lula-tem-54-dos-votos-validos-e-bolsonaro-46-1022</a></li><li id="ref-37">O Povo (AtlasIntel, 2º turno de 2022). <a href="https://www.opovo.com.br/eleicoes-2022/2022/10/27/pesquisa-atlas-intel-lula-vai-a-532-e-bolsonaro-recua-a-468.html">https://www.opovo.com.br/eleicoes-2022/2022/10/27/pesquisa-atlas-intel-lula-vai-a-532-e-bolsonaro-recua-a-468.html</a></li></ol><!-- /gerado:fontes -->
+<p style="font-size:13px;color:var(--muted)">Pesquisas de 9 a 18/10 a partir da compilação do Poder360; as divulgadas de 17 a 21/10, das reportagens indicadas. Consulta em 21/10/2026.</p>
+
+<section class="apendice quebra" id="apendice">
+<h2 id="apendice-a">Apêndice A. Reprodução dos números</h2>
+<p>O simulador da página roda no navegador, em JavaScript. As figuras deste relatório foram feitas por um programa à parte, em Python (<code>pipeline/relatorio_simulacao.py</code>), que reimplementa o mesmo algoritmo: mesmo gerador pseudoaleatório (mulberry32), mesma semente, mesma ordem de sorteios e o mesmo quantil com interpolação linear. A Tabela A1 compara os dois. As diferenças vêm só do arredondamento da página para uma casa decimal.</p>
+<div class="tabela">
+  <p class="tit"><b>Tabela A1.</b> Números da página (arredondados como publicados) e da reimplementação em Python, com 20 mil simulações.</p>
+  <div class="tscroll"><!-- gerado:conferencia --><table class="dados"><thead><tr><th>Configuração</th><th class="r">Mediana do 22 (página)</th><th class="r">Mediana do 22 (Python)</th><th class="r">22 &gt; 50% (página)</th><th class="r">22 &gt; 50% (Python)</th></tr></thead><tbody><tr><td>Padrão</td><td class="r">52,7%</td><td class="r">52,66%</td><td class="r">96%</td><td class="r">95,99%</td></tr><tr><td>Erro ±2</td><td class="r">52,6%</td><td class="r">52,63%</td><td class="r">89%</td><td class="r">88,96%</td></tr><tr><td>Erro ±3</td><td class="r">52,6%</td><td class="r">52,63%</td><td class="r">80%</td><td class="r">80,03%</td></tr><tr><td>Só 2014</td><td class="r">51,0%</td><td class="r">50,97%</td><td class="r vazio">—</td><td class="r">78,25%</td></tr><tr><td>Só 2018</td><td class="r">52,8%</td><td class="r">52,77%</td><td class="r vazio">—</td><td class="r">98,83%</td></tr><tr><td>Só 2022</td><td class="r">53,0%</td><td class="r">53,00%</td><td class="r vazio">—</td><td class="r">99,41%</td></tr></tbody></table><!-- /gerado:conferencia --></div>
+</div>
+<p>Para refazer tudo: <code>python pipeline/transferencia.py</code> estima as matrizes (site/dados/transferencia.json); <code>python pipeline/relatorio_simulacao.py</code> roda as simulações, confere com a página, desenha as figuras, preenche as tabelas desta página e gera o PDF com o Chrome. Os dados derivados estão na pasta <code>dados/</code> do site.</p>
+</section>
+</main>
+<footer class="pe">Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE. Relatório de Luis Felipe Hartmann, 21 de outubro de 2026. <a href="../segundo-turno/">Simulador interativo</a> · <a href="../metodologia/">Metodologia</a></footer>
+</body>
+</html>

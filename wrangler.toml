@@ -1,0 +1,8 @@
+# Cloudflare Pages: site estático em site/ + uma Function (functions/vivo/) que lê o snapshot ao vivo do R2.
+name = "eleicaoemnumeros"
+pages_build_output_dir = "site"
+compatibility_date = "2024-09-23"
+
+[[r2_buckets]]
+binding = "VIVO"
+bucket_name = "apuracao"

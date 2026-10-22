@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A Curva da Apuração</title>
+<meta name="description" content="Reconstrução minuto a minuto da apuração do 1º turno de 2026 a partir da hora em que cada boletim de urna chegou ao TSE, estado por estado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Layout: controle de tempo fixo → curva nacional → regiões em miniatura → estados em linhas → método. Mesmo sistema visual das outras páginas do site. */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  /* candidatos: convenção da imprensa (13 vermelho, 22 azul), igual às outras páginas */
+  --c1: #2a78d6; --c2: #e34948;
+  --area: rgba(21, 24, 26, 0.12); --area-line: #4a504c;
+  --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 8px 24px rgba(20, 30, 25, 0.08);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px; --gap: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c1: #3987e5; --c2: #e66767; --area: rgba(237, 240, 235, 0.14); --area-line: #c0c6be;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c1: #3987e5; --c2: #e66767; --area: rgba(237, 240, 235, 0.14); --area-line: #c0c6be;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+img { max-width: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.abas { max-width: 1240px; }
+.topbar .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; padding-block: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+
+.lede { padding-block: 32px 8px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px 48px; align-items: end; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(32px, 5vw, 56px); line-height: 1.02; letter-spacing: -0.015em; margin: 4px 0 0; text-wrap: balance; }
+.lede p { margin: 12px 0 0; color: var(--ink-2); max-width: 62ch; }
+.answer { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; color: var(--ink-2); font-size: 14.5px; }
+.answer b { color: var(--ink); }
+.eleicao { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
+.eleicao .seg { max-width: 100%; }
+#content.trocando { opacity: .45; transition: opacity .15s; }
+
+/* controle de tempo */
+.clock { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-block: 1px solid var(--line); margin-top: 24px; }
+.clock .wrap { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding-block: 10px; }
+.play { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--ink); color: var(--surface); cursor: pointer; display: grid; place-items: center; }
+.play svg { width: 16px; height: 16px; }
+.now { display: flex; flex-direction: column; line-height: 1.15; min-width: 92px; }
+.now b { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 26px; }
+.now span { font-size: 12px; color: var(--muted); }
+/* barra de tempo: trilho com a parte já percorrida preenchida (--p, posto em irPara) e alvo de toque de 40 px */
+input[type=range] { width: 100%; height: 40px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; --p: 0%; }
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--ink) var(--p), var(--line-strong) var(--p)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -8px; border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line-strong), 0 1px 3px rgba(0,0,0,.25); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--ink) var(--p), var(--line-strong) var(--p)); }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line-strong); }
+input[type=range]:focus-visible { outline-offset: 0; }
+.readout { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; justify-content: flex-end; }
+.readout div { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.readout b { font-size: 17px; font-weight: 700; color: var(--ink); }
+.rot-curto { display: none; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: 0; }
+
+section.block { padding-block: 28px; border-top: 1px solid var(--line); }
+section.block:first-of-type { border-top: 0; }
+.block-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 8px 24px; margin-bottom: 14px; }
+.block-head h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; line-height: 1.1; margin: 2px 0 0; text-wrap: balance; }
+.block-head p { margin: 6px 0 0; color: var(--ink-2); max-width: 72ch; font-size: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); }
+.seg button { border: 0; background: transparent; padding: 5px 12px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart .lbl { font-size: 12.5px; font-weight: 650; }
+.gridline { stroke: var(--line); stroke-width: 1; }
+.baseline { stroke: var(--line-strong); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+
+.regioes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.reg { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.reg h3 { margin: 0; font-size: 14px; font-weight: 650; display: flex; justify-content: space-between; gap: 6px; }
+.reg h3 span { font-weight: 500; color: var(--muted); font-size: 12.5px; }
+.split { display: flex; gap: 2px; height: 8px; border-radius: 2px; overflow: hidden; background: var(--surface-2); }
+.split i { display: block; height: 100%; }
+.splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); }
+
+.tscroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.r, th.r { text-align: right; }
+#estados td.uf { font-weight: 650; white-space: nowrap; }
+#estados td.uf small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+#estados .spark { width: 220px; min-width: 160px; }
+#estados .votacao { min-width: 170px; }
+.pctnow { font-weight: 650; }
+details.data-table { margin-top: 10px; font-size: 13px; }
+details.data-table summary { cursor: pointer; color: var(--accent); width: max-content; max-width: 100%; padding: 6px 0; }
+.method { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--gap); font-size: 14px; color: var(--ink-2); }
+.method p { margin: 0 0 10px; }
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); max-width: min(260px, calc(100vw - 16px)); }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.loading { padding: 80px 0; text-align: center; color: var(--muted); }
+footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+
+@media (max-width: 960px) {
+  .lede, .method { grid-template-columns: minmax(0, 1fr); }
+  .regioes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* tela de toque ou estreita: botões com ~42 px de altura */
+@media (max-width: 960px), (pointer: coarse) {
+  .seg button { min-height: 42px; padding: 8px 14px; font-size: 14px; }
+  details.data-table summary { padding: 10px 0; }
+}
+/* celular: barra de tempo em duas linhas (play, hora e controle; depois os números), gráficos com margem direita menor,
+   tabela dos estados com a coluna do estado fixa ao rolar de lado */
+@media (max-width: 620px) {
+  .lede { padding-top: 22px; }
+  .clock .wrap { grid-template-columns: auto auto minmax(0, 1fr); gap: 4px 12px; padding-block: 8px; }
+  .now { min-width: 0; }
+  .now b { font-size: 22px; }
+  .now span { font-size: 11px; }
+  .readout { grid-column: 1 / -1; justify-content: flex-start; gap: 2px 16px; font-size: 12.5px; }
+  .rot-longo { display: none; }
+  .rot-curto { display: inline; }
+  .readout div { flex-direction: row; align-items: baseline; gap: 6px; }
+  .readout b { font-size: 15px; }
+  .block-head h2 { font-size: 23px; }
+  .panel { padding: 12px; }
+  .chart text { font-size: 12px; }
+  .chart .lbl { font-size: 13px; }
+  .regioes { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .reg { padding: 10px; }
+  th, td { padding: 7px 8px; }
+  #estados th:first-child, #estados td.uf { position: sticky; left: 0; z-index: 1; background: var(--bg); }
+  #estados td.uf { white-space: normal; min-width: 128px; max-width: 150px; }
+  #estados td.uf small { font-size: 12px; line-height: 1.35; }
+  #estados .spark { width: 130px; min-width: 120px; }
+  #estados .votacao { min-width: 150px; }
+  #estados td.r { white-space: nowrap; }
+}
+@media (max-width: 420px) { .eleicao .seg button { padding: 8px 10px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+  <div class="brand">
+    <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+    <div><div class="brand-name"><a href="../" style="color:inherit;text-decoration:none">Eleição em Números</a></div><div class="brand-sub" id="brand-sub">A curva da apuração · 1º turno de 2026</div></div>
+  </div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/" aria-current="page">Curva da apuração</a></nav></header>
+
+<main>
+  <section class="wrap lede">
+    <div>
+      <div class="eleicao"><span>Eleição</span><div class="seg" role="group" aria-label="Eleição" id="seg-eleicao"><button type="button" data-eleicao="2026" aria-pressed="true">1º turno 2026</button><button type="button" data-eleicao="2022_1t" aria-pressed="false">1º turno 2022</button><button type="button" data-eleicao="2022_2t" aria-pressed="false">2º turno 2022</button></div></div>
+      <div class="eyebrow" id="eyebrow">Domingo, 4 de outubro de 2026 · Presidente</div>
+      <h1>Por que a curva da apuração vira?</h1>
+      <p>Na noite da eleição, o percentual de cada candidato muda ao longo da apuração e parece que alguém “virou”. Esta página reconstrói a apuração minuto a minuto com a hora em que cada boletim de urna chegou ao TSE, e mostra de onde vinham os votos já contados em cada momento.</p>
+    </div>
+    <p class="answer" id="resposta">Carregando…</p>
+  </section>
+
+  <div class="clock" id="clock" hidden>
+    <div class="wrap">
+      <button type="button" class="play" id="play" aria-label="Reproduzir a apuração"></button>
+      <div class="now"><b id="hora" class="num">17:00</b><span>horário de Brasília</span></div>
+      <input type="range" id="tempo" min="0" max="1" value="0" aria-label="Momento da apuração">
+      <div class="readout" id="readout"></div>
+    </div>
+  </div>
+
+  <div class="wrap" id="content"><div class="loading">Carregando boletins…</div></div>
+</main>
+
+<footer><div class="wrap">Dados: boletins de urna do TSE (dados abertos). Os horários vêm do campo DT_BU_RECEBIDO, em horário de Brasília. Página parte do <a href="../">Eleição em Números</a>.</div></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script>
+"use strict";
+const NOMES_UF = { AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins" };
+const REGIOES = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
+const fmt = new Intl.NumberFormat("pt-BR");
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ICON_PLAY = '<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 16 16"><rect x="3.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/><rect x="9.5" y="2.5" width="3" height="11" rx="1" fill="currentColor"/></svg>';
+
+// cada eleição tem o seu arquivo; a comparação "mesmo ritmo" das três fica em curva.json
+const ELEICOES = {
+  "2026": { arq: "dados/curva.json", rotulo: "1º turno de 2026", data: "Domingo, 4 de outubro de 2026", norm: "2026" },
+  "2022_1t": { arq: "dados/curva_2022_1t.json", rotulo: "1º turno de 2022", data: "Domingo, 2 de outubro de 2022", norm: "2022_1t" },
+  "2022_2t": { arq: "dados/curva_2022_2t.json", rotulo: "2º turno de 2022", data: "Domingo, 30 de outubro de 2022", norm: "2022" },
+};
+const CACHE = {};
+const carregar = k => CACHE[k] ??= fetch(ELEICOES[k].arq).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+
+let D, N, T0, VALIDOS, A, B, NAC, NORM, state = { i: 0, eixo: "hora", tocando: null, ano: "2026", eleicao: "2026" };
+
+const hora = i => { const m = T0.getHours() * 60 + T0.getMinutes() + i * D.passoMin; return `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`; };
+
+async function iniciar() {
+  const pedida = new URLSearchParams(location.search).get("eleicao");
+  NORM = (await carregar("2026")).normalizada;
+  montar();
+  await trocarEleicao(ELEICOES[pedida] ? pedida : "2026");
+}
+
+async function trocarEleicao(k) {
+  if (state.tocando) alternarPlay();
+  document.querySelectorAll("#seg-eleicao button").forEach(x => x.setAttribute("aria-pressed", x.dataset.eleicao === k));
+  document.getElementById("content").classList.add("trocando");
+  const dados = await carregar(k);
+  if (document.querySelector("#seg-eleicao [aria-pressed=true]").dataset.eleicao !== k) return; // outro clique chegou antes
+  state.eleicao = k;
+  D = dados;
+  preparar();
+  // o experimento "mesmo ritmo" acompanha a eleição escolhida (e continua com o seu próprio seletor)
+  state.ano = ELEICOES[k].norm;
+  document.querySelectorAll("#seg-norm button").forEach(x => x.setAttribute("aria-pressed", x.dataset.ano === state.ano));
+  const url = new URL(location.href);
+  if (k === "2026") url.searchParams.delete("eleicao"); else url.searchParams.set("eleicao", k);
+  history.replaceState(null, "", url);
+  atualizarTextos();
+  const slider = document.getElementById("tempo");
+  slider.max = N - 1;
+  state.i = Math.max(NAC.recebidas.findIndex(x => x > 0), Math.min(N - 1, Math.round(60 / D.passoMin)));
+  desenharCurva(); desenharNorm(); desenharRegioes(); desenharEstados(); tabelaCurva(); irPara(state.i);
+  document.getElementById("content").classList.remove("trocando");
+}
+
+function preparar() {
+  T0 = new Date(D.inicio);
+  const C = D.candidatos;
+  VALIDOS = C.filter(c => !["95", "96"].includes(c.n)).map(c => c.n);
+  // cores fixas por número, em qualquer eleição: 22 em --c1 e 13 em --c2
+  [A, B] = VALIDOS.includes("22") && VALIDOS.includes("13") ? ["22", "13"] : VALIDOS;
+  const ufs = Object.keys(D.estados);
+  // série nacional e por região
+  const soma = (lista, f) => d3.range(D.passos).map(i => d3.sum(lista, e => f(e, i)));
+  const agrega = lista => ({
+    secoes: d3.sum(lista, e => e.secoes),
+    recebidas: soma(lista, (e, i) => e.recebidas[i]),
+    votos: Object.fromEntries(C.map(c => [c.n, soma(lista, (e, i) => e.votos[c.n][i])])),
+  });
+  NAC = agrega(Object.values(D.estados));
+  NAC.regioes = Object.fromEntries(REGIOES.map(r => [r, agrega(Object.values(D.estados).filter(e => e.regiao === r))]));
+  // corta a cauda: até 99,9% das seções + 30 min
+  const fim = NAC.recebidas.findIndex(x => x >= 0.999 * NAC.secoes);
+  N = Math.min(D.passos, (fim < 0 ? D.passos : fim) + Math.round(30 / D.passoMin));
+  ufs.forEach(u => {
+    const e = D.estados[u];
+    e.t50 = e.recebidas.findIndex(x => x >= e.secoes / 2);
+    e.t90 = e.recebidas.findIndex(x => x >= 0.9 * e.secoes);
+  });
+}
+
+const share = (obj, g, i) => { const v = d3.sum(VALIDOS, k => obj.votos[k][i]); return v ? obj.votos[g][i] / v : null; };
+const nomeC = n => D.candidatos.find(c => c.n === n);
+
+function montar() {
+  document.getElementById("content").innerHTML = `
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Brasil</div><h2>A curva, como apareceu na noite</h2>
+        <p>Fatia dos votos válidos de cada candidato entre os boletins que já tinham chegado. A linha fina marca o resultado final. Arraste o controle ou aperte o play.</p></div>
+        <div class="seg" role="group" aria-label="Eixo horizontal"><button type="button" data-eixo="hora" aria-pressed="true">Por horário</button><button type="button" data-eixo="pct" aria-pressed="false">Por % apurado</button></div></div>
+      <div class="panel"><div class="legend" id="leg-curva"></div><div class="chart" id="ch-curva"></div>
+        <details class="data-table"><summary>Ver em tabela</summary><div class="tscroll" id="tb-curva"></div></details></div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Experimento</div><h2>E se todos os estados apurassem no mesmo ritmo?</h2>
+        <p>Cada estado mantém a ordem em que seus boletins chegaram, mas os tempos são esticados ou encolhidos para que todos comecem e terminem juntos: o primeiro boletim de cada estado no instante zero, o último no fim, e o resto distribuído por igual. Se a "virada" fosse truque da contagem, ela continuaria aí. Ela quase some.</p></div>
+        <div class="seg" role="group" aria-label="Eleição do experimento" id="seg-norm"><button type="button" data-ano="2026" aria-pressed="true">1º turno 2026</button><button type="button" data-ano="2022_1t" aria-pressed="false">1º turno 2022</button><button type="button" data-ano="2022" aria-pressed="false">2º turno 2022</button></div></div>
+      <div class="panel"><div class="legend" id="leg-norm"></div><div class="chart" id="ch-norm"></div>
+        <p class="answer" id="txt-norm" style="margin-top:12px"></p>
+        <details class="data-table"><summary>Ver em tabela</summary><div class="tscroll" id="tb-norm"></div></details></div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Regiões</div><h2>Quanto de cada região já tinha chegado</h2>
+        <p id="txt-regioes"></p></div></div>
+      <div class="regioes" id="regioes"></div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Estados</div><h2>Cada estado no seu ritmo</h2>
+        <p>Ordenados pela hora em que metade dos boletins tinha chegado. Onde a fila no encerramento é longa, a urna fecha mais tarde e o boletim chega depois.</p></div></div>
+      <div class="tscroll"><table id="estados"><thead><tr><th>Estado</th><th>Chegada dos boletins</th><th class="r">Agora</th><th class="r">Metade às</th><th class="r">90% às</th><th>Votação no estado</th></tr></thead><tbody></tbody></table></div>
+    </section>
+    <section class="block">
+      <div class="block-head"><div><div class="eyebrow">Método</div><h2>Como esta curva foi feita</h2></div></div>
+      <div class="method" id="metodo"></div>
+    </section>`;
+
+  document.querySelectorAll("#seg-eleicao button").forEach(b => b.addEventListener("click", () => {
+    if (b.getAttribute("aria-pressed") !== "true") trocarEleicao(b.dataset.eleicao).catch(erro);
+  }));
+  document.querySelectorAll(".seg button[data-eixo]").forEach(b => b.addEventListener("click", () => {
+    state.eixo = b.dataset.eixo;
+    document.querySelectorAll(".seg button[data-eixo]").forEach(x => x.setAttribute("aria-pressed", x === b));
+    desenharCurva(); CURVA.mover(state.i);
+  }));
+  const slider = document.getElementById("tempo");
+  slider.addEventListener("input", () => irPara(+slider.value));
+  const play = document.getElementById("play");
+  play.innerHTML = ICON_PLAY;
+  play.addEventListener("click", alternarPlay);
+  document.getElementById("clock").hidden = false;
+
+  document.querySelectorAll("#seg-norm button").forEach(b => b.addEventListener("click", () => {
+    state.ano = b.dataset.ano;
+    document.querySelectorAll("#seg-norm button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    desenharNorm();
+  }));
+}
+
+/* textos que dependem da eleição escolhida */
+function atualizarTextos() {
+  const E = ELEICOES[state.eleicao], ca = nomeC(A), cb = nomeC(B), last = N - 1;
+  const i1h = Math.min(last, Math.round(60 / D.passoMin));
+  document.getElementById("eyebrow").textContent = `${E.data} · Presidente`;
+  document.getElementById("brand-sub").textContent = `A curva da apuração · ${E.rotulo}`;
+  const ordem = Object.entries(D.estados).sort((x, y) => x[1].t50 - y[1].t50);
+  const primeiros = ordem.slice(0, 5).map(([u]) => u), ultimos = ordem.slice(-5).map(([u]) => u);
+  // quem estava na frente às 18h e quem terminou na frente
+  const lider = i => share(NAC, A, i) >= share(NAC, B, i) ? ca : cb;
+  const virou = lider(i1h) !== lider(last);
+  document.getElementById("resposta").innerHTML =
+    `<b>Ninguém virou: as regiões chegaram em horários diferentes.</b> Às ${hora(i1h)}, com ${pct(NAC.recebidas[i1h] / NAC.secoes, 0)} das seções apuradas, ${esc(ca.nome)} tinha ${pct(share(NAC, A, i1h))} e ${esc(cb.nome)} ${pct(share(NAC, B, i1h))}. No fim, ${pct(share(NAC, A, last))} e ${pct(share(NAC, B, last))}${virou ? `, com ${esc(lider(last).nome)} na frente` : ""}. Os estados que mais demoraram (${ultimos.join(", ")}) votaram de forma diferente dos que chegaram primeiro (${primeiros.join(", ")}).`;
+
+  const item = (c, cor) => `<span><i class="sw" style="background:var(${cor})"></i>${esc(c.nome)} <span style="color:var(--muted)">${c.n}${c.partido ? " · " + esc(c.partido) : ""}</span></span>`;
+  document.getElementById("leg-curva").innerHTML = item(ca, "--c1") + item(cb, "--c2");
+
+  // região que chega por último (metade das seções) e região cuja votação mais se afasta do total do país
+  const t50 = r => NAC.regioes[r].recebidas.findIndex(x => x >= NAC.regioes[r].secoes / 2);
+  const tardia = REGIOES.reduce((m, r) => t50(r) > t50(m) ? r : m);
+  const desvio = r => Math.abs(share(NAC.regioes[r], A, last) - share(NAC, A, last));
+  const diferente = REGIOES.reduce((m, r) => desvio(r) > desvio(m) ? r : m);
+  document.getElementById("txt-regioes").textContent = "A área mostra a fração das seções da região já recebidas. Abaixo, a votação final na região. " +
+    (tardia === diferente ? `Repare que o ${tardia} chega por último e é onde a votação é mais diferente da média.`
+      : `Repare que o ${tardia} chega por último, e que a votação mais diferente da média é a do ${diferente}.`);
+
+  document.getElementById("metodo").innerHTML = `
+    <div><p>Cada linha do boletim de urna publicado pelo TSE traz a hora em que aquele boletim chegou à totalização (DT_BU_RECEBIDO). Ordenando todos os ${fmt.format(NAC.secoes)} boletins por essa hora e somando os votos, a apuração é reconstruída em passos de ${D.passoMin} minutos.</p>
+      <p>A curva do site oficial pode diferir por alguns minutos, porque entre a chegada do boletim e a divulgação há a etapa de totalização. A forma da curva é a mesma. Os votos do exterior ficam de fora.</p></div>
+    <div><p>Votos válidos são os nominais, sem brancos e nulos. A versão normalizada usa os mesmos boletins: só troca a hora de chegada pela posição do boletim na fila do próprio estado.</p>
+      <p>Fonte: <a href="${esc(D.fonte)}" target="_blank" rel="noopener">boletins de urna, dados abertos do TSE</a>. O mesmo arquivo serve para refazer esta conta em uma planilha.</p></div>`;
+}
+const erro = err => { document.getElementById("content").innerHTML = `<div class="loading">Não foi possível carregar os dados (${esc(err.message)}). Recarregue a página.</div>`; };
+
+/* ---------- apuração normalizada ---------- */
+function desenharNorm() {
+  // ordem fixa (22 e depois 13), igual à do gráfico de cima: chaves numéricas de objeto viriam em ordem crescente
+  const C = NORM[state.ano], [a, b] = ["22", "13"];
+  const nome = n => C.nomes?.[n] ?? n;
+  const cor = { [a]: "--c1", [b]: "--c2" };
+  document.getElementById("leg-norm").innerHTML = [a, b].map(n => `<span><i class="sw" style="background:var(${cor[n]})"></i>${esc(nome(n))}</span>`).join("") +
+    `<span><svg width="26" height="10" aria-hidden="true"><line x1="0" x2="26" y1="5" y2="5" stroke="currentColor" stroke-width="2.4"/></svg> mesmo ritmo em todos os estados</span>` +
+    `<span><svg width="26" height="10" aria-hidden="true"><line x1="0" x2="26" y1="5" y2="5" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3" opacity=".6"/></svg> como aconteceu</span>`;
+  const el = document.getElementById("ch-norm");
+  const W = Math.max(300, el.clientWidth || 800), H = Math.round(Math.min(380, Math.max(250, W * 0.38)));
+  const estreito = W < 560, ml = estreito ? 40 : 46, mr = estreito ? 66 : 120, mt = 10, mb = 38, iw = W - ml - mr, ih = H - mt - mb;
+  const x = d3.scaleLinear().domain([0, 1]).range([0, iw]);
+  const todos = [a, b].flatMap(n => [...C.real[n], ...C.normalizada[n]]);
+  const y = d3.scaleLinear().domain([Math.floor((d3.min(todos) - .005) * 50) / 50, Math.ceil((d3.max(todos) + .005) * 50) / 50]).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Curva real e curva normalizada");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  y.ticks(6).forEach(t => { g.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(t)).attr("y2", y(t)); g.append("text").attr("x", -8).attr("y", y(t)).attr("dy", "0.32em").attr("text-anchor", "end").text(pct(t, 0)); });
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  [0, .25, .5, .75, 1].forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(pct(t, 0)));
+  g.append("text").attr("x", iw).attr("y", ih + 33).attr("text-anchor", "end").text("das seções apuradas");
+  if (y.domain()[0] < .5 && y.domain()[1] > .5) g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(.5)).attr("y2", y(.5)).attr("stroke", css("--ink-2")).attr("stroke-dasharray", "2 3").attr("opacity", .6);
+  const linha = arr => d3.line().x((d, i) => x(C.q[i])).y(d => y(d)).curve(d3.curveMonotoneX)(arr);
+  [a, b].forEach(n => {
+    g.append("path").attr("d", linha(C.real[n])).attr("fill", "none").attr("stroke", css(cor[n])).attr("stroke-width", 1.4).attr("stroke-dasharray", "4 3").attr("opacity", .6);
+    g.append("path").attr("d", linha(C.normalizada[n])).attr("fill", "none").attr("stroke", css(cor[n])).attr("stroke-width", 2.4);
+  });
+  const rot = [a, b].map(n => ({ n, y: y(C.final[n]) })).sort((p, q) => p.y - q.y);
+  if (rot[1].y - rot[0].y < 30) { const m = (rot[0].y + rot[1].y) / 2; rot[0].y = m - 15; rot[1].y = m + 15; }
+  rot.forEach(r => { const t = g.append("text").attr("x", iw + 8).attr("y", r.y).attr("dy", "0.32em").attr("class", "lbl").style("fill", css("--ink")); t.append("tspan").text(pct(C.final[r.n])); t.append("tspan").attr("x", iw + 8).attr("dy", "1.2em").style("font-weight", 400).style("fill", css("--muted")).style("font-size", "11px").text(`${r.n} · final`); });
+  g.append("rect").attr("width", iw).attr("height", ih).attr("fill", "transparent").style("touch-action", "pan-y")
+    .on("pointermove pointerdown", e => { const i = Math.max(0, Math.min(C.q.length - 1, Math.round(x.invert(d3.pointer(e)[0]) * C.q.length) - 1));
+      mostrarTip(e, `<b>${pct(C.q[i], 1)} apurado</b>` + [a, b].map(n => `<div class="r"><span><i class="sw" style="background:var(${cor[n]})"></i>${esc(nome(n))}</span><span class="num">${pct(C.normalizada[n][i], 1)} · real ${pct(C.real[n][i], 1)}</span></div>`).join("")); })
+    .on("pointerleave pointercancel", esconderTip);
+  el.replaceChildren(svg.node());
+  const amp = arr => d3.max(arr) - d3.min(arr), i10 = C.q.findIndex(q => q >= .1);
+  document.getElementById("txt-norm").innerHTML = `<b>Com 10% apurado</b>, ${esc(nome(a))} tinha ${pct(C.real[a][i10])} na apuração real e teria ${pct(C.normalizada[a][i10])} com todos os estados no mesmo ritmo; terminou com ${pct(C.final[a])}. ` +
+    `A oscilação de ${esc(nome(a))} ao longo da noite cai de ${(amp(C.real[a].slice(i10)) * 100).toFixed(1).replace(".", ",")} para ${(amp(C.normalizada[a].slice(i10)) * 100).toFixed(1).replace(".", ",")} pontos. ` +
+    `O que sobra vem da ordem <i>dentro</i> de cada estado: capitais e cidades grandes costumam mandar os boletins antes do interior, e os dois votam diferente.`;
+  const linhasT = C.q.map((q, i) => i).filter(i => (i + 1) % 10 === 0);
+  document.getElementById("tb-norm").innerHTML = `<table><thead><tr><th>Apurado</th>${[a, b].map(n => `<th class="r">${n} real</th><th class="r">${n} mesmo ritmo</th>`).join("")}</tr></thead><tbody>${linhasT.map(i => `<tr><td>${pct(C.q[i], 0)}</td>${[a, b].map(n => `<td class="r num">${pct(C.real[n][i], 2)}</td><td class="r num">${pct(C.normalizada[n][i], 2)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+function alternarPlay() {
+  const play = document.getElementById("play");
+  if (state.tocando) { clearInterval(state.tocando); state.tocando = null; play.innerHTML = ICON_PLAY; play.setAttribute("aria-label", "Reproduzir a apuração"); return; }
+  if (state.i >= N - 1) state.i = NAC.recebidas.findIndex(x => x > 0);
+  play.innerHTML = ICON_PAUSE; play.setAttribute("aria-label", "Pausar");
+  state.tocando = setInterval(() => { if (state.i >= N - 1) return alternarPlay(); irPara(state.i + 1); }, 70);
+}
+
+/* ---------- curva nacional ---------- */
+let CURVA = null;
+function desenharCurva() {
+  const el = document.getElementById("ch-curva");
+  const W = Math.max(300, el.clientWidth || 800), H = Math.round(Math.min(420, Math.max(260, W * 0.42)));
+  const estreito = W < 560, ml = estreito ? 40 : 46, mr = estreito ? 66 : 120, mt = 10, mb = 34, iw = W - ml - mr, ih = H - mt - mb;
+  const ini = NAC.recebidas.findIndex(x => x > 0);
+  const idx = d3.range(ini, N);
+  const xv = i => state.eixo === "hora" ? i : NAC.recebidas[i] / NAC.secoes;
+  const x = state.eixo === "hora" ? d3.scaleLinear().domain([ini, N - 1]).range([0, iw]) : d3.scaleLinear().domain([0, 1]).range([0, iw]);
+  const sA = idx.map(i => share(NAC, A, i)), sB = idx.map(i => share(NAC, B, i));
+  // a escala ignora os primeiros minutos (menos de 1% das seções), quando poucos boletins fazem a curva pular; a linha é recortada
+  const firmes = idx.flatMap((i, k) => NAC.recebidas[i] >= 0.01 * NAC.secoes ? [sA[k], sB[k]] : []).filter(v => v != null);
+  const lo = d3.min(firmes), hi = d3.max(firmes);
+  const y = d3.scaleLinear().domain([Math.floor((lo - 0.01) * 50) / 50, Math.ceil((hi + 0.01) * 50) / 50]).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Fatia de cada candidato ao longo da apuração");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  y.ticks(6).forEach(t => { g.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(t)).attr("y2", y(t)); g.append("text").attr("x", -8).attr("y", y(t)).attr("dy", "0.32em").attr("text-anchor", "end").text(pct(t, 0)); });
+  g.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", iw).attr("y1", ih).attr("y2", ih);
+  if (state.eixo === "hora") {
+    idx.filter(i => (T0.getMinutes() + i * D.passoMin) % 60 === 0).forEach(i => g.append("text").attr("x", x(i)).attr("y", ih + 18).attr("text-anchor", "middle").text(hora(i).replace(":00", "h")));
+  } else {
+    [0, .25, .5, .75, 1].forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(pct(t, 0)));
+    g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text("das seções apuradas");
+  }
+  const finais = [[A, "--c1"], [B, "--c2"]];
+  finais.forEach(([c, cor]) => {
+    const f = share(NAC, c, N - 1);
+    g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(f)).attr("y2", y(f)).attr("stroke", css(cor)).attr("stroke-width", 1).attr("opacity", .45);
+  });
+  const linha = (arr) => d3.line().defined(d => d.v != null).x(d => x(xv(d.i))).y(d => y(d.v)).curve(d3.curveMonotoneX)(idx.map((i, k) => ({ i, v: arr[k] })));
+  const clip = "clip-curva";
+  svg.append("defs").append("clipPath").attr("id", clip).append("rect").attr("x", -4).attr("y", 0).attr("width", iw + 8).attr("height", ih);
+  g.append("path").attr("d", linha(sA)).attr("fill", "none").attr("stroke", css("--c1")).attr("stroke-width", 2.2).attr("clip-path", `url(#${clip})`);
+  g.append("path").attr("d", linha(sB)).attr("fill", "none").attr("stroke", css("--c2")).attr("stroke-width", 2.2).attr("clip-path", `url(#${clip})`);
+  // rótulos diretos no fim (resultado final)
+  const rot = finais.map(([c, cor]) => ({ c, cor, y: y(share(NAC, c, N - 1)) })).sort((a, b) => a.y - b.y);
+  if (rot[1].y - rot[0].y < 30) { const m = (rot[0].y + rot[1].y) / 2; rot[0].y = m - 15; rot[1].y = m + 15; }
+  rot.forEach(r => {
+    const cc = nomeC(r.c);
+    const t = g.append("text").attr("x", iw + 8).attr("y", r.y).attr("dy", "0.32em").attr("class", "lbl").style("fill", css("--ink"));
+    t.append("tspan").text(pct(share(NAC, r.c, N - 1)));
+    t.append("tspan").attr("x", iw + 8).attr("dy", "1.2em").style("font-weight", 400).style("fill", css("--muted")).style("font-size", "11px").text(`${cc.n} · final`);
+  });
+  const cursor = g.append("g");
+  cursor.append("line").attr("class", "baseline").attr("y1", 0).attr("y2", ih).style("stroke", css("--ink")).style("opacity", .5);
+  const dA = cursor.append("circle").attr("r", 4.5).attr("fill", css("--c1")).attr("stroke", css("--surface")).attr("stroke-width", 2);
+  const dB = cursor.append("circle").attr("r", 4.5).attr("fill", css("--c2")).attr("stroke", css("--surface")).attr("stroke-width", 2);
+  /* arrastar de lado no gráfico move o tempo; de cima para baixo continua rolando a página */
+  g.append("rect").attr("width", iw).attr("height", ih).attr("fill", "transparent").style("cursor", "ew-resize").style("touch-action", "pan-y")
+    .on("pointerdown pointermove", e => {
+      if (e.type === "pointermove" && !(e.buttons & 1) && e.pointerType !== "mouse") return;
+      const [mx] = d3.pointer(e);
+      let i;
+      if (state.eixo === "hora") i = Math.round(x.invert(mx));
+      else { const alvo = x.invert(mx) * NAC.secoes; i = NAC.recebidas.findIndex(v => v >= alvo); if (i < 0) i = N - 1; }
+      i = Math.max(ini, Math.min(N - 1, i));
+      if (e.type === "pointerdown" || e.buttons & 1) irPara(i);
+      mostrarTip(e, `<b>${hora(i)}</b> · ${pct(NAC.recebidas[i] / NAC.secoes)} apurado<div class="r"><span><i class="sw" style="background:var(--c1)"></i>${esc(nomeC(A).nome)}</span><span class="num">${pct(share(NAC, A, i), 2)}</span></div><div class="r"><span><i class="sw" style="background:var(--c2)"></i>${esc(nomeC(B).nome)}</span><span class="num">${pct(share(NAC, B, i), 2)}</span></div>`);
+    })
+    .on("pointerleave pointercancel", esconderTip);
+  el.replaceChildren(svg.node());
+  CURVA = { mover: i => { const px = x(xv(i)); cursor.attr("transform", `translate(${px},0)`); const cy = v => Math.max(0, Math.min(ih, y(v ?? 0))); dA.attr("cy", cy(share(NAC, A, i))); dB.attr("cy", cy(share(NAC, B, i))); } };
+}
+
+/* ---------- regiões ---------- */
+let REG = [];
+function sparkArea(el, serie, total, { altura = 70, marca50 = false } = {}) {
+  const W = Math.max(140, el.clientWidth || 200), H = altura;
+  const ini = NAC.recebidas.findIndex(x => x > 0);
+  const x = d3.scaleLinear().domain([ini, N - 1]).range([0, W]), y = d3.scaleLinear().domain([0, 1]).range([H - 2, 2]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("aria-hidden", "true");
+  svg.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", W).attr("y1", y(.5)).attr("y2", y(.5));
+  svg.append("line").attr("class", "baseline").attr("x1", 0).attr("x2", W).attr("y1", y(0)).attr("y2", y(0));
+  const pts = d3.range(ini, N).map(i => [x(i), y(serie[i] / total)]);
+  svg.append("path").attr("d", d3.area().x(d => d[0]).y0(y(0)).y1(d => d[1])(pts)).attr("fill", css("--area"));
+  svg.append("path").attr("d", d3.line()(pts)).attr("fill", "none").attr("stroke", css("--area-line")).attr("stroke-width", 1.5);
+  const cur = svg.append("line").attr("y1", 0).attr("y2", H).attr("stroke", css("--ink")).attr("stroke-width", 1).attr("opacity", .55);
+  el.replaceChildren(svg.node());
+  return i => cur.attr("x1", x(i)).attr("x2", x(i));
+}
+function splitBar(obj, i) {
+  const a = share(obj, A, i), b = share(obj, B, i);
+  if (a == null) return `<div class="split"></div><div class="splitlbl"><span>—</span><span>—</span></div>`;
+  return `<div class="split"><i style="width:${a * 100}%;background:var(--c1)"></i><i style="flex:1"></i><i style="width:${b * 100}%;background:var(--c2)"></i></div>
+    <div class="splitlbl num"><span>${A} · ${pct(a)}</span><span>${B} · ${pct(b)}</span></div>`;
+}
+function desenharRegioes() {
+  const el = document.getElementById("regioes");
+  el.innerHTML = REGIOES.map(r => `<div class="reg"><h3>${r} <span class="num" data-now="${r}"></span></h3><div class="chart" data-sp="${r}"></div>${splitBar(NAC.regioes[r], N - 1)}</div>`).join("");
+  REG = REGIOES.map(r => ({ r, mover: sparkArea(el.querySelector(`[data-sp="${r}"]`), NAC.regioes[r].recebidas, NAC.regioes[r].secoes), now: el.querySelector(`[data-now="${r}"]`) }));
+}
+
+/* ---------- estados ---------- */
+let EST = [];
+function desenharEstados() {
+  const tb = document.querySelector("#estados tbody");
+  const ordem = Object.entries(D.estados).sort((x, y) => x[1].t50 - y[1].t50);
+  tb.innerHTML = ordem.map(([u, e]) => `<tr>
+    <td class="uf">${u}<small>${esc(NOMES_UF[u])} · ${e.regiao}</small></td>
+    <td class="spark"><div class="chart" data-uf="${u}"></div></td>
+    <td class="r num pctnow" data-now="${u}"></td>
+    <td class="r num">${hora(e.t50)}</td><td class="r num">${hora(e.t90)}</td>
+    <td class="votacao">${splitBar(e, D.passos - 1)}</td></tr>`).join("");
+  EST = ordem.map(([u, e]) => ({ e, mover: sparkArea(tb.querySelector(`[data-uf="${u}"]`), e.recebidas, e.secoes, { altura: 34 }), now: tb.querySelector(`[data-now="${u}"]`) }));
+}
+
+function tabelaCurva() {
+  const ini = NAC.recebidas.findIndex(x => x > 0);
+  const linhas = d3.range(ini, N).filter(i => (i * D.passoMin) % 10 === 0);
+  document.getElementById("tb-curva").innerHTML = `<table><thead><tr><th>Horário</th><th class="r">Seções apuradas</th><th class="r">${A}</th><th class="r">${B}</th></tr></thead><tbody>${linhas.map(i => `<tr><td>${hora(i)}</td><td class="r num">${pct(NAC.recebidas[i] / NAC.secoes)}</td><td class="r num">${pct(share(NAC, A, i), 2)}</td><td class="r num">${pct(share(NAC, B, i), 2)}</td></tr>`).join("")}</tbody></table>`;
+}
+
+/* ---------- tempo ---------- */
+function irPara(i) {
+  state.i = i;
+  const sl = document.getElementById("tempo");
+  sl.value = i;
+  sl.style.setProperty("--p", `${(i - +sl.min) / ((+sl.max - +sl.min) || 1) * 100}%`);
+  document.getElementById("hora").textContent = hora(i);
+  document.getElementById("readout").innerHTML =
+    `<div><span><span class="rot-longo">Seções apuradas</span><span class="rot-curto">Apurado</span></span><b class="num">${pct(NAC.recebidas[i] / NAC.secoes)}</b></div>` +
+    `<div><span><i class="sw" style="background:var(--c1)"></i>${A}</span><b class="num">${pct(share(NAC, A, i), 2)}</b></div>` +
+    `<div><span><i class="sw" style="background:var(--c2)"></i>${B}</span><b class="num">${pct(share(NAC, B, i), 2)}</b></div>`;
+  CURVA?.mover(i);
+  REG.forEach(r => { r.mover(i); r.now.textContent = pct(NAC.regioes[r.r].recebidas[i] / NAC.regioes[r.r].secoes, 0); });
+  EST.forEach(s => { s.mover(i); s.now.textContent = pct(s.e.recebidas[i] / s.e.secoes, 0); });
+}
+
+const TIP = document.getElementById("tip");
+function mostrarTip(e, html) {
+  TIP.innerHTML = html; TIP.hidden = false;
+  const w = TIP.offsetWidth, h = TIP.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  TIP.style.left = Math.max(8, x) + "px"; TIP.style.top = Math.max(8, y) + "px";
+}
+function esconderTip() { TIP.hidden = true; }
+addEventListener("scroll", esconderTip, { passive: true });
+/* na barra de páginas (que rola de lado no celular), deixa a página atual à vista */
+const abaAtual = () => { const nav = document.querySelector(".abas"), at = nav?.querySelector("[aria-current]"); if (nav && at && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = at.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - at.offsetWidth) / 2; };
+abaAtual(); document.fonts?.ready.then(abaAtual); document.fonts?.addEventListener("loadingdone", abaAtual); addEventListener("load", abaAtual);
+{ let w0 = innerWidth; addEventListener("resize", () => { if (innerWidth !== w0) { w0 = innerWidth; abaAtual(); } }); }
+
+let tRes, larg = innerWidth;
+const redesenhar = () => { if (D) { desenharCurva(); desenharNorm(); desenharRegioes(); desenharEstados(); irPara(state.i); } };
+addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => { if (Math.abs(innerWidth - larg) > 20) { larg = innerWidth; redesenhar(); } }, 200); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redesenhar);
+new MutationObserver(redesenhar).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+iniciar().catch(erro);
+</script>
+
+</body>
+</html>

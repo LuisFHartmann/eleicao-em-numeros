@@ -1,0 +1,11 @@
+# dados brutos e tabelas reduzidas: gerados por pipeline/baixar.py
+data
+data/
+__pycache__/
+*.pyc
+# snapshot do coletor usado em testes contra o 1º turno
+site/ao-vivo/dados/vivo_6257.json
+site/ao-vivo/dados/*.tmp
+site/ao-vivo/dados/vivo_6258.json
+node_modules/
+.wrangler/

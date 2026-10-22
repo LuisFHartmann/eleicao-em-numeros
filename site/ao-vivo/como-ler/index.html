@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Como Ler o Painel</title>
+<meta name="description" content="Guia do painel ao vivo: uma imagem do painel com cada elemento numerado e explicado em uma frase, os erros comuns de leitura e, embaixo, o texto completo sobre o modelo e os testes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../../comum.css">
+<style>
+/* Guia em duas camadas: no topo, o painel de verdade com marcadores numerados e uma frase por número;
+   embaixo, o texto completo, recolhido em seções. */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea; --on-accent: #ffffff;
+  --c22: #2a78d6; --c13: #e34948; --esperada: #7d837d;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px;
+  /* projeção inicial: o mesmo tom apagado do painel (cinza puxado para a cor de cada candidato) */
+  --ini13: color-mix(in srgb, var(--c13) 42%, var(--esperada)); --ini22: color-mix(in srgb, var(--c22) 42%, var(--esperada));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335; --on-accent: #0f1211;
+    --c22: #3987e5; --c13: #e66767; --esperada: #8b918a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335; --on-accent: #0f1211;
+  --c22: #3987e5; --c13: #e66767; --esperada: #8b918a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.62; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding: 10px max(16px, env(safe-area-inset-left, 0px)); max-width: 1240px; margin: 0 auto; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+main { padding: 28px max(16px, env(safe-area-inset-right, 0px)) 64px max(16px, env(safe-area-inset-left, 0px)); }
+.larga { max-width: 1180px; margin: 0 auto; }
+.texto { max-width: 800px; margin: 0 auto; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(32px, 5vw, 52px); line-height: 1.04; letter-spacing: -0.015em; margin: 4px 0 12px; text-wrap: balance; }
+h3 { font-size: 17px; margin: 24px 0 4px; }
+p, li { color: var(--ink-2); }
+p b, li b, dd b { color: var(--ink); }
+.deck { font-size: 18px; color: var(--ink-2); margin: 0; max-width: 60ch; }
+.voltar { display: inline-flex; align-items: center; gap: 6px; font-size: 14.5px; font-weight: 600; text-decoration: none; }
+
+/* ---------- abertura: título à esquerda, erros comuns à direita ---------- */
+.abre { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 48px; align-items: end; margin-top: 16px; }
+.erros { background: var(--surface); border: 1px solid var(--line-strong); border-left: 4px solid var(--accent); border-radius: var(--r); padding: 14px 18px 12px; }
+.erros h2 { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 19px; line-height: 1.2; margin: 0 0 8px; }
+.erros ol { margin: 0; padding: 0; list-style: none; counter-reset: e; }
+.erros li { counter-increment: e; position: relative; padding-left: 26px; margin: 0 0 7px; font-size: 14.5px; line-height: 1.45; color: var(--ink); }
+.erros li::before { content: counter(e); position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: var(--surface); font-size: 11px; font-weight: 700; display: grid; place-items: center; line-height: 1; }
+.erros li span { color: var(--ink-2); }
+
+/* ---------- figuras do painel com marcadores ---------- */
+.fig { margin-top: 36px; }
+.fig-tit { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+.fig-tit h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; line-height: 1.1; margin: 0; }
+.fig-tit span { font-size: 14px; color: var(--muted); }
+.shot { position: relative; border-radius: var(--r); box-shadow: 0 1px 2px rgba(20, 30, 25, .06), 0 10px 28px rgba(20, 30, 25, .10); }
+.shot img { display: block; width: 100%; height: auto; border-radius: var(--r); }
+.so-escuro { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .so-claro { display: none; }
+  :root:not([data-theme="light"]) .so-escuro { display: block; }
+  :root:not([data-theme="light"]) .shot { box-shadow: 0 0 0 1px var(--line), 0 10px 28px rgba(0, 0, 0, .35); }
+}
+:root[data-theme="dark"] .so-claro { display: none; }
+:root[data-theme="dark"] .so-escuro { display: block; }
+:root[data-theme="dark"] .shot { box-shadow: 0 0 0 1px var(--line), 0 10px 28px rgba(0, 0, 0, .35); }
+/* marcador: posição em % da imagem, então acompanha a largura; no celular vale a imagem (e a posição) do celular */
+.mk, .leg .n { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-size: 12.5px; font-weight: 700; display: grid; place-items: center; line-height: 1; font-variant-numeric: tabular-nums; }
+.mk { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); box-shadow: 0 0 0 2px var(--surface), 0 1px 4px rgba(0, 0, 0, .25); pointer-events: none; }
+.leg { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 22px; }
+.leg li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14.5px; line-height: 1.45; margin: 0; }
+.leg li b { color: var(--ink); }
+.leg .n { margin-top: -1px; }
+.leg svg { vertical-align: -1px; margin-right: 2px; }
+.fonte-img { font-size: 13px; color: var(--muted); margin: 26px 0 0; }
+
+/* ---------- texto completo, recolhido ---------- */
+.detalhe-tit { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 28px; line-height: 1.12; margin: 56px 0 4px; padding-top: 24px; border-top: 1px solid var(--line); }
+.detalhe-sub { margin: 0 0 14px; font-size: 15px; }
+details.sec { border-bottom: 1px solid var(--line); scroll-margin-top: 12px; }
+details.sec:first-of-type { border-top: 1px solid var(--line); }
+details.sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 14px 4px; font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 21px; line-height: 1.2; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary:hover { color: var(--accent); }
+details.sec > summary .n { color: var(--accent); min-width: 1.1em; }
+details.sec > summary svg { width: 16px; height: 16px; flex: none; margin-left: auto; color: var(--ink-2); transition: transform .15s; }
+details.sec[open] > summary svg { transform: rotate(90deg); }
+details.sec > .corpo { padding: 0 4px 22px; }
+details.sec > .corpo > :first-child { margin-top: 0; }
+@media (prefers-reduced-motion: reduce) { details.sec > summary svg { transition: none; } }
+.alerta ul { margin: 0; padding-left: 20px; }
+.alerta li { margin-bottom: 6px; }
+.formula { font-family: var(--f-mono); font-size: 13.5px; background: var(--surface-2); border-radius: var(--r); padding: 12px 14px; overflow-x: auto; white-space: pre; color: var(--ink); line-height: 1.55; }
+dl.itens { margin: 12px 0; }
+dl.itens dt { font-weight: 700; color: var(--ink); margin-top: 14px; display: flex; align-items: center; gap: 8px; }
+dl.itens dd { margin: 2px 0 0; color: var(--ink-2); }
+.sw { display: inline-block; vertical-align: -1px; flex: none; }
+.tscroll { overflow-x: auto; margin: 14px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pergunta { background: var(--accent-soft); border-radius: var(--r); padding: 14px 18px; margin: 18px 0; }
+.pergunta p { margin: 0; color: var(--ink); }
+.pergunta p + p { margin-top: 6px; color: var(--ink-2); }
+ol.passos li { margin-bottom: 8px; }
+footer { max-width: 800px; margin: 0 auto; padding: 0 16px 48px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .abre { grid-template-columns: minmax(0, 1fr); align-items: start; }
+}
+/* cada faixa de largura usa o recorte do painel naquela largura, e os marcadores medidos nele */
+@media (max-width: 1100px) and (min-width: 641px) { .mk { left: var(--xt); top: var(--yt); } }
+@media (max-width: 640px) {
+  .deck { font-size: 16.5px; }
+  .fig { margin-top: 30px; }
+  .fig-tit h2 { font-size: 23px; }
+  .mk { left: var(--xm); top: var(--ym); width: 22px; height: 22px; font-size: 12px; }
+  .leg { grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .detalhe-tit { font-size: 24px; }
+  details.sec > summary { font-size: 19px; }
+  .formula { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap brand">
+  <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+  <div><div class="brand-name"><a href="../../">Eleição em Números</a></div><div class="brand-sub">Ao vivo · como ler o painel</div></div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="../../">Início</a><a href="../../votos/">Mapa de votos</a><a href="../../segundo-turno/">Simulação do 2º turno</a><a href="../" aria-current="page">Ao vivo</a><a href="../../metodologia/">Metodologia</a><a href="../../apuracao/">Curva da apuração</a></nav></header>
+
+<main>
+<div class="larga">
+<a class="voltar" href="../">← Voltar ao painel ao vivo</a>
+<div class="abre">
+  <div>
+    <div class="eyebrow">Guia de leitura</div>
+    <h1>Como ler o painel ao vivo</h1>
+    <p class="deck">O painel mostra duas coisas ao mesmo tempo: a <b>contagem</b>, os votos que já chegaram, e a <b>projeção</b>, onde a contagem deve terminar. Cada número nas imagens abaixo tem uma frase de explicação.</p>
+  </div>
+  <aside class="erros" aria-labelledby="erros-tit">
+    <h2 id="erros-tit">3 erros comuns de leitura</h2>
+    <ol>
+      <li>Quem está na frente agora não é necessariamente quem vai ganhar.</li>
+      <li>Compare a contagem com a pontilhada do horário, não com a projeção inicial.</li>
+      <li>84% de chance não é certeza: o outro vence em 16 de cada 100 simulações.</li>
+    </ol>
+  </aside>
+</div>
+
+<section class="fig" aria-labelledby="f-placar">
+  <div class="fig-tit"><h2 id="f-placar">O placar</h2><span>o resumo do momento, logo abaixo da barra de controle</span></div>
+  <div class="shot">
+    <picture class="so-claro"><source media="(max-width: 640px)" srcset="painel-placar-390-claro.webp" width="720" height="1030"><source media="(max-width: 1100px)" srcset="painel-placar-768-claro.webp" width="1476" height="586"><img src="painel-placar-1280-claro.webp" width="1815" height="236" alt="Placar do painel com 54% apurado: contagem 13 49,8% e 22 50,2%; projeção 13 50,5% e 22 49,5%; chance de vitória 13 84% e 22 16%." decoding="async"></picture><picture class="so-escuro"><source media="(max-width: 640px)" srcset="painel-placar-390-escuro.webp" width="720" height="1030"><source media="(max-width: 1100px)" srcset="painel-placar-768-escuro.webp" width="1476" height="586"><img src="painel-placar-1280-escuro.webp" width="1815" height="236" alt="Placar do painel com 54% apurado: contagem 13 49,8% e 22 50,2%; projeção 13 50,5% e 22 49,5%; chance de vitória 13 84% e 22 16%." loading="lazy" decoding="async"></picture>
+    <span class="mk" style="--x:11.37%;--y:15.59%;--xt:18.64%;--yt:8.36%;--xm:37.1%;--ym:4.36%" aria-hidden="true">1</span><span class="mk" style="--x:33.48%;--y:15.59%;--xt:73.13%;--yt:8.36%;--xm:46.71%;--ym:22.96%" aria-hidden="true">2</span><span class="mk" style="--x:71.56%;--y:15.59%;--xt:46.35%;--yt:54.73%;--xm:93.35%;--ym:48.55%" aria-hidden="true">3</span><span class="mk" style="--x:54.46%;--y:73.91%;--xt:18.32%;--yt:86.01%;--xm:36.17%;--ym:66.32%" aria-hidden="true">4</span><span class="mk" style="--x:87.12%;--y:15.59%;--xt:68.5%;--yt:54.73%;--xm:37.23%;--ym:77.67%" aria-hidden="true">5</span>
+  </div>
+  <ol class="leg">
+    <li><span class="n">1</span><span><b>Seções apuradas:</b> quanto do país já foi contado.</span></li>
+    <li><span class="n">2</span><span><b>Contagem oficial:</b> só os votos que já chegaram. Engana no começo da noite.</span></li>
+    <li><span class="n">3</span><span><b>Projeção atualizada:</b> onde o resultado deve terminar, com o que já chegou; a faixa tem 90% das simulações.</span></li>
+    <li><span class="n">4</span><span><b>Projeção inicial:</b> o que o modelo esperava antes do 1º boletim, para comparar.</span></li>
+    <li><span class="n">5</span><span><b>Chance de vitória:</b> em quantas simulações cada um termina na frente. Não mede o tamanho da vantagem.</span></li>
+  </ol>
+</section>
+
+<section class="fig" aria-labelledby="f-proj">
+  <div class="fig-tit"><h2 id="f-proj">O gráfico da projeção</h2><span>a noite inteira, um candidato acima e outro abaixo de 50%</span></div>
+  <div class="shot">
+    <picture class="so-claro"><source media="(max-width: 640px)" srcset="painel-proj-390-claro.webp" width="720" height="1000"><source media="(max-width: 1100px)" srcset="painel-proj-768-claro.webp" width="1476" height="712"><img src="painel-proj-1280-claro.webp" width="1815" height="695" alt="Gráfico da projeção às 18h30: a contagem do 22 começa alta e desce; a projeção atualizada fica perto de 50%, com o 13 pouco acima; as tracejadas da projeção inicial seguem em 52% e 48%." loading="lazy" decoding="async"></picture><picture class="so-escuro"><source media="(max-width: 640px)" srcset="painel-proj-390-escuro.webp" width="720" height="1000"><source media="(max-width: 1100px)" srcset="painel-proj-768-escuro.webp" width="1476" height="712"><img src="painel-proj-1280-escuro.webp" width="1815" height="695" alt="Gráfico da projeção às 18h30: a contagem do 22 começa alta e desce; a projeção atualizada fica perto de 50%, com o 13 pouco acima; as tracejadas da projeção inicial seguem em 52% e 48%." loading="lazy" decoding="async"></picture>
+    <span class="mk" style="--x:16.03%;--y:29.75%;--xt:18.62%;--yt:35.38%;--xm:28.26%;--ym:35.39%" aria-hidden="true">6</span><span class="mk" style="--x:10.57%;--y:65.75%;--xt:14.32%;--yt:65.24%;--xm:20.28%;--ym:61.13%" aria-hidden="true">7</span><span class="mk" style="--x:69.52%;--y:37.97%;--xt:62.82%;--yt:42.64%;--xm:76.89%;--ym:42.6%" aria-hidden="true">8</span><span class="mk" style="--x:8.36%;--y:18.06%;--xt:10.08%;--yt:28.37%;--xm:16.01%;--ym:30.63%" aria-hidden="true">9</span>
+  </div>
+  <ol class="leg">
+    <li><span class="n">6</span><span><b>Linha grossa:</b> a contagem oficial ao longo da noite. Anda muito.</span></li>
+    <li><span class="n">7</span><span><b>Linha fina e faixa em cor viva:</b> a projeção atualizada e seus 90%. Deve andar pouco.</span></li>
+    <li><span class="n">8</span><span><b>Tracejada apagada:</b> a projeção inicial, fixa a noite toda. Antes do 1º boletim, vem com uma faixa.</span></li>
+    <li><span class="n">9</span><span><b>Pontilhada:</b> onde a contagem deveria estar a cada horário, se tudo saísse como o esperado.</span></li>
+  </ol>
+</section>
+
+<section class="fig" aria-labelledby="f-curva">
+  <div class="fig-tit"><h2 id="f-curva">Curva da apuração e distribuição</h2><span>logo abaixo do gráfico da projeção</span></div>
+  <div class="shot">
+    <picture class="so-claro"><source media="(max-width: 640px)" srcset="painel-dois-390-claro.webp" width="720" height="1232"><source media="(max-width: 1100px)" srcset="painel-dois-768-claro.webp" width="1476" height="1602"><img src="painel-dois-1280-claro.webp" width="1815" height="635" alt="Curva da apuração, com a contagem real e a esperada de cada candidato, e o histograma das simulações: a maior parte à esquerda de 50%, onde vence o 13." loading="lazy" decoding="async"></picture><picture class="so-escuro"><source media="(max-width: 640px)" srcset="painel-dois-390-escuro.webp" width="720" height="1232"><source media="(max-width: 1100px)" srcset="painel-dois-768-escuro.webp" width="1476" height="1602"><img src="painel-dois-1280-escuro.webp" width="1815" height="635" alt="Curva da apuração, com a contagem real e a esperada de cada candidato, e o histograma das simulações: a maior parte à esquerda de 50%, onde vence o 13." loading="lazy" decoding="async"></picture>
+    <span class="mk" style="--x:14.41%;--y:36.61%;--xt:24.19%;--yt:19.44%;--xm:31.43%;--ym:21.27%" aria-hidden="true">10</span><span class="mk" style="--x:67.12%;--y:63.48%;--xt:16.82%;--yt:90.01%;--xm:17.55%;--ym:87.34%" aria-hidden="true">11</span>
+  </div>
+  <ol class="leg">
+    <li><span class="n">10</span><span><b>Curva esperada × real:</b> a tracejada é como a contagem deve andar; a grossa, como está andando.</span></li>
+    <li><span class="n">11</span><span><b>Distribuição:</b> o resultado final de cada simulação. À esquerda de 50% vence o 13; à direita, o 22.</span></li>
+  </ol>
+</section>
+<p class="fonte-img">Imagens: o próprio painel, no modo "Noite real de 2022", às 18h30, com 54% das seções apuradas. Repare: a contagem tinha o 22 na frente, e a projeção já indicava o 13, que venceu.</p>
+</div>
+
+<div class="texto">
+<h2 class="detalhe-tit" id="detalhe">Em detalhe</h2>
+<p class="detalhe-sub">O texto completo, para quem quer entender cada parte. Clique para abrir.</p>
+
+<details class="sec" id="nao-e"><summary><span class="n">!</span>O que a projeção não é<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo alerta">
+  <ul>
+    <li><b>Não é o resultado oficial.</b> É uma estimativa estatística, com margem de erro. O resultado oficial é sempre o do TSE.</li>
+    <li><b>A contagem parcial engana.</b> Os boletins chegam em ordem: Sul e Centro-Oeste primeiro, Nordeste por último, e as capitais antes do interior. Quem lidera no começo da noite pode não liderar no fim, sem que nada de estranho tenha acontecido.</li>
+    <li><b>Os primeiros boletins não representam o município.</b> Costumam vir de aldeias, quilombos e comunidades pequenas, que votam muito diferente da sede. Por isso o modelo dá pouco peso a eles.</li>
+    <li><b>Não é pesquisa e não vê a campanha.</b> Debates, notícias e apoios entre o 1º e o 2º turno mudam o resultado e não entram no modelo. Ele parte do 1º turno e de como os eleitores migraram de voto em eleições passadas.</li>
+    <li><b>Faixa de 90% não é certeza.</b> Se o modelo estiver bem calibrado, o resultado fica fora da faixa em cerca de 1 a cada 10 noites.</li>
+  </ul>
+</div></details>
+
+<details class="sec" id="placar"><summary><span class="n">1</span>O placar<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<p>A faixa de quatro quadros logo abaixo da barra de controle. Os dois candidatos aparecem sempre lado a lado, na ordem do número na urna: <b style="color:var(--c13)">13</b> e depois <b style="color:var(--c22)">22</b>. As cores seguem a convenção da imprensa (vermelho para o 13, azul para o 22) e não indicam preferência.</p>
+<dl class="itens">
+  <dt>Seções apuradas</dt>
+  <dd>Quanto das seções eleitorais do país já foi contado, e quantos votos válidos (sem brancos e nulos) isso soma.</dd>
+  <dt>Contagem oficial agora</dt>
+  <dd>A porcentagem de cada candidato entre os votos válidos <b>já contados</b>. É o número que o TSE mostra. Ele muda muito ao longo da noite porque os votos chegam em ordem, e não diz sozinho quem vai ganhar.</dd>
+  <dt>Projeção do resultado final</dt>
+  <dd>Onde o modelo estima que cada candidato vai terminar quando todas as seções forem contadas. O número grande é a <b>mediana</b> das simulações (metade delas termina acima, metade abaixo). A <b>faixa</b> abaixo contém 90% das simulações. A linha <b>"inicial"</b>, com o mesmo traço tracejado do gráfico, mostra a projeção feita antes de qualquer boletim, para comparar com o número grande. Antes do primeiro boletim, o quadro inteiro é a projeção inicial.</dd>
+  <dt>Chance de vitória</dt>
+  <dd>Em que fração das simulações cada candidato termina com mais da metade dos votos válidos. Logo abaixo aparece a chance que o modelo dava antes da apuração. Uma chance de 80% não é certeza: em 1 de cada 5 simulações, o outro candidato vence.</dd>
+</dl>
+</div></details>
+
+<details class="sec" id="projecao"><summary><span class="n">2</span>O gráfico da projeção<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<p>É o gráfico principal. O eixo horizontal é o horário da noite, e o vertical, a porcentagem dos votos válidos. Há um conjunto de linhas para cada candidato, espelhados em torno de 50%. Em <b>tom apagado</b> da cor de cada um, o que se esperava antes de qualquer boletim, fixo a noite toda; em <b>cor viva</b>, o que está acontecendo.</p>
+<dl class="itens">
+  <dt><svg class="sw" width="26" height="12" aria-hidden="true"><line x1="0" x2="26" y1="3" y2="3" stroke="var(--ini13)" stroke-width="1.6" stroke-dasharray="5 4"/><line x1="0" x2="26" y1="9" y2="9" stroke="var(--ini22)" stroke-width="1.6" stroke-dasharray="5 4"/></svg> Projeção inicial (tracejada apagada, fixa)</dt>
+  <dd>O resultado que o modelo esperava <b>antes do primeiro boletim</b>: a linha tracejada é a mediana de milhares de simulações (Monte Carlo). Ela tem a cor de cada candidato misturada com cinza, para ficar visivelmente mais fraca que a projeção atualizada. Enquanto nenhuma contagem chegou a 1% apurado, ela vem com uma faixa clara com 90% das simulações; quando os boletins começam a chegar, a faixa sai e fica só a linha, para não se misturar à faixa da projeção atualizada. Ela não muda durante a noite. Serve de régua: mostra quanto os boletins já afastaram a estimativa do ponto de partida.</dd>
+  <dt><svg class="sw" width="26" height="12" aria-hidden="true"><rect x="0" y="1" width="26" height="10" rx="1.5" fill="var(--c13)" opacity=".2"/><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c13)" stroke-width="1.8"/></svg> Projeção atualizada (linha fina e faixa, em cor viva)</dt>
+  <dd>A mesma conta, refeita a cada atualização com os boletins que já chegaram: linha fina na mediana e faixa com 90% das simulações. A faixa estreita conforme a noite avança, porque sobra menos voto para estimar. A projeção deve andar pouco; se ela se afasta da tracejada, é porque os boletins estão chegando diferentes do esperado.</dd>
+  <dt><svg class="sw" width="26" height="12" aria-hidden="true"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c13)" stroke-width="3.2"/></svg> Contagem oficial (linha grossa)</dt>
+  <dd>A porcentagem de cada candidato entre os votos já contados, a mesma do TSE. No começo da noite ela costuma estar longe do resultado final, por causa da ordem de chegada dos boletins. No fim, as linhas grossa e fina se encontram.</dd>
+  <dt><svg class="sw" width="26" height="12" aria-hidden="true"><line x1="0" x2="26" y1="6" y2="6" stroke="var(--c13)" stroke-width="1.8" stroke-dasharray="1 3.5"/></svg> Contagem esperada por horário (pontilhada)</dt>
+  <dd>Como a contagem oficial <b>deveria</b> aparecer em cada horário se tudo saísse como o esperado, levando em conta a ordem em que os boletins costumam chegar (a do 1º turno de 2026 ou, no modo 2022, a daquela noite). Compare a linha grossa com a pontilhada, e não com a tracejada: uma contagem acima da pontilhada às 18h é sinal de desvio a favor daquele candidato; acima da tracejada, não necessariamente.</dd>
+</dl>
+<p>As linhas coloridas só começam quando 1% das seções foi apurado. Antes disso, a contagem é feita de poucos boletins e oscila demais para o gráfico. Passe o mouse (ou o dedo) sobre o gráfico para ver os números de cada horário. No celular, os rótulos de cada candidato ficam embaixo do gráfico.</p>
+</div></details>
+
+<details class="sec" id="curva"><summary><span class="n">3</span>A curva da apuração<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<p>O gráfico "Como a contagem deve andar, e como está andando" mostra só a contagem, sem projeção. A linha <b>tracejada</b> é a curva esperada: a votação esperada de cada seção, somada na ordem e no horário em que as seções foram apuradas no 1º turno. A linha <b>grossa</b> é a contagem real da noite. Nos modos ao vivo e Simulação 2026, a <b>pontilhada</b> é a curva do próprio 1º turno, contando só os votos do 13 e do 22.</p>
+<p>O botão do eixo muda a régua horizontal:</p>
+<ul>
+  <li><b>Por horário:</b> mostra <i>quando</i> a contagem deve se aproximar do resultado. Útil para saber se o atraso é normal para aquela hora.</li>
+  <li><b>Por % apurado:</b> mostra <i>quanto</i> já foi contado. Útil para comparar com outras noites: uma noite pode atrasar uma hora e ainda assim seguir a mesma curva.</li>
+</ul>
+<p>Para a versão detalhada dessa curva no 1º turno, com a "virada" explicada estado por estado, veja a <a href="../../apuracao/">curva da apuração</a>.</p>
+</div></details>
+
+<details class="sec" id="distribuicao"><summary><span class="n">4</span>Distribuição das simulações e chance de vitória<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<p>O histograma ao lado da curva mostra o resultado de cada simulação da última atualização. Cada barra conta quantas simulações terminaram naquele intervalo. À esquerda da linha de 50% vence o 13; à direita, o 22. A barra fica na cor de quem vence naquela fatia.</p>
+<p>A chance de vitória é a fração das simulações de cada lado. Ela não mede o tamanho da vantagem: um candidato pode ter 95% de chance com uma vantagem projetada de 1 ponto, se já faltar pouco para contar. Quando a reprodução de 2022 chega ao fim, uma linha vertical marca o resultado real.</p>
+</div></details>
+
+<details class="sec" id="estados"><summary><span class="n">5</span>A tabela de estados<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<p>Fica recolhida: clique em "Ver os 27 estados e o exterior" para abrir. No celular, ela rola dentro da própria caixa, com o nome do estado preso à esquerda. Para cada estado:</p>
+<ul>
+  <li><b>Apurado e andamento:</b> a fração das seções do estado já contada.</li>
+  <li><b>Contagem:</b> a porcentagem de cada candidato entre os válidos já contados no estado.</li>
+  <li><b>Projeção:</b> onde o estado deve terminar.</li>
+  <li><b>Desvio do esperado:</b> a projeção do estado menos o que se esperava dele antes da apuração, em pontos percentuais, e a favor de qual candidato. Um estado que ainda não apurou nada também pode ter desvio, herdado dos outros estados da mesma região e do país (veja <a href="#modelo">como os boletins mudam a projeção</a>).</li>
+</ul>
+</div></details>
+
+<details class="sec" id="fontes"><summary><span class="n">6</span>Os modos: ao vivo, noite real de 2022 e simulação 2026<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<dl class="itens">
+  <dt>Ao vivo (TSE)</dt>
+  <dd>Na noite de 25 de outubro, a partir das 17h, o painel consulta a página de resultados do TSE a cada minuto, direto do seu navegador, e baixa só os municípios que mudaram. O histórico da noite fica guardado no seu navegador, para o gráfico não recomeçar se você recarregar a página. Antes do primeiro boletim, o painel mostra só a projeção inicial, com a faixa.</dd>
+  <dt>Noite real de 2022</dt>
+  <dd>Uma reprodução acelerada do 2º turno de 2022, com os boletins reais na hora em que chegaram. Serve para ver como o modelo se comportaria numa noite de verdade. O modelo só recebe o que se sabia antes daquela eleição (detalhes em <a href="#testes">os testes</a>).</dd>
+  <dt>Simulação 2026</dt>
+  <dd>Uma noite inventada, para ensaiar o painel. Os votos de cada seção saem do 1º turno de 2026 redistribuídos como os eleitores migraram em 2014, 2018 e 2022, mais erros sorteados por região, estado, município e seção, e os boletins chegam na hora em que chegaram no 1º turno. <b>Não é uma previsão</b>: o resultado final dessa noite fica, por construção, no centro do que o modelo espera.</dd>
+</dl>
+<p>Nos dois modos de reprodução, o botão de play, a barra de tempo e o seletor de velocidade controlam o relógio da noite.</p>
+</div></details>
+
+<details class="sec" id="modelo"><summary><span class="n">7</span>Como os boletins mudam a projeção<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<div class="pergunta">
+  <p><b>"Quando a urna 1 é apurada, isso muda o esperado da urna 2?"</b></p>
+  <p><b>Sim, mas no nível de município, não de urna.</b> O modelo nunca vê urnas isoladas: ele vê totais por município, e é o desvio de cada município em relação ao esperado que corrige o resto.</p>
+</div>
+<p>Passo a passo:</p>
+<ol class="passos">
+  <li><b>O esperado de cada município.</b> Antes da eleição, cada município recebe uma votação esperada no 2º turno: os votos de cada candidato do 1º turno, de brancos e nulos e a abstenção, redistribuídos como os eleitores migraram em eleições passadas (veja a <a href="../../segundo-turno/">simulação do 2º turno</a>).</li>
+  <li><b>Os dados chegam por município.</b> A API ao vivo do TSE entrega, para cada município, quantas seções já foram contadas e quantos votos cada candidato tem. Não há dado urna por urna durante a noite.</li>
+  <li><b>O desvio de cada município apurado.</b> Para cada município que já mandou boletins, mede-se quanto a fatia do 22 entre os válidos dos dois foge do esperado. A conta é feita em logit, uma escala que leva em conta que perto de 90% há menos espaço para subir: 2 pontos a mais num município que dá 90% a um candidato pesam mais que 2 pontos num município que dá 50%.</li>
+  <li><b>Separar o desvio em camadas.</b> Esse desvio é explicado como a soma de um efeito do Brasil, um da região, um do estado e um do próprio município. Os efeitos são estimados juntos, com todos os municípios já apurados, por uma <b>regressão bayesiana hierárquica</b>: cada efeito começa em zero (o esperado) e só se move quando os dados pedem. Cada município pesa conforme o tamanho da sua amostra, medida em eleitores das seções já contadas. A regressão é <b>robusta a valores extremos</b>: um município muito fora do padrão conta, mas com influência limitada.</li>
+  <li><b>Os municípios que ainda não apuraram herdam os efeitos</b> do Brasil, da sua região e do seu estado. É assim que um desvio visto em um lugar se espalha para o que falta.</li>
+  <li><b>Um município apurado em parte</b> herda também <b>70% do seu próprio desvio</b>, ponderado pelo tamanho da amostra: com poucas seções contadas, quase nada; com a maior parte contada, perto dos 70%. É por isso que as primeiras seções de aldeias e comunidades pequenas não arrastam a projeção do município inteiro.</li>
+  <li><b>Comparecimento.</b> O número de votos válidos que ainda faltam em cada estado também é corrigido pelo comparecimento visto nas seções já contadas.</li>
+  <li><b>Incerteza e ordem de chegada.</b> Cada projeção sorteia milhares de vezes os efeitos e os desvios de cada município (Monte Carlo) e soma os votos que faltam. Como os primeiros municípios de um estado não são uma amostra ao acaso (capitais antes do interior), o que falta recebe um choque extra, do país e de cada estado, que encolhe à medida que a apuração avança. Das simulações saem a mediana, a faixa de 90% e a chance de vitória.</li>
+</ol>
+<div class="formula">desvio do município = efeito Brasil + efeito região + efeito estado + efeito próprio
+
+tamanho típico, antes de qualquer boletim (em logit; 0,05 ≈ 1,25 ponto perto de 50%):
+  Brasil 0,035   região 0,04   estado 0,05   município 0,07</div>
+
+<h3>Um exemplo: o Paraná chega abaixo do esperado</h3>
+<p>Suponha que os municípios do Paraná que já chegaram deem ao 22 <b>três pontos a menos</b> que o esperado. A projeção dos municípios do Paraná que faltam cai; a dos outros estados do Sul (a mesma região, Santa Catarina e Rio Grande do Sul) cai um pouco; e o resto do país quase não muda. Quanto o resto se move depende de quanto do resto já chegou:</p>
+<div class="tscroll"><table>
+  <thead><tr><th>Situação no momento</th><th class="r">Paraná</th><th class="r">SC e RS</th><th class="r">Outros estados</th></tr></thead>
+  <tbody>
+    <tr><td>Paraná com 30% apurado; o resto do país com 20% apurado, dentro do esperado; SC e RS ainda sem boletins</td><td class="r">−3,0</td><td class="r">−1,1 a −1,3</td><td class="r">≈ 0</td></tr>
+    <tr><td>Igual, mas SC e RS já com 10% apurado, dentro do esperado</td><td class="r">−3,0</td><td class="r">≈ 0</td><td class="r">≈ 0</td></tr>
+    <tr><td>Só o Paraná apurou (30%); nenhum outro estado tem boletins</td><td class="r">−3,0</td><td class="r">−1,4 a −1,6</td><td class="r">−0,6 a −0,7</td></tr>
+  </tbody>
+</table></div>
+<p style="font-size:14px;color:var(--muted)">Mudança na projeção do 22 em cada estado, em pontos percentuais, em relação ao esperado antes da apuração. Contas feitas com o próprio modelo do painel e boletins inventados para o exemplo; o mesmo vale, espelhado, para o 13.</p>
+<p>A lógica: se o resto do país está chegando como o esperado, o modelo conclui que o desvio é do Paraná e o deixa quase todo lá. Se SC e RS ainda não falaram, parte do desvio pode ser da região Sul, e eles herdam um pouco. Se o Paraná é o único com dados, o modelo ainda não tem como saber se o desvio é do estado, da região ou do país inteiro, e divide a correção entre os três. Note que "vizinho", aqui, quer dizer da mesma região: São Paulo e Mato Grosso do Sul fazem fronteira com o Paraná, mas estão em outras regiões.</p>
+</div></details>
+
+<details class="sec" id="testes"><summary><span class="n">8</span>Os testes, e os limites deles<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary><div class="corpo">
+<h3>A noite real de 2022</h3>
+<p>No modo "Noite real de 2022", o modelo só sabe o que se sabia antes daquela eleição: o <b>1º turno de 2022</b> e a <b>migração de votos de 2014 e 2018</b>. Por isso a projeção inicial daquela noite era <b>Lula <span id="t-ini-a">52,0%</span> e Bolsonaro <span id="t-ini-b">48,0%</span></b>, e o resultado real foi <b>Lula <span id="t-fim-a">50,9%</span> e Bolsonaro <span id="t-fim-b">49,1%</span></b>. A diferença de cerca de 1 ponto é o erro do ponto de partida, e é o que os boletins precisam corrigir ao longo da noite.</p>
+<p id="t-resumo">Com 8% apurado, a contagem mostrava Bolsonaro na frente, enquanto a projeção já indicava Lula na frente.</p>
+<h3>Sendo honesto sobre o teste</h3>
+<ul>
+  <li><b>A largura da faixa foi calibrada nessa mesma noite.</b> O choque da ordem de chegada (0,06 para o país e 0,05 para cada estado) e o tamanho típico dos desvios de estado e de município foram medidos em 2022. Então acertar 2022 não prova que a faixa está certa: é como corrigir a prova com o gabarito usado para estudar. Uma faixa calibrada assim tende a ser mais estreita do que deveria em uma noite nova.</li>
+  <li><b>A simulação de 2026 também não é um teste independente.</b> Os votos simulados saem das mesmas premissas do modelo, então ela mostra que o painel funciona, não que o modelo acerta.</li>
+  <li><b>Foi uma noite só.</b> O primeiro teste fora da amostra é a própria noite de 25 de outubro de 2026.</li>
+</ul>
+<p>A <a href="../../metodologia/#aovivo">metodologia</a> tem o gráfico completo do teste de 2022 e os detalhes técnicos.</p>
+</div></details>
+
+<p style="margin-top:36px"><a class="voltar" href="../">← Voltar ao painel ao vivo</a></p>
+</div>
+</main>
+<footer>Eleição em Números · um experimento de estatística, apartidário, feito com dados públicos do TSE. O resultado oficial é sempre o do TSE.</footer>
+<script>
+"use strict";
+// um link para uma seção recolhida (ex.: #testes, vindo do painel) abre a seção antes de rolar até ela
+function abrirAlvo() {
+  const id = decodeURIComponent(location.hash.slice(1));
+  const el = id && document.getElementById(id);
+  if (!el) return;
+  const d = el.closest("details");
+  if (d && !d.open) { d.open = true; requestAnimationFrame(() => el.scrollIntoView()); }
+}
+addEventListener("hashchange", abrirAlvo);
+abrirAlvo();
+// números do teste de 2022 lidos do mesmo arquivo usado pelo painel
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+fetch("../dados/teste_replay_2022.json").then(r => r.json()).then(T => {
+  const ini = T.linhas.find(l => l.k === 0) ?? T.linhas[0];
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set("t-ini-a", pct(1 - ini.mediana)); set("t-ini-b", pct(ini.mediana));
+  set("t-fim-a", pct(1 - T.final)); set("t-fim-b", pct(T.final));
+  const l8 = T.linhas.find(l => l.apurado >= 0.08), ate = T.linhas.filter(l => l.apurado > 0 && l.apurado < 0.95);
+  const dentro = ate.filter(l => l.q05 <= T.final && T.final <= l.q95).length;
+  document.getElementById("t-resumo").textContent = `Com ${pct(l8.apurado, 0)} apurado, a contagem mostrava Lula ${pct(1 - l8.atual)} e Bolsonaro ${pct(l8.atual)}; a projeção atualizada dizia Lula ${pct(1 - l8.mediana)} e Bolsonaro ${pct(l8.mediana)}, com a faixa de 90% indo de ${pct(1 - l8.q95)} a ${pct(1 - l8.q05)} para Lula. O resultado final ficou dentro da faixa de 90% em ${dentro} de ${ate.length} atualizações até 95% apurado.`;
+}).catch(() => {});
+</script>
+</body>
+</html>

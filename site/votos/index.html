@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Votos para Presidente · Eleição em Números</title>
+<meta name="description" content="Mapa da votação para Presidente em 2026, no 1º turno e no 2º turno (ao vivo), por estado e município, e a distribuição das seções comparada com 2022.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Layout: abas → título + seletor de turno → totais nacionais → controles (granularidade, medida, forma, recorte) → mapa + painel do selecionado → tabela → distribuição das seções 2026 × 2022 (só no 1º turno). */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  /* convenção da imprensa: azul para o 22, vermelho para o 13; cinza neutro no meio (escala divergente) */
+  --c22: #2a78d6; --c13: #e34948; --mid: #e9e8e3; --outros: #8a8f88; --ano-ant: #4a504c;
+  --seq-0: #e3edf9; --seq-1: #0d366b;
+  --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 8px 24px rgba(20, 30, 25, 0.08);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px; --gap: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --mid: #3a3d3b; --outros: #8b918a; --ano-ant: #c0c6be;
+    --seq-0: #22374d; --seq-1: #b7d3f6;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --mid: #3a3d3b; --outros: #8b918a; --ano-ant: #c0c6be;
+  --seq-0: #22374d; --seq-1: #b7d3f6;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); text-underline-offset: 2px; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 21px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+.brand svg { width: 30px; height: 30px; flex: none; }
+.brand { display: flex; align-items: center; gap: 10px; }
+
+.lede { padding-block: 28px 4px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "eyebrow turnos" "titulo turnos" "texto turnos"; column-gap: 40px; align-items: end; }
+.lede > .eyebrow { grid-area: eyebrow; }
+.lede > h1 { grid-area: titulo; }
+.lede > .lede-txt { grid-area: texto; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(30px, 4.4vw, 50px); line-height: 1.03; letter-spacing: -0.015em; margin: 4px 0 0; text-wrap: balance; }
+.lede p { margin: 10px 0 0; color: var(--ink-2); max-width: 70ch; }
+/* seletor de turno: o controle principal da página */
+.turnos { grid-area: turnos; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 10px; }
+.turnos button { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; min-width: 0; min-height: 68px; padding: 10px 18px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-2); text-align: left; cursor: pointer; transition: background .15s; }
+.turnos button:hover { background: var(--surface); }
+.turnos button b { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-weight: 750; font-stretch: 85%; font-size: 24px; line-height: 1.05; color: var(--ink); }
+.turnos button span { font-size: 13px; line-height: 1.3; }
+.turnos button[aria-pressed="true"] { background: var(--ink); color: var(--surface); box-shadow: var(--shadow); }
+.turnos button[aria-pressed="true"] b { color: var(--surface); }
+.turnos .ponto { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.turnos button[aria-pressed="true"] .ponto { background: var(--accent-soft); }
+.turnos .ponto.vivo { animation: pulso 1.6s ease-in-out infinite; }
+@keyframes pulso { 50% { opacity: .25; } }
+@media (min-width: 961px) { .turnos button { min-width: 236px; } }
+
+.totais { margin-block: 22px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 40px; }
+.cand { display: grid; grid-template-columns: minmax(0, 210px) minmax(0, 1fr) 64px; gap: 10px; align-items: center; font-size: 13.5px; }
+.cand .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cand .nm small { color: var(--muted); font-family: var(--f-mono); margin-left: 4px; }
+.cand .bar { height: 10px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.cand .bar i { display: block; height: 100%; border-radius: 0 2px 2px 0; }
+.cand .v { text-align: right; font-weight: 600; }
+.cand.grande { font-size: 15px; }
+.cand.grande .bar { height: 14px; }
+
+.controles { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-end; margin-bottom: 14px; }
+.ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ctl > span { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:disabled { opacity: .4; cursor: not-allowed; }
+select { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 10px; min-height: 34px; max-width: 100%; }
+
+section.block { padding-block: 26px; border-top: 1px solid var(--line); }
+.block-head h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 26px; line-height: 1.1; margin: 2px 0 0; text-wrap: balance; }
+.block-head p { margin: 6px 0 14px; color: var(--ink-2); max-width: 74ch; font-size: 14px; }
+.grid-mapa { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--gap); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; }
+#detalhe { scroll-margin-top: 110px; }
+.panel h3 { margin: 0 0 2px; font-size: 16px; }
+.panel .sub { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+#map { position: relative; width: 100%; aspect-ratio: 1 / 1; background: var(--surface-2); border-radius: 4px; overflow: hidden; touch-action: pan-y; }
+#map svg { width: 100%; height: 100%; display: block; cursor: grab; }
+#map .area { stroke: var(--surface); stroke-width: 0.35; vector-effect: non-scaling-stroke; cursor: pointer; }
+#map .area:hover { stroke: var(--ink); stroke-width: 1.2; }
+#map .contorno { fill: none; stroke: var(--surface); stroke-width: 1.2; vector-effect: non-scaling-stroke; pointer-events: none; }
+#map .fundo { fill: var(--surface); stroke: var(--line-strong); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+#map circle { stroke: var(--surface); stroke-width: 0.6; vector-effect: non-scaling-stroke; cursor: pointer; }
+#map .sel { stroke: var(--ink) !important; stroke-width: 2 !important; }
+.map-wrap { position: relative; }
+.map-barra { position: absolute; right: 10px; top: 10px; }
+.map-barra:has(.map-tools:empty), .map-dica { display: none; }
+.map-tools { display: flex; flex-direction: column; gap: 4px; }
+.map-tools button { width: 32px; height: 32px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 17px; line-height: 1; box-shadow: var(--shadow); }
+.escala { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+.escala i { display: block; width: 200px; max-width: 45vw; height: 10px; border-radius: 2px; }
+.det-nome { font-family: var(--f-display); font-stretch: 85%; font-weight: 700; font-size: 22px; line-height: 1.15; margin: 0; }
+.det-meta { font-size: 13px; color: var(--muted); margin: 4px 0 14px; }
+.det-cands { display: flex; flex-direction: column; gap: 7px; }
+.det-cands .cand { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 54px; font-size: 13px; }
+.margem { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.margem b { font-size: 18px; }
+
+.tscroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+th button { all: unset; cursor: pointer; }
+th button[data-dir]::after { content: " " attr(data-dir); color: var(--ink); }
+td.r, th.r { text-align: right; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+td .sm { font-size: 12.5px; color: var(--muted); }
+.mbar { position: relative; height: 10px; width: 160px; background: var(--surface-2); border-radius: 2px; }
+.mbar i { position: absolute; top: 0; bottom: 0; }
+.mbar::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--line-strong); }
+.more { margin-top: 12px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 8px 14px; cursor: pointer; }
+
+.grid-2e { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.gridline { stroke: var(--line); stroke-width: 1; }
+.baseline { stroke: var(--line-strong); stroke-width: 1; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 8px; }
+.sw { width: 12px; height: 3px; display: inline-block; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
+.stat-90 { display: flex; gap: 22px; margin-top: 10px; font-size: 13px; color: var(--ink-2); flex-wrap: wrap; }
+.stat-90 b { font-size: 18px; color: var(--ink); display: block; }
+.nota { font-size: 13.5px; color: var(--ink-2); max-width: 80ch; margin: 14px 0 0; }
+
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; box-shadow: var(--shadow); max-width: min(280px, calc(100vw - 16px)); line-height: 1.45; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.loading { padding: 80px 0; text-align: center; color: var(--muted); }
+/* 2º turno: aviso, situação da consulta e áreas sem seções apuradas */
+.vivo-status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); padding-top: 18px; max-width: 80ch; }
+.vivo-status i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.vivo-status i.ok { background: var(--accent); }
+.vivo-status b { color: var(--ink-2); font-weight: 600; }
+.aviso { grid-column: 1 / -1; background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: var(--r); padding: 14px 16px; font-size: 15px; color: var(--ink); }
+.aviso b { font-weight: 700; }
+.aviso p { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-2); }
+.apurado b { display: block; font-family: var(--f-display); font-weight: 750; font-stretch: 85%; font-size: 34px; line-height: 1; }
+.apurado span { font-size: 13px; color: var(--ink-2); }
+.parcial { font-size: 13px; color: var(--ink-2); margin: 10px 0 0; }
+#map .area.vazio, #map circle.vazio { stroke: var(--line-strong); }
+.escala i.sw-vazio, .sw-vazio { display: inline-block; vertical-align: -1px; width: 14px; height: 10px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 2px; }
+.map-nota { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: var(--ink-2); font-size: 14px; }
+.map-nota div { max-width: 42ch; }
+footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+@media (max-width: 960px) {
+  .grid-mapa, .grid-2e { grid-template-columns: minmax(0, 1fr); }
+  .totais { gap: 12px 28px; }
+  .lede { grid-template-columns: minmax(0, 1fr); grid-template-areas: "eyebrow" "titulo" "turnos" "texto"; }
+  .turnos { margin-top: 16px; max-width: 560px; }
+}
+/* celular e tablet estreito: alvos de toque maiores, cabeçalho que não fica preso, tabela com a 1ª coluna fixa */
+@media (max-width: 700px) {
+  .totais { grid-template-columns: minmax(0, 1fr); }
+  .topbar { position: static; }
+  #detalhe { scroll-margin-top: 12px; }
+  .lede { padding-top: 20px; }
+  .turnos button { min-height: 64px; padding: 10px 12px; }
+  .turnos button b { font-size: 21px; }
+  .turnos button span { font-size: 12.5px; }
+  .controles { gap: 12px 14px; }
+  .ctl.cheio, .ctl.cheio select { width: 100%; }
+  .panel { padding: 12px; }
+  /* no celular os botões do mapa saem de cima do mapa (cobriam o Nordeste) e ficam numa barra logo abaixo */
+  .map-barra { position: static; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .map-dica { display: block; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+  .map-tools { flex-direction: row; gap: 6px; flex: none; }
+  .map-tools button { box-shadow: none; }
+  .escala { font-size: 13px; }
+  .escala > i { flex: 1 1 60px; width: auto; min-width: 60px; max-width: 200px; }
+  #tabela td { white-space: nowrap; }
+  #tabela td:first-child { white-space: normal; }
+  .controles > .ctl:has(#c-gran) { order: 1; }
+  .controles > .ctl:has(#c-forma) { order: 2; }
+  .controles > #ctl-medida { order: 3; }
+  .controles > .ctl.cheio { order: 4; }
+  .cand, .det-cands .cand { grid-template-columns: minmax(0, 1fr) minmax(56px, 90px) 52px; }
+  .block-head h2 { font-size: 23px; }
+  th, td { padding: 8px 8px; font-size: 14px; }
+  #tabela th:first-child, #tabela td:first-child { position: sticky; left: 0; z-index: 1; background: var(--bg); min-width: 118px; max-width: 150px; }
+  #tabela tbody tr:hover td:first-child { background: var(--surface-2); }
+  .mbar { width: 90px; }
+  .chart text { font-size: 12px; }
+  .stat-90 { gap: 14px; }
+}
+/* tela de toque ou estreita (celular e tablet): alvos de ~42 px e letras pequenas um pouco maiores */
+@media (max-width: 960px), (pointer: coarse) {
+  .seg button { min-height: 42px; padding: 8px 14px; font-size: 14px; }
+  select { min-height: 42px; font-size: 15px; }
+  .map-tools button { width: 42px; height: 42px; font-size: 19px; }
+  .more { min-height: 42px; }
+  .ctl > span { font-size: 11.5px; }
+  .cand .nm small { font-size: 12px; }
+  #tabela th button { display: inline-block; padding: 11px 2px; min-width: 34px; }
+  #tabela th.r button { text-align: right; }
+  #tabela th { padding-block: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .turnos .ponto.vivo { animation: none; } .turnos button { transition: none; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="5" y="9" width="11" height="7" rx="1" fill="var(--accent)"/><g fill="currentColor"><circle cx="20.5" cy="10.5" r="1.3"/><circle cx="24.5" cy="10.5" r="1.3"/><circle cx="20.5" cy="14.5" r="1.3"/><circle cx="24.5" cy="14.5" r="1.3"/><circle cx="20.5" cy="18.5" r="1.3"/><circle cx="24.5" cy="18.5" r="1.3"/></g></svg>
+      <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub" id="brand-sub">Eleições 2026 · 1º turno · dados públicos do TSE</div></div>
+    </div>
+  </div>
+  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/" aria-current="page">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav>
+</header>
+
+<main class="wrap">
+  <section class="lede">
+    <div class="eyebrow" id="eyebrow">Presidente · 1º turno · 4 de outubro de 2026</div>
+    <h1 id="titulo">Como o Brasil votou</h1>
+    <div class="turnos" id="c-turno" role="group" aria-label="Turno">
+      <button type="button" data-v="1" aria-pressed="true"><b>1º turno</b><span>4/10 · resultado completo</span></button>
+      <button type="button" data-v="2" aria-pressed="false"><b><i class="ponto" id="t2-ponto"></i>2º turno</b><span id="t2-sub">ao vivo a partir das 17h de 25/10</span></button>
+    </div>
+    <p class="lede-txt">A votação para Presidente em cada estado e município. A escala vai do vermelho (13) ao azul (22), passando pelo cinza quando a disputa é equilibrada. Em área, o mapa exagera municípios grandes e pouco povoados; os círculos mostram o peso real de cada lugar.</p>
+  </section>
+  <div class="vivo-status" id="vivo-status" role="status" hidden></div>
+  <div class="totais" id="totais"></div>
+  <div id="content"><div class="loading">Carregando…</div></div>
+</main>
+<footer><div class="wrap">Dados: boletins de urna do TSE (2026) e votação por seção (2022). Malhas do IBGE.</div></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script>
+"use strict";
+const UFS = { AC: "Acre", AL: "Alagoas", AP: "Amapá", AM: "Amazonas", BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo", GO: "Goiás", MA: "Maranhão", MT: "Mato Grosso", MS: "Mato Grosso do Sul", MG: "Minas Gerais", PA: "Pará", PB: "Paraíba", PR: "Paraná", PE: "Pernambuco", PI: "Piauí", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte", RS: "Rio Grande do Sul", RO: "Rondônia", RR: "Roraima", SC: "Santa Catarina", SP: "São Paulo", SE: "Sergipe", TO: "Tocantins" };
+const fmt = new Intl.NumberFormat("pt-BR");
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const pp = x => (x > 0 ? "+" : "") + (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " p.p.";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const sum = a => a.reduce((x, y) => x + (y || 0), 0);
+const getJSON = url => fetch(url).then(r => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); });
+
+const state = { turno: "1", gran: "uf", medida: "margem", forma: "area", uf: "", sel: null, sort: { key: "aptos", dir: -1 }, limite: 50, histUF: "" };
+let B, MUNS, C, I13, I22, VALIDOS, MALHA_MUN, MALHA_UF, HIST = null;
+/* C, I13, I22, VALIDOS e MUNS apontam para o turno ativo; T1 guarda os do 1º turno, MUNS2 os municípios do 2º */
+let T1 = null, MUNS2 = null;
+
+/* ---------- 2º turno: fontes ----------
+   (a) snapshot do coletor do projeto (/vivo/6258.json no ar, via Pages Function; ../ao-vivo/dados/vivo_6258.json localmente), se tiver menos de 10 minutos;
+   (b) senão, a API do TSE direto do navegador: os 27 arquivos de UF (e o exterior) e, na granularidade
+       município, só os municípios da UF escolhida, usando o índice -ab para baixar só o que mudou.
+   ?eleicao=6257 lê o 1º turno (já apurado) pelo mesmo caminho, só com o 13 e o 22, para testar. */
+const QS = new URLSearchParams(location.search);
+const ELE = /^\d{4}$/.test(QS.get("eleicao") ?? "") ? QS.get("eleicao") : "6258";
+const TESTE = ELE !== "6258";
+const TSE = `https://resultados.tse.jus.br/oficial/ele2026/${ELE}/dados`, E6 = `e00${ELE}`;
+const INTERVALO = 60000;
+/* no 2º turno só a margem faz sentido (o comparecimento só sai no fim); com uma medida só, o controle some */
+const MEDIDAS2 = ["margem"];
+const C2 = [{ n: "13", nome: "Lula" }, { n: "22", nome: "Flávio Bolsonaro" }];
+const num = s => +String(s ?? "0").replace(/\./g, "").replace(",", ".") || 0;
+const getFresh = url => fetch(url, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`${r.status} em ${url.split("/").pop()}`); return r.json(); });
+const marca = x => `${x.s?.st}|${x.dt}|${x.ht}`;
+const INICIO2 = Date.parse("2026-10-25T17:00:00-03:00");
+const T2 = { fonte: null, ufs: {}, ext: null, br: null, chave: new Map(), munUF: {}, vistoUF: {}, vistoMun: {}, horaTSE: "", consulta: null, erro: null, timer: null, ocupado: false, denovo: false, prior: null };
+
+const MEDIDAS = {
+  margem: { rot: "Margem 22 − 13", f: u => (u.v[I22] - u.v[I13]) / u.validos, tipo: "div" },
+  comp: { rot: "Comparecimento", f: u => u.comp / u.aptos, tipo: "seqn" },
+};
+
+function corrigirOrientacao(fc) {
+  fc.features.forEach(f => {
+    if (d3.geoArea(f) <= 2 * Math.PI) return;
+    const g = f.geometry;
+    if (g.type === "Polygon") g.coordinates.forEach(r => r.reverse());
+    else if (g.type === "MultiPolygon") g.coordinates.forEach(p => p.forEach(r => r.reverse()));
+  });
+  return fc;
+}
+
+async function iniciar() {
+  [B, MALHA_UF] = await Promise.all([getJSON("../dados/votos.json"), getJSON("../dados/malha_br.json").then(corrigirOrientacao)]);
+  HIST = await getJSON("../dados/votos_hist.json").catch(() => null);
+  C = B.candidatos;
+  I13 = C.findIndex(c => c.n === "13"); I22 = C.findIndex(c => c.n === "22");
+  VALIDOS = C.map((c, i) => ["95", "96"].includes(c.n) ? null : i).filter(i => i != null);
+  const M = B.municipios, campos = Object.keys(M);
+  MUNS = M.cod.map((_, i) => Object.fromEntries(campos.map(k => [k, M[k][i]])));
+  MUNS.forEach(m => { m.v = C.map((_, i) => m.pres[i] || 0); m.validos = sum(VALIDOS.map(i => m.v[i])); m.id = m.ibge; m.rotulo = `${m.nome} · ${m.uf}`; });
+  T1 = { C, I13, I22, VALIDOS, MUNS };
+  prepararTurno2();
+  if (QS.get("turno") === "2" || TESTE) state.turno = "2";
+  /* granularidade: só estado e município; valores antigos (como ?gran=regiao) caem para estado */
+  const gq = QS.get("gran");
+  state.gran = ["mun", "municipio"].includes(gq) ? "mun" : "uf";
+  const ufq = (QS.get("uf") || "").toUpperCase();
+  if (UFS[ufq]) { state.uf = ufq; if (!gq) state.gran = "mun"; }
+  montar();
+  rotuloTurno2();
+  usarTurno(state.turno);
+}
+
+function agrega(lista, id, rotulo, nv = C.length, val = VALIDOS) {
+  const u = { id, rotulo, aptos: 0, comp: 0, st: 0, ts: 0, v: Array(nv).fill(0), n: lista.length };
+  lista.forEach(m => { u.aptos += m.aptos; u.comp += m.comp; u.st += m.st || 0; u.ts += m.ts || 0; m.v.forEach((x, i) => u.v[i] += x); });
+  u.validos = sum(val.map(i => u.v[i]));
+  return u;
+}
+const ag2 = (lista, id, rotulo) => agrega(lista, id, rotulo, 2, [0, 1]);
+function unidades() {
+  if (state.turno === "2") return unidades2();
+  const base = state.uf ? MUNS.filter(m => m.uf === state.uf) : MUNS;
+  if (state.gran === "mun") return base;
+  return [...d3.group(base, m => m.uf)].map(([u, l]) => Object.assign(agrega(l, u, UFS[u]), { uf: u }));
+}
+
+function linhaCand(c, v, tot, cor, grande = false) {
+  return `<div class="cand${grande ? " grande" : ""}"><span class="nm">${esc(c.nome)}<small>${c.n}</small></span><span class="bar"><i style="width:${tot ? v / tot * 100 : 0}%;background:var(${cor})"></i></span><span class="v num">${pct(v / tot)}</span></div>`;
+}
+const corCand = i => i === I22 ? "--c22" : i === I13 ? "--c13" : "--outros";
+function totais() {
+  if (state.turno === "2") return totais2();
+  const u = agrega(MUNS, "BR", "Brasil");
+  const ordem = VALIDOS.slice().sort((a, b) => u.v[b] - u.v[a]);
+  const meio = Math.ceil(ordem.length / 2);
+  const col = lista => lista.map(i => linhaCand(C[i], u.v[i], u.validos, corCand(i), i === I13 || i === I22)).join("");
+  document.getElementById("totais").innerHTML = `<div style="display:flex;flex-direction:column;gap:7px">${col(ordem.slice(0, meio))}</div><div style="display:flex;flex-direction:column;gap:7px">${col(ordem.slice(meio))}<p class="sm" style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">Percentuais dos votos válidos (sem brancos e nulos). ${fmt.format(u.validos)} votos válidos.</p></div>`;
+}
+
+function montar() {
+  const ufOpts = Object.entries(UFS).sort((a, b) => a[1].localeCompare(b[1], "pt-BR")).map(([k, n]) => `<option value="${k}">${n}</option>`).join("");
+  document.getElementById("content").innerHTML = `
+    <div class="controles">
+      <div class="ctl"><span>Granularidade</span><div class="seg" id="c-gran"><button type="button" data-v="uf">Estado</button><button type="button" data-v="mun">Município</button></div></div>
+      <div class="ctl" id="ctl-medida"><span>Medida</span><div class="seg" id="c-medida">${Object.entries(MEDIDAS).map(([k, m]) => `<button type="button" data-v="${k}">${m.rot}</button>`).join("")}</div></div>
+      <div class="ctl"><span>Forma</span><div class="seg" id="c-forma"><button type="button" data-v="area">Área</button><button type="button" data-v="circ">Círculos</button></div></div>
+      <div class="ctl cheio"><span>Recorte</span><select id="c-uf"><option value="">Brasil inteiro</option>${ufOpts}</select></div>
+    </div>
+    <div class="grid-mapa">
+      <div class="panel"><div class="map-wrap"><div id="map"></div>
+        <div class="map-barra"><span class="map-dica">Toque num lugar para ver o detalhe. Para aproximar, use dois dedos ou os botões.</span><div class="map-tools" id="map-tools"></div></div></div>
+        <div class="escala" id="escala"></div></div>
+      <div class="panel" id="detalhe"></div>
+    </div>
+    <section class="block">
+      <div class="block-head"><h2 id="tb-titulo"></h2><p>Ordene pelas colunas. Clique numa linha para ver o detalhe.</p></div>
+      <div class="tscroll"><table id="tabela"><thead><tr>
+        <th><button type="button" data-k="rotulo">Lugar</button></th><th class="r"><button type="button" data-k="aptos">Eleitores</button></th>
+        <th class="r"><button type="button" data-k="comp" id="th-comp">Comparecimento</button></th><th class="r"><button type="button" data-k="s13">13</button></th>
+        <th class="r"><button type="button" data-k="s22">22</button></th><th><button type="button" data-k="margem">Margem 22 − 13</button></th>
+      </tr></thead><tbody></tbody></table></div>
+      <button type="button" class="more" id="mais" hidden>Mostrar mais</button>
+    </section>
+    <section class="block" id="sec-hist">
+      <div class="block-head"><h2>Como as seções votaram: 2026 comparado com 2022</h2>
+        <p>Quantas seções deram cada fatia de votos ao candidato. Uma curva com cauda longa à direita quer dizer muitas seções com votação quase unânime. Para comparar, a linha fina é a mesma conta em 2022, quando o 13 também era Lula e o 22 era Jair Bolsonaro.</p></div>
+      <div class="controles"><div class="ctl cheio"><span>Recorte</span><select id="h-uf"><option value="">Brasil inteiro</option>${ufOpts}</select></div></div>
+      <div class="grid-2e" id="hist"></div>
+      <p class="nota" id="hist-nota"></p>
+    </section>`;
+  const seg = (id, key, cb) => {
+    const el = document.getElementById(id);
+    const marcar = () => el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state[key]));
+    el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { state[key] = b.dataset.v; marcar(); cb(); }));
+    marcar();
+  };
+  seg("c-gran", "gran", () => { state.sel = null; state.limite = 50; gravarURL(); pedirMunicipios(); desenhar(); });
+  seg("c-medida", "medida", () => desenhar());
+  seg("c-forma", "forma", () => desenhar());
+  seg("c-turno", "turno", () => usarTurno(state.turno));
+  document.getElementById("c-uf").value = state.uf;
+  document.getElementById("c-uf").addEventListener("change", e => { state.uf = e.target.value; if (state.uf && state.gran !== "mun") { state.gran = "mun"; document.querySelectorAll("#c-gran button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === "mun")); } state.sel = null; state.limite = 50; gravarURL(); pedirMunicipios(); desenhar(); });
+  document.getElementById("h-uf").addEventListener("change", e => { state.histUF = e.target.value; desenharHist(); });
+  document.querySelectorAll("#tabela th button").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.k; state.sort = { key: k, dir: state.sort.key === k ? -state.sort.dir : (k === "rotulo" ? 1 : -1) }; desenharTabela(unidades());
+  }));
+  document.getElementById("mais").addEventListener("click", () => { state.limite += 100; desenharTabela(unidades()); });
+  document.querySelector("#tabela tbody").addEventListener("click", e => { const tr = e.target.closest("tr[data-id]"); if (!tr) return; selecionar(tr.dataset.id); document.getElementById("detalhe").scrollIntoView({ block: "nearest", behavior: "smooth" }); });
+  desenharHist();
+}
+
+function escalaDe(med, lista) {
+  const vals = lista.map(med.f).filter(isFinite).sort(d3.ascending);
+  if (med.tipo === "div") {
+    const m = Math.max(0.1, d3.quantile(vals.map(Math.abs).sort(d3.ascending), 0.95) || 0.5);
+    const s = d3.scaleDiverging(d3.piecewise(d3.interpolateLab, [css("--c13"), css("--mid"), css("--c22")])).domain([-m, 0, m]).clamp(true);
+    return { s, lo: -m, hi: m, fmtv: v => (v > 0 ? "22 +" : v < 0 ? "13 +" : "") + pct(Math.abs(v), 0) };
+  }
+  const lo = d3.quantile(vals, 0.02) ?? 0, hi = Math.max(lo + 0.01, d3.quantile(vals, 0.98) ?? 1);
+  return { s: d3.scaleSequential(d3.interpolateLab(css("--seq-0"), css("--seq-1"))).domain([lo, hi]).clamp(true), lo, hi, fmtv: v => pct(v, 0) };
+}
+
+let ZOOM = null;
+function desenhar(manter = false) {
+  const lista = unidades(), med = MEDIDAS[state.medida], esc_ = escalaDe(med, lista);
+  /* no 2º turno, área sem seções apuradas fica neutra (não é empate) */
+  const dois = state.turno === "2", vazio = u => dois && !(u && u.validos > 0), NEUTRO = css("--surface");
+  const cor = u => vazio(u) ? NEUTRO : esc_.s(med.f(u));
+  const peso = u => dois ? u.aptos : u.validos;
+  if (!manter) ZOOM = null;
+  document.querySelectorAll("#c-forma button").forEach(b => b.disabled = state.gran !== "mun" && b.dataset.v === "circ");
+  const forma = state.gran === "mun" ? state.forma : "area";
+  const el = document.getElementById("map");
+  el.innerHTML = "";
+  const ferr = document.getElementById("map-tools");
+  ferr.innerHTML = `<button type="button" data-z="in" aria-label="Aproximar" title="Aproximar">+</button><button type="button" data-z="out" aria-label="Afastar" title="Afastar">−</button><button type="button" data-z="reset" aria-label="Ver o mapa inteiro" title="Ver o mapa inteiro">⤢</button>`;
+  const W = 800, H = 800;
+  const svg = d3.select(el).insert("svg", ":first-child").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", `Mapa: ${med.rot}`);
+  const g = svg.append("g");
+  const ufFeat = MALHA_UF.features.filter(f => !state.uf || String(f.properties.codarea) === String(B.ufs[state.uf].ibge));
+  const proj = d3.geoMercator().fitExtent([[10, 10], [W - 10, H - 10]], { type: "FeatureCollection", features: ufFeat });
+  const path = d3.geoPath(proj);
+  const tip = u => dois ? tip2(u, med, esc_) : `<b>${esc(u.rotulo)}</b><div class="r"><span>${med.rot}</span><span class="num">${esc_.fmtv(med.f(u))}</span></div><div class="r"><span style="color:var(--c13)">13</span><span class="num">${pct(u.v[I13] / u.validos)}</span></div><div class="r"><span style="color:var(--c22)">22</span><span class="num">${pct(u.v[I22] / u.validos)}</span></div><div class="r"><span>Eleitores</span><span class="num">${fmt.format(u.aptos)}</span></div>`;
+  const byId = Object.fromEntries(lista.map(u => [String(u.id), u]));
+  if (state.gran === "mun") {
+    const feats = MALHA_MUN?.features.filter(f => byId[f.properties.codarea]) ?? [];
+    if (forma === "area") {
+      g.selectAll("path").data(feats).join("path").attr("class", "area").attr("d", path)
+        .style("fill", f => cor(byId[f.properties.codarea])).classed("vazio", f => vazio(byId[f.properties.codarea]))
+        .on("pointermove", (e, f) => dica(e, tip(byId[f.properties.codarea]))).on("pointerleave", esconderTip)
+        .on("click", (e, f) => tocar(f.properties.codarea));
+    } else {
+      g.selectAll("path.fundo").data(ufFeat).join("path").attr("class", "fundo").attr("d", path);
+      const pos = Object.fromEntries(feats.map(f => [f.properties.codarea, path.centroid(f)]));
+      const r = d3.scaleSqrt().domain([0, d3.max(lista, peso) || 1]).range([0, state.uf ? 26 : 22]);
+      g.selectAll("circle").data(lista.filter(u => pos[u.id] && isFinite(pos[u.id][0])).sort((a, b) => peso(b) - peso(a))).join("circle")
+        .attr("cx", u => pos[u.id][0]).attr("cy", u => pos[u.id][1]).attr("r", u => r(peso(u))).style("fill", cor).classed("vazio", vazio)
+        .on("pointermove", (e, u) => dica(e, tip(u))).on("pointerleave", esconderTip).on("click", (e, u) => tocar(u.id));
+    }
+    g.selectAll("path.contorno").data(ufFeat).join("path").attr("class", "contorno").attr("d", path);
+  } else {
+    const ibge2uf = Object.fromEntries(Object.entries(B.ufs).map(([u, x]) => [String(x.ibge), u]));
+    const unidadeDe = f => byId[ibge2uf[f.properties.codarea]];
+    g.selectAll("path").data(ufFeat).join("path").attr("class", "area").attr("d", path)
+      .style("fill", f => { const u = unidadeDe(f); return u ? cor(u) : css("--surface-2"); }).classed("vazio", f => { const u = unidadeDe(f); return !!u && vazio(u); })
+      .on("pointermove", (e, f) => { const u = unidadeDe(f); if (u) dica(e, tip(u)); }).on("pointerleave", esconderTip)
+      .on("click", (e, f) => { const u = unidadeDe(f); if (u) tocar(u.id); });
+  }
+  /* No toque: sem zoom, um dedo rola a página (o mapa não prende a rolagem) e o toque abre o detalhe; o movimento de pinça
+     ou os botões + e − aproximam. Com o mapa aproximado, um dedo arrasta o mapa e a pinça continua valendo. */
+  const kAtual = () => ZOOM?.k ?? 1;
+  const toqueMapa = () => svg.style("touch-action", kAtual() > 1.01 ? "none" : "pan-y");
+  const zoom = d3.zoom().scaleExtent([1, 40]).translateExtent([[0, 0], [W, H]])
+    .filter(e => (!e.ctrlKey || e.type === "wheel") && !e.button && !(e.type === "touchstart" && kAtual() <= 1.01))
+    .on("zoom", e => { g.attr("transform", e.transform); ZOOM = e.transform; toqueMapa(); esconderTip(); });
+  svg.call(zoom);
+  toqueMapa();
+  let pinca = null;
+  const dedos = e => [...e.touches].slice(0, 2).map(t => d3.pointer(t, svg.node()));
+  svg.on("touchstart.pinca", e => {
+    if (e.touches.length !== 2 || kAtual() > 1.01) return;
+    const [a, b] = dedos(e);
+    pinca = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, k: kAtual() };
+  }, { passive: true }).on("touchmove.pinca", e => {
+    if (!pinca || e.touches.length !== 2) return;
+    if (e.cancelable) e.preventDefault();
+    const [a, b] = dedos(e);
+    zoom.scaleTo(svg, Math.min(40, Math.max(1, pinca.k * Math.hypot(a[0] - b[0], a[1] - b[1]) / pinca.d)), [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]);
+  }, { passive: false }).on("touchend.pinca touchcancel.pinca", e => { if (e.touches.length < 2) pinca = null; });
+  if (manter) { // atualização automática do 2º turno: mantém o zoom e o lugar selecionado
+    if (ZOOM) svg.call(zoom.transform, ZOOM);
+    if (state.sel) g.selectAll(".area, circle").classed("sel", d => String(d?.properties?.codarea ?? d?.id) === state.sel);
+  }
+  ferr.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.z === "in") svg.transition().duration(250).call(zoom.scaleBy, 1.8);
+    else if (b.dataset.z === "out") svg.transition().duration(250).call(zoom.scaleBy, 1 / 1.8);
+    else svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+  }));
+  const stops = d3.range(0, 1.0001, 0.1).map(t => `${esc_.s(esc_.lo + t * (esc_.hi - esc_.lo))} ${t * 100}%`).join(",");
+  document.getElementById("escala").innerHTML = `<span>${esc(med.rot)}</span><span class="num">${esc_.fmtv(esc_.lo)}</span><i style="background:linear-gradient(90deg,${stops})"></i><span class="num">${esc_.fmtv(esc_.hi)}</span>${dois ? `<span style="margin-left:10px"><i class="sw-vazio"></i> sem seções apuradas</span>` : ""}`;
+  desenharDetalhe(lista);
+  desenharTabela(lista);
+}
+
+function desenharDetalhe(lista) {
+  if (state.turno === "2") return detalhe2(lista);
+  const u = (state.sel && lista.find(x => String(x.id) === String(state.sel))) || agrega(state.uf ? MUNS.filter(m => m.uf === state.uf) : MUNS, "", state.uf ? UFS[state.uf] : "Brasil");
+  const ordem = VALIDOS.slice().sort((a, b) => u.v[b] - u.v[a]).slice(0, 6);
+  const margem = (u.v[I22] - u.v[I13]) / u.validos;
+  const ehMun = !!u.cod;
+  document.getElementById("detalhe").innerHTML = `
+    <div class="eyebrow">${ehMun ? "Município" : state.sel ? "Estado" : "Total do recorte"}</div>
+    <h3 class="det-nome">${esc(u.rotulo)}</h3>
+    <div class="det-meta">${fmt.format(u.aptos)} eleitores · comparecimento ${pct(u.comp / u.aptos)} · ${fmt.format(u.validos)} votos válidos</div>
+    <div class="det-cands">${ordem.map(i => linhaCand(C[i], u.v[i], u.validos, corCand(i))).join("")}</div>
+    <div class="margem">Margem: <b class="num" style="color:var(${margem >= 0 ? "--c22" : "--c13"})">${margem >= 0 ? "22" : "13"} à frente por ${pct(Math.abs(margem))}</b>
+      <div style="color:var(--muted);font-size:13px">${fmt.format(Math.abs(u.v[I22] - u.v[I13]))} votos de diferença</div></div>
+    `;
+}
+
+function desenharTabela(lista) {
+  const dois = state.turno === "2", apurado = u => u.ts ? u.st / u.ts : 0;
+  const med = { margem: MEDIDAS.margem.f, s13: u => u.v[I13] / u.validos, s22: u => u.v[I22] / u.validos, comp: dois ? apurado : MEDIDAS.comp.f, aptos: u => u.aptos, rotulo: u => u.rotulo }[state.sort.key];
+  document.getElementById("th-comp").textContent = dois ? "Apurado" : "Comparecimento";
+  /* lugares ainda sem votos apurados (2º turno) ficam no fim, em qualquer ordem */
+  const L = lista.slice().sort((a, b) => {
+    const A = med(a), Bv = med(b);
+    if (typeof A === "string") return A.localeCompare(Bv, "pt-BR") * state.sort.dir;
+    if (isFinite(A) !== isFinite(Bv)) return isFinite(A) ? -1 : 1;
+    return isFinite(A) ? (A - Bv) * state.sort.dir : 0;
+  });
+  document.querySelectorAll("#tabela th button").forEach(b => { if (b.dataset.k === state.sort.key) b.dataset.dir = state.sort.dir > 0 ? "↑" : "↓"; else delete b.dataset.dir; });
+  document.getElementById("tb-titulo").textContent = state.gran === "mun" ? `Municípios${state.uf ? " · " + UFS[state.uf] : ""} · ${fmt.format(L.length)}` : state.uf ? UFS[state.uf] : `Estados · ${fmt.format(L.length)}`;
+  document.querySelector("#tabela tbody").innerHTML = L.slice(0, state.limite).map(u => {
+    const m = MEDIDAS.margem.f(u), w = Math.min(50, Math.abs(m) * 50);
+    const barra = !isFinite(m) ? "" : `<i style="${m >= 0 ? `left:50%;width:${w}%;background:var(--c22)` : `right:50%;width:${w}%;background:var(--c13)`}"></i>`;
+    return `<tr data-id="${u.id}"><td>${esc(u.cod ? u.nome : u.rotulo)}${u.cod ? `<div class="sm">${u.uf}</div>` : ""}</td><td class="r num">${fmt.format(u.aptos)}</td><td class="r num">${dois ? pct(apurado(u)) : pct(u.comp / u.aptos)}</td>
+      <td class="r num">${pct(u.v[I13] / u.validos)}</td><td class="r num">${pct(u.v[I22] / u.validos)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="mbar">${barra}</div><span class="num sm">${!isFinite(m) ? "—" : `${m >= 0 ? "22" : "13"} +${pct(Math.abs(m))}`}</span></div></td></tr>`;
+  }).join("");
+  document.getElementById("mais").hidden = L.length <= state.limite;
+}
+
+/* toque/clique no mapa: no celular o painel de detalhe fica abaixo do mapa, então rola só o necessário para ele aparecer */
+const empilhado = matchMedia("(max-width: 960px)");
+function tocar(id) {
+  selecionar(id);
+  if (empilhado.matches) document.getElementById("detalhe").scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+function selecionar(id) {
+  state.sel = String(id);
+  const lista = unidades();
+  if (state.gran === "uf" && !state.uf) { /* clique num estado: mostra o detalhe; duplo nível pela tabela/recorte */ }
+  desenharDetalhe(lista);
+  d3.selectAll("#map .area, #map circle").classed("sel", function (d) { const k = d?.properties?.codarea ?? d?.id; return String(k) === state.sel; });
+}
+
+/* ---------- distribuição das seções ---------- */
+function desenharHist() {
+  const el = document.getElementById("hist"), nota = document.getElementById("hist-nota");
+  if (!HIST) { el.innerHTML = `<p class="nota">A comparação com 2022 aparece quando o arquivo <code>dados/votos_hist.json</code> for gerado.</p>`; nota.textContent = ""; return; }
+  const chave = state.histUF || "BR";
+  const caixa = n => {
+    const h26 = HIST.h2026[chave]?.[n], h22 = HIST.h2022[chave]?.[n];
+    if (!h26) return `<div class="panel"><p class="nota">Sem dados.</p></div>`;
+    const t26 = sum(h26), t22 = sum(h22 || []);
+    const f26 = h26.map(v => v / t26), f22 = (h22 || []).map(v => v / t22);
+    const acima = (h, t) => t ? sum(h.slice(45)) / t : null;
+    const id = `hc-${n}`;
+    setTimeout(() => linhasHist(document.getElementById(id), f26, f22, n === "13" ? "--c13" : "--c22"), 0);
+    return `<div class="panel"><h3>${n === "13" ? "13 · Lula (2026 e 2022)" : "22 · Flávio Bolsonaro (2026) e Jair Bolsonaro (2022)"}</h3>
+      <div class="legend"><span><i class="sw" style="background:var(${n === "13" ? "--c13" : "--c22"});height:3px"></i>2026</span><span><i class="sw" style="background:var(--ano-ant);height:1.5px"></i>2022</span></div>
+      <div class="chart" id="${id}"></div>
+      <div class="stat-90"><div><b class="num">${pct(acima(h26, t26), 2)}</b>das seções com 90% ou mais em 2026</div><div><b class="num">${pct(acima(h22 || [], t22), 2)}</b>em 2022 (${fmt.format(sum((h22 || []).slice(45)))} seções)</div><div><b class="num">${fmt.format(sum(h26.slice(45)))}</b>seções em 2026</div></div></div>`;
+  };
+  el.innerHTML = caixa("13") + caixa("22");
+  nota.textContent = "As seções com votação quase unânime se concentram em comunidades pequenas e homogêneas, no interior do Nordeste e do Norte. Se o padrão de 2026 repete o de 2022 nos mesmos lugares, a explicação mais provável é a geografia do voto, não a urna.";
+}
+function linhasHist(el, a, b, cor) {
+  const W = Math.max(300, el.clientWidth || 500), H = 230, ml = 44, mr = 8, mt = 8, mb = 34, iw = W - ml - mr, ih = H - mt - mb;
+  const n = a.length, x = d3.scaleLinear().domain([0, 1]).range([0, iw]);
+  const y = d3.scaleLinear().domain([0, d3.max([...a, ...b]) || 0.01]).nice(4).range([ih, 0]);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  y.ticks(4).forEach(t => { g.append("line").attr("class", t ? "gridline" : "baseline").attr("x1", 0).attr("x2", iw).attr("y1", y(t)).attr("y2", y(t)); g.append("text").attr("x", -8).attr("y", y(t)).attr("dy", "0.32em").attr("text-anchor", "end").text(pct(t, 0)); });
+  [0, .25, .5, .75, 1].forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 16).attr("text-anchor", "middle").text(pct(t, 0)));
+  g.append("text").attr("x", iw / 2).attr("y", ih + 30).attr("text-anchor", "middle").text("fatia dos votos válidos na seção");
+  g.append("rect").attr("x", x(0.9)).attr("width", x(1) - x(0.9)).attr("y", 0).attr("height", ih).attr("fill", css("--surface-2"));
+  const line = d3.line().x((_, i) => x((i + 0.5) / n)).y(v => y(v)).curve(d3.curveMonotoneX);
+  if (b.length) g.append("path").attr("d", line(b)).attr("fill", "none").attr("stroke", css("--ano-ant")).attr("stroke-width", 1.5);
+  g.append("path").attr("d", line(a)).attr("fill", "none").attr("stroke", css(cor)).attr("stroke-width", 2.2);
+  g.append("rect").attr("width", iw).attr("height", ih).attr("fill", "transparent").style("touch-action", "pan-y").on("pointermove pointerdown", e => {
+    const i = Math.max(0, Math.min(n - 1, Math.floor(x.invert(d3.pointer(e)[0]) * n)));
+    mostrarTip(e, `<b>${pct(i / n, 0)}–${pct((i + 1) / n, 0)} dos votos</b><div class="r"><span>2026</span><span class="num">${pct(a[i])} das seções</span></div>${b.length ? `<div class="r"><span>2022</span><span class="num">${pct(b[i])} das seções</span></div>` : ""}`);
+  }).on("pointerleave pointercancel", esconderTip);
+  el.replaceChildren(svg.node());
+}
+
+const TIP = document.getElementById("tip");
+function mostrarTip(e, html) {
+  TIP.innerHTML = html; TIP.hidden = false;
+  const w = TIP.offsetWidth, h = TIP.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  TIP.style.left = Math.max(8, x) + "px"; TIP.style.top = Math.max(8, y) + "px";
+}
+function esconderTip() { TIP.hidden = true; }
+/* dica só com mouse: no toque ela ficaria presa na tela; o painel de detalhe faz esse papel */
+function dica(e, html) { if (e.pointerType === "mouse") mostrarTip(e, html); }
+addEventListener("scroll", esconderTip, { passive: true });
+/* na barra de páginas (que rola de lado no celular), deixa a página atual à vista */
+const abaAtual = () => { const nav = document.querySelector(".abas"), at = nav?.querySelector("[aria-current]"); if (nav && at && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = at.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft - (nav.clientWidth - at.offsetWidth) / 2; };
+abaAtual(); document.fonts?.ready.then(abaAtual); document.fonts?.addEventListener("loadingdone", abaAtual); addEventListener("load", abaAtual);
+{ let w0 = innerWidth; addEventListener("resize", () => { if (innerWidth !== w0) { w0 = innerWidth; abaAtual(); } }); }
+
+/* a malha de municípios (2,9 MB) só é baixada quando alguém escolhe a granularidade município */
+const _desenhar = desenhar;
+let MALHA_MUN_P = null;
+desenhar = async function (manter = false) {
+  if (state.turno === "2" && state.gran === "mun" && T2.fonte !== "coletor") {
+    if (!state.uf) return semMunicipios();
+    if (!T2.munUF[state.uf]) return aguardarMunicipios();
+  }
+  if (state.gran === "mun" && !MALHA_MUN) {
+    document.getElementById("map").innerHTML = '<div class="loading">Carregando municípios…</div>';
+    document.getElementById("map-tools").innerHTML = "";
+    MALHA_MUN_P ??= getJSON("../dados/malha_br_mun.json").then(corrigirOrientacao);
+    MALHA_MUN = await MALHA_MUN_P;
+  }
+  _desenhar(manter);
+};
+
+/* ---------- 2º turno ---------- */
+function prepararTurno2() {
+  MUNS2 = T1.MUNS.map(m => ({ cod: m.cod, uf: m.uf, nome: m.nome, ibge: m.ibge, id: m.ibge, rotulo: m.rotulo, lat: m.lat, lon: m.lon, aptos: m.aptos, ts: m.secoes || 0, st: 0, comp: 0, v: [0, 0], validos: 0 }));
+  MUNS2.forEach(m => T2.chave.set(m.uf + m.cod, m));
+  Object.keys(UFS).forEach(uf => T2.ufs[uf] = ufDeMunicipios(uf));
+  T2.ext = { id: "ZZ", rotulo: "Exterior", aptos: 0, ts: 0, st: 0, comp: 0, v: [0, 0], validos: 0 };
+  totalBR();
+}
+const ufDeMunicipios = uf => Object.assign(ag2(MUNS2.filter(m => m.uf === uf), uf, UFS[uf]), { uf });
+const totalBR = () => { T2.br = ag2([...Object.values(T2.ufs), T2.ext], "BR", "Brasil e exterior"); };
+function aplicar(alvo, x) { Object.assign(alvo, x); alvo.validos = alvo.v[0] + alvo.v[1]; }
+function lerU(d) { // arquivo de resultado (-u) de UF, município ou exterior
+  const cands = d.carg?.[0]?.agr?.flatMap(a => a.par.flatMap(p => p.cand)) ?? [];
+  const v = n => num(cands.find(c => c.n === n)?.vap);
+  return { v: [v("13"), v("22")], st: num(d.s?.st), ts: num(d.s?.ts), aptos: num(d.e?.te) };
+}
+
+/* turno, granularidade e recorte ficam na URL, para recarregar ou compartilhar o mesmo mapa */
+function gravarURL() {
+  const q = new URLSearchParams(location.search);
+  if (state.turno === "2") q.set("turno", "2"); else q.delete("turno");
+  const gran = state.uf ? (state.gran === "uf" ? "uf" : null) : (state.gran === "mun" ? "mun" : null);
+  if (gran) q.set("gran", gran); else q.delete("gran");
+  if (state.uf) q.set("uf", state.uf); else q.delete("uf");
+  history.replaceState(null, "", q.toString() ? `?${q}` : location.pathname);
+}
+
+/* legenda do botão do 2º turno: antes das 17h de 25/10, durante a apuração e depois do fim */
+function rotuloTurno2() {
+  const u = T2.br, fim = !TESTE && T2.fonte && u.ts > 0 && u.st >= u.ts, vivo = Date.now() >= INICIO2 && !fim;
+  document.getElementById("t2-sub").textContent = fim ? "25/10 · apuração concluída" : vivo ? "ao vivo · apuração em andamento" : "ao vivo a partir das 17h de 25/10";
+  document.getElementById("t2-ponto").classList.toggle("vivo", vivo);
+}
+
+function usarTurno(t) {
+  state.turno = t;
+  const dois = t === "2";
+  ({ C, I13, I22, VALIDOS, MUNS } = dois ? { C: C2, I13: 0, I22: 1, VALIDOS: [0, 1], MUNS: MUNS2 } : T1);
+  document.querySelectorAll("#c-turno button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === t));
+  if (dois && !MEDIDAS2.includes(state.medida)) state.medida = "margem";
+  document.querySelectorAll("#c-medida button").forEach(b => { b.hidden = dois && !MEDIDAS2.includes(b.dataset.v); b.setAttribute("aria-pressed", b.dataset.v === state.medida); });
+  document.getElementById("ctl-medida").hidden = dois && MEDIDAS2.length < 2;
+  document.getElementById("sec-hist").hidden = dois;
+  document.getElementById("vivo-status").hidden = !dois;
+  document.getElementById("eyebrow").textContent = dois ? `Presidente · 2º turno · 25 de outubro de 2026${TESTE ? " · teste com o 1º turno" : ""}` : "Presidente · 1º turno · 4 de outubro de 2026";
+  document.getElementById("titulo").textContent = dois ? "A apuração do 2º turno" : "Como o Brasil votou";
+  document.getElementById("brand-sub").textContent = `Eleições 2026 · ${dois ? "2º" : "1º"} turno · dados públicos do TSE`;
+  state.sel = null; state.limite = 50;
+  clearInterval(T2.timer); T2.timer = null;
+  gravarURL();
+  totais();
+  desenhar();
+  if (dois) { atualizar2(); T2.timer = setInterval(atualizar2, INTERVALO); }
+}
+
+/* uma consulta por vez; se pedirem outra no meio (ex.: troca de estado), roda de novo ao terminar */
+async function atualizar2() {
+  if (T2.ocupado) { T2.denovo = true; return; }
+  T2.ocupado = true;
+  try {
+    if (!(await lerColetor())) await lerTSE();
+    T2.erro = null;
+  } catch (e) { T2.erro = e.message; console.error(e); }
+  T2.ocupado = false; T2.consulta = new Date();
+  if (state.turno === "2") { totais(); desenhar(true); }
+  if (T2.denovo) { T2.denovo = false; atualizar2(); }
+}
+function pedirMunicipios() {
+  if (state.turno === "2" && state.gran === "mun" && state.uf && !T2.munUF[state.uf] && T2.fonte !== "coletor") atualizar2();
+}
+
+async function lerColetor() {
+  let d;
+  for (const u of [`/vivo/${ELE}.json`, `../ao-vivo/dados/vivo_${ELE}.json`]) { try { d = await getFresh(u); break; } catch { /* tenta o próximo */ } }
+  if (!d) return false;
+  if (!d?.obs || !(Date.now() - Date.parse(d.atualizado) < 10 * 60000)) return false;
+  T2.prior ??= await getJSON("../ao-vivo/dados/prior_2026.json");
+  const P = T2.prior, o = d.obs;
+  P.uf.forEach((uf, i) => {
+    const x = { v: [o.a[i] || 0, o.b[i] || 0], st: o.st[i] || 0, ts: P.ts[i] || 0, aptos: P.te[i] || 0 };
+    if (uf === "ZZ") aplicar(T2.ext, x);
+    else { const m = T2.chave.get(uf + P.cod[i]); if (m) aplicar(m, x); }
+  });
+  Object.keys(UFS).forEach(uf => { T2.ufs[uf] = ufDeMunicipios(uf); T2.munUF[uf] = true; });
+  totalBR();
+  T2.fonte = "coletor"; T2.horaTSE = d.horaTSE || "";
+  return true;
+}
+
+async function lerTSE() {
+  const br = await getFresh(`${TSE}/br/br-${E6}-ab.json`);
+  let falhas = 0;
+  await Promise.all(br.abr.filter(x => x.tpabr === "uf").map(async x => {
+    const UF = x.cdabr.toUpperCase(), alvo = UF === "ZZ" ? T2.ext : T2.ufs[UF];
+    if (!alvo) return;
+    const st = num(x.s?.st);
+    if (st === 0) { aplicar(alvo, { v: [0, 0], st: 0, ts: num(x.s?.ts) || alvo.ts, aptos: num(x.e?.te) || alvo.aptos }); T2.vistoUF[UF] = marca(x); return; }
+    if (T2.vistoUF[UF] === marca(x)) return; // nada mudou nesta UF desde a última leitura
+    try {
+      aplicar(alvo, lerU(await getFresh(`${TSE}/${x.cdabr}/${x.cdabr}-c0001-${E6}-u.json`)));
+      T2.vistoUF[UF] = marca(x);
+    } catch (e) { falhas++; }
+  }));
+  totalBR();
+  T2.fonte = "tse";
+  T2.horaTSE = br.abr.find(x => x.tpabr === "br")?.ht || "";
+  if (state.gran === "mun" && state.uf) falhas += await lerMunicipiosTSE(state.uf);
+  if (falhas) throw new Error(`${falhas} arquivo(s) do TSE não responderam`);
+}
+async function lerMunicipiosTSE(UF) {
+  const uf = UF.toLowerCase();
+  const ab = await getFresh(`${TSE}/${uf}/${uf}-${E6}-ab.json`);
+  const pend = [];
+  ab.abr.filter(x => x.tpabr === "mun").forEach(x => {
+    const m = T2.chave.get(UF + x.cdabr);
+    if (!m) return;
+    if (num(x.s?.st) === 0) { aplicar(m, { v: [0, 0], st: 0, ts: num(x.s?.ts) || m.ts, aptos: num(x.e?.te) || m.aptos }); T2.vistoMun[UF + x.cdabr] = marca(x); }
+    else if (T2.vistoMun[UF + x.cdabr] !== marca(x)) pend.push([m, x]);
+  });
+  let falhas = 0;
+  for (let i = 0; i < pend.length; i += 24) await Promise.all(pend.slice(i, i + 24).map(async ([m, x]) => {
+    try {
+      aplicar(m, lerU(await getFresh(`${TSE}/${uf}/${uf}${x.cdabr}-c0001-${E6}-u.json`)));
+      T2.vistoMun[UF + x.cdabr] = marca(x);
+    } catch { falhas++; }
+  }));
+  T2.munUF[UF] = true;
+  return falhas;
+}
+
+function unidades2() {
+  if (state.gran === "mun") return MUNS2.filter(m => !state.uf || m.uf === state.uf);
+  return Object.values(T2.ufs).filter(u => !state.uf || u.uf === state.uf);
+}
+const apur = u => u.ts ? u.st / u.ts : 0;
+
+function totais2() {
+  const el = document.getElementById("totais"), u = T2.br;
+  statusVivo();
+  rotuloTurno2();
+  if (!T2.fonte) {
+    el.innerHTML = T2.erro ? `<div class="aviso">Não foi possível consultar o TSE agora (${esc(T2.erro)}). O mapa tenta de novo a cada minuto.</div>` : `<p class="nota" style="margin:0">Consultando o TSE…</p>`;
+    return;
+  }
+  if (!u.st) {
+    el.innerHTML = `<div class="aviso"><b>A apuração do 2º turno começa às 17h de 25 de outubro; o mapa se atualiza sozinho.</b>
+      <p>Até lá o mapa fica em cor neutra. Para a projeção do resultado durante a noite, veja a página <a href="../ao-vivo/">Ao vivo</a>.</p></div>`;
+    return;
+  }
+  const fim = u.st >= u.ts;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:7px">${[0, 1].map(i => linhaCand(C2[i], u.v[i], u.validos, i ? "--c22" : "--c13", true)).join("")}
+      <p style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">Percentuais dos votos válidos${TESTE ? " somando só o 13 e o 22" : ""}, contados até agora. ${fmt.format(u.validos)} votos válidos. Inclui o exterior.</p></div>
+    <div><div class="apurado"><b class="num">${pct(apur(u), 2)}</b><span>das seções apuradas (${fmt.format(u.st)} de ${fmt.format(u.ts)})</span></div>
+      ${fim ? "" : `<p class="parcial">Resultado parcial. A contagem depende da ordem em que os boletins chegam ao TSE, e essa ordem não é aleatória: alguns lugares terminam antes de outros. A vantagem de agora pode mudar até o fim. A página <a href="../ao-vivo/">Ao vivo</a> projeta o resultado levando isso em conta.</p>`}</div>`;
+}
+function statusVivo() {
+  const el = document.getElementById("vivo-status"), hora = d => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const p = [];
+  if (TESTE) p.push(`<b>Teste com o 1º turno</b> (só os votos no 13 e no 22)`);
+  if (T2.fonte) p.push(T2.fonte === "coletor" ? "Fonte: coletor do projeto" : "Fonte: site do TSE, consultado direto do seu navegador");
+  if (T2.horaTSE) p.push(`TSE às ${esc(T2.horaTSE)}`);
+  if (T2.consulta) p.push(`consultado às ${hora(T2.consulta)}`);
+  if (T2.erro && T2.fonte) p.push(`última consulta incompleta (${esc(T2.erro)})`);
+  p.push("atualiza sozinho a cada minuto");
+  el.innerHTML = `<i class="${T2.fonte && !T2.erro ? "ok" : ""}"></i><span>${p.join(" · ")}</span>`;
+}
+
+function tip2(u, med, esc_) {
+  const linhas = u.validos > 0
+    ? `<div class="r"><span>${med.rot}</span><span class="num">${esc_.fmtv(med.f(u))}</span></div><div class="r"><span style="color:var(--c13)">13</span><span class="num">${pct(u.v[0] / u.validos)}</span></div><div class="r"><span style="color:var(--c22)">22</span><span class="num">${pct(u.v[1] / u.validos)}</span></div>`
+    : `<div class="r"><span>Nenhuma seção apurada ainda</span></div>`;
+  return `<b>${esc(u.rotulo)}</b>${linhas}<div class="r"><span>Apurado</span><span class="num">${pct(apur(u))} das seções</span></div><div class="r"><span>Eleitores</span><span class="num">${fmt.format(u.aptos)}</span></div>`;
+}
+function detalhe2(lista) {
+  const sel = state.sel && lista.find(x => String(x.id) === String(state.sel));
+  const u = sel || (state.uf ? T2.ufs[state.uf] : T2.br);
+  const tipo = u.cod ? "Município" : sel ? "Estado" : "Total do recorte";
+  const margem = (u.v[1] - u.v[0]) / u.validos, a = apur(u);
+  document.getElementById("detalhe").innerHTML = `
+    <div class="eyebrow">${tipo}</div>
+    <h3 class="det-nome">${esc(u.rotulo)}</h3>
+    <div class="det-meta">${fmt.format(u.aptos)} eleitores · <b style="color:var(--ink-2)">${pct(a)} das seções apuradas</b> (${fmt.format(u.st)} de ${fmt.format(u.ts)})</div>
+    <div class="det-cands">${[0, 1].map(i => linhaCand(C2[i], u.v[i], u.validos, i ? "--c22" : "--c13")).join("")}</div>
+    ${u.validos > 0 ? `<div class="margem">Margem: <b class="num" style="color:var(${margem >= 0 ? "--c22" : "--c13"})">${margem >= 0 ? "22" : "13"} à frente por ${pct(Math.abs(margem))}</b>
+      <div style="color:var(--muted);font-size:13px">${fmt.format(Math.abs(u.v[1] - u.v[0]))} votos de diferença, com ${fmt.format(u.validos)} votos válidos contados</div></div>`
+      : `<div class="margem" style="color:var(--muted)">Nenhuma seção apurada ainda.</div>`}
+    ${a > 0 && a < 1 ? `<p class="parcial">Parcial: o número muda conforme os boletins chegam, e a ordem de chegada não é aleatória.</p>` : ""}`;
+}
+function notaMapa(html) {
+  document.getElementById("map-tools").innerHTML = "";
+  document.getElementById("map").innerHTML = `<div class="map-nota"><div>${html}</div></div>`;
+  document.getElementById("escala").innerHTML = "";
+}
+function semMunicipios() {
+  notaMapa(`<b>Escolha um estado em “Recorte” para ver os municípios.</b><br>Para não sobrecarregar o site do TSE, esta página baixa os municípios de um estado por vez. Quando o coletor do projeto estiver ativo, o Brasil inteiro aparece de uma vez.`);
+  desenharDetalhe([]);
+  desenharTabela([]);
+  document.getElementById("tb-titulo").textContent = "Municípios · escolha um estado";
+}
+function aguardarMunicipios() {
+  notaMapa(T2.ocupado || !T2.erro ? `Carregando os municípios de ${esc(UFS[state.uf])} no TSE…` : `Não foi possível carregar os municípios de ${esc(UFS[state.uf])} (${esc(T2.erro)}). Nova tentativa em 1 minuto.`);
+  desenharDetalhe([]);
+  desenharTabela([]);
+}
+let tRes, larg = innerWidth;
+addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => { if (Math.abs(innerWidth - larg) > 20) { larg = innerWidth; desenharHist(); } }, 200); });
+const tema = () => { if (B) { totais(); desenhar(); desenharHist(); } };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", tema);
+new MutationObserver(tema).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+iniciar().catch(err => { document.getElementById("content").innerHTML = `<div class="loading">Não foi possível carregar os dados (${esc(err.message)}).</div>`; console.error(err); });
+</script>
+</body>
+</html>

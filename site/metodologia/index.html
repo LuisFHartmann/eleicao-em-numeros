@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Metodologia da Simulação</title>
+<meta name="description" content="Como são feitas a simulação do 2º turno, a curva da apuração e a projeção ao vivo: dados, premissas, testes e limitações.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+/* Documento de leitura: coluna de ~72 caracteres, figuras e tabelas na largura do texto. */
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  --c22: #2a78d6; --c13: #e34948; --band: rgba(42, 120, 214, 0.16); --band-2: rgba(42, 120, 214, 0.30);
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --band: rgba(57, 135, 229, 0.20); --band-2: rgba(57, 135, 229, 0.36); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --band: rgba(57, 135, 229, 0.20); --band-2: rgba(57, 135, 229, 0.36); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.62; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding: 10px max(16px, env(safe-area-inset-left, 0px)); max-width: 1240px; margin: 0 auto; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+main { max-width: 800px; margin: 0 auto; padding: 36px max(16px, env(safe-area-inset-left, 0px)) 64px max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(32px, 5vw, 52px); line-height: 1.04; letter-spacing: -0.015em; margin: 4px 0 12px; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 28px; line-height: 1.12; margin: 44px 0 8px; padding-top: 20px; border-top: 1px solid var(--line); text-wrap: balance; }
+h2 .n { color: var(--accent); margin-right: 6px; }
+h3 { font-size: 17px; margin: 24px 0 4px; }
+p, li { color: var(--ink-2); }
+p b, li b { color: var(--ink); }
+.deck { font-size: 18px; color: var(--ink-2); }
+.indice { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 18px; margin: 24px 0; font-size: 14.5px; }
+.indice ol { margin: 6px 0 0; padding-left: 20px; }
+.formula { font-family: var(--f-mono); font-size: 13.5px; background: var(--surface-2); border-radius: var(--r); padding: 12px 14px; overflow-x: auto; white-space: pre; color: var(--ink); line-height: 1.55; }
+.baixar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 8px; font-size: 14.5px; }
+.baixar a.pdf { display: inline-flex; align-items: center; font-weight: 700; text-decoration: none; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--r); padding: 7px 12px; }
+.baixar a.pdf:hover { text-decoration: underline; }
+/* celular: fórmulas quebram a linha em vez de passar da tela; tabelas rolam dentro do próprio bloco */
+@media (max-width: 600px) {
+  body { font-size: 15.5px; }
+  .formula { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; padding: 10px 12px; }
+  table { font-size: 13px; }
+  th, td { padding: 5px 6px; }
+  td.r { white-space: nowrap; }
+  th { white-space: normal; }
+  #tb-transf td:first-child { min-width: 132px; }
+  .seg button { padding: 8px 12px; }
+  .legend { font-size: 12px; }
+}
+.caixa { border-left: 3px solid var(--accent); padding: 4px 0 4px 16px; margin: 18px 0; }
+.tscroll { overflow-x: auto; margin: 14px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td small { color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); }
+.seg button { font: inherit; color: var(--ink-2); border: 0; background: transparent; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+figure { margin: 20px 0; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.gridline { stroke: var(--line); } .baseline { stroke: var(--line-strong); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+.heat { font-variant-numeric: tabular-nums; }
+footer { max-width: 800px; margin: 0 auto; padding: 0 16px 48px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap brand">
+  <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+  <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Metodologia</div></div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/" aria-current="page">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav></header>
+
+<main>
+<div class="eyebrow">Atualizado em 19 de outubro de 2026</div>
+<h1>Como as simulações são feitas</h1>
+<p class="baixar"><a class="pdf" href="../relatorio/simulacao-segundo-turno-2026.pdf" download>Baixar o relatório (PDF)</a><a href="../relatorio/">ler o relatório da simulação do 2º turno no navegador</a></p>
+<p class="deck">Este site faz três coisas com dados públicos do TSE: reconstrói a curva da apuração do 1º turno, simula o 2º turno a partir de como os eleitores migraram em eleições passadas e projeta, durante a apuração, o resultado final. Esta página explica cada passo, as premissas e os testes, para quem quiser conferir ou discordar.</p>
+
+<div class="indice"><b>Nesta página</b>
+<ol><li><a href="#dados">Dados</a></li><li><a href="#curva">A curva da apuração e a versão "mesmo ritmo"</a></li><li><a href="#transferencia">De onde vêm os votos do 2º turno</a></li><li><a href="#montecarlo">A simulação de Monte Carlo</a></li><li><a href="#aovivo">A projeção durante a apuração</a></li><li><a href="#limites">O que estes números não dizem</a></li><li><a href="#reproduzir">Como reproduzir</a></li></ol></div>
+
+<h2 id="dados"><span class="n">1</span>Dados</h2>
+<ul>
+<li><b>Boletins de urna do 1º turno de 2026</b> (<a href="https://dadosabertos.tse.jus.br/dataset/resultados-2026-boletim-de-urna">dados abertos do TSE</a>): votos de cada candidato por seção, eleitores aptos, comparecimento e a hora em que cada boletim chegou à totalização (campo DT_BU_RECEBIDO). São 497.897 seções. Os votos do exterior não estão nesses arquivos e entram só no painel ao vivo, lidos da API.</li>
+<li><b>Resultados por seção de 2014, 2018 e 2022</b>, nos dois turnos (votação por seção e detalhe da votação por seção, TSE). É deles que sai a migração de votos entre turnos.</li>
+<li><b>Boletins do 2º turno de 2022 com a hora de chegada</b>, para reconstruir aquela noite e testar o modelo ao vivo.</li>
+<li><b>Locais de votação</b>, com coordenadas, e <b>malhas municipais do IBGE</b>, para os mapas.</li>
+<li><b>Na noite da apuração</b>, a <a href="https://resultados.tse.jus.br/oficial/app/index.html">API de divulgação do TSE</a>: um índice por estado diz quais municípios mudaram, e só esses são baixados.</li>
+</ul>
+<p>Todos os arquivos grandes são lidos direto da internet para a memória, e só as tabelas reduzidas são gravadas. Os programas estão na pasta <code>pipeline/</code> do repositório.</p>
+
+<h2 id="curva"><span class="n">2</span>A curva da apuração e a versão "mesmo ritmo"</h2>
+<p>Ordenando os boletins pela hora de chegada e somando os votos, a apuração é reconstruída minuto a minuto. A curva "vira" porque as regiões chegam em horários diferentes: Sul e Centro-Oeste fecham primeiro, e o Nordeste, onde o 13 é mais forte, chega por último.</p>
+<p>Para separar o efeito da ordem de chegada, a página da curva tem uma versão em que <b>todos os estados apuram no mesmo ritmo</b>. Cada estado mantém a ordem real dos seus boletins, mas a posição de cada boletim vira uma fração de 0 a 1 dentro do estado (o primeiro em 0, o último em 1). A curva nacional no instante <i>q</i> soma, em todos os estados, os boletins com posição até <i>q</i>:</p>
+<div class="formula">posição(b) = (ordem de chegada de b no seu estado) / (boletins do estado)
+fatia(q)    = Σ votos do candidato em boletins com posição ≤ q  /  Σ votos válidos nesses boletins</div>
+<p>Se a virada fosse um artifício da contagem, ela continuaria aparecendo. Ela quase some. No 2º turno de 2022, a curva real começou com Lula em 40,6% e só passou de 50% com 68% apurado; no mesmo ritmo, começa em 49,5% e passa de 50% por volta de 30%. Sobra uma inclinação de cerca de 1,5 ponto, que vem da ordem <i>dentro</i> de cada estado: capitais e cidades grandes costumam mandar os boletins antes do interior.</p>
+
+<h2 id="transferencia"><span class="n">3</span>De onde vêm os votos do 2º turno</h2>
+<p>O voto é secreto, então ninguém sabe em quem votou no 2º turno quem escolheu um candidato no 1º. Mas cada seção tem os dois resultados, e as seções variam muito entre si. Se nas seções onde um candidato teve mais votos no 1º turno o candidato A cresce mais no 2º, é sinal de que os eleitores dele foram para A. Essa técnica se chama <b>inferência ecológica</b>.</p>
+<h3>Grupos e classificação</h3>
+<p>No 1º turno, cada eleitor apto cai em um de sete grupos: o principal candidato da esquerda (E), o principal da direita (D), outros de esquerda (OE), de centro (OC) e de direita (OD), brancos e nulos (BN) e abstenção (AB). No 2º turno, em quatro: E, D, BN e AB. A classificação dos "outros" é uma escolha, feita pelo campo do partido e pelo apoio declarado no 2º turno. A página de simulação deixa reclassificar qualquer candidato de 2026.</p>
+<div class="formula">para cada seção s:   y₂(s) = x₁(s) · B
+x₁ = fração dos aptos em cada grupo do 1º turno   (7 números)
+y₂ = fração dos aptos em cada destino do 2º turno (4 números)
+B  = matriz 7×4: cada linha diz para onde foi aquele grupo, soma 1, sem negativos</div>
+<h3>Estimação</h3>
+<ol>
+<li><b>Por região.</b> Uma matriz por região e por eleição, porque os eleitores de um mesmo candidato não migram igual no Nordeste e no Sul.</li>
+<li><b>Comparando seções do mesmo município.</b> Bairros diferentes votam diferente por muitas razões, e isso confunde a migração com a geografia (a "falácia ecológica"). Por isso o ajuste usa principalmente a variação <i>dentro</i> de cada município, mais 10% da variação entre municípios.</li>
+<li><b>Efeito de contexto.</b> A migração dos grupos grandes que não são os dois finalistas (centro, brancos e nulos, abstenção) pode mudar com a inclinação política da seção. Em 2014, por exemplo, os eleitores de Marina foram muito mais para Aécio onde Aécio já era forte. Sem isso, o modelo jogava essa diferença sobre os grupos pequenos.</li>
+<li><b>Grupos pequenos.</b> Um grupo com menos de 2,5% dos eleitores da região tem pouco sinal nos dados. A estimativa dele combina os próprios dados com o comportamento do mesmo campo político em outras eleições e regiões, na proporção do seu tamanho: com 1% do eleitorado, 40% vêm dos próprios dados e 60% do "campo".</li>
+<li><b>Restrições e cálculo.</b> Mínimos quadrados ponderados pelos aptos, com as linhas no simplex (somam 1, sem negativos), resolvidos por gradiente projetado acelerado (FISTA).</li>
+<li><b>Incerteza.</b> Reamostragem de municípios (bootstrap, 120 vezes), que dá 120 matrizes por região e eleição.</li>
+</ol>
+<figure>
+  <div class="legend" style="justify-content:space-between;align-items:center"><span>Para onde foi cada grupo do 1º turno (média do país, ponderada pelo tamanho de cada grupo nas regiões)</span><span class="seg" id="seg-ano" role="group" aria-label="Eleição"><button type="button" data-ano="2014" aria-pressed="false">2014</button><button type="button" data-ano="2018" aria-pressed="false">2018</button><button type="button" data-ano="2022" aria-pressed="true">2022</button></span></div>
+  <div class="tscroll"><table id="tb-transf"></table></div>
+  <figcaption>Linhas: grupo do 1º turno. Colunas: destino no 2º turno. "*": grupo pequeno, em que parte da estimativa vem do mesmo campo em outras eleições.</figcaption>
+</figure>
+<h3>O método previu bem as eleições passadas?</h3>
+<p>O teste é aplicar a migração de uma eleição ao 1º turno da eleição seguinte e comparar com o 2º turno real:</p>
+<div class="tscroll"><table id="tb-valid"></table></div>
+<p>Os erros ficam entre 0,8 e 1,8 ponto. É pouco, mas são só três testes, e eleições diferentes têm candidatos diferentes. Por isso a simulação soma esse erro à incerteza, em vez de tratá-lo como zero.</p>
+
+<h2 id="montecarlo"><span class="n">4</span>A simulação de Monte Carlo</h2>
+<p>A <a href="../segundo-turno/">página de simulação</a> repete 20 mil vezes o seguinte sorteio:</p>
+<ol>
+<li><b>Sorteia uma eleição passada</b> com pesos: 2014 = 15, 2018 = 35 e 2022 = 50. A de 2022 tem os mesmos candidatos principais; a de 2014 é a mais diferente. Os pesos são ajustáveis.</li>
+<li><b>Sorteia uma matriz</b> por região, entre as 120 do bootstrap daquela eleição.</li>
+<li><b>Aplica a matriz ao 1º turno de 2026</b> em cada estado: os votos de cada candidato, brancos, nulos e abstenção vão para E, D, BN e AB.</li>
+<li><b>Soma um erro nacional</b> sorteado de uma normal com o tamanho do erro dos testes (raiz da média dos quadrados = 1,2 ponto).</li>
+</ol>
+<div class="formula">resultado(s) = Σ_estados D  /  Σ_estados (E + D)   +   erro(s),   erro ~ Normal(0; 1,2 p.p.)
+chance de vitória = fração das 20 mil simulações em que o resultado passa de 50%</div>
+<p>Com as escolhas-padrão, o 22 fica com <b>52,7%</b> dos votos válidos na mediana e o 13 com 47,3% (90% das simulações entre 50,2% e 54,8% para o 22). O 22 passa de 50% em <b>96%</b> das simulações e o 13 em 4%. O número que mais pesa é o tamanho do erro, que três testes não fixam com segurança:</p>
+<div class="tscroll"><table>
+<tr><th>Erro somado</th><th class="r">Mediana do 22</th><th class="r">Faixa de 90%</th><th class="r">22 vence</th></tr>
+<tr><td>±1,2 ponto (o dos testes)</td><td class="r">52,7%</td><td class="r">50,2–54,8%</td><td class="r">96%</td></tr>
+<tr><td>±2 pontos</td><td class="r">52,6%</td><td class="r">49,1–56,1%</td><td class="r">89%</td></tr>
+<tr><td>±3 pontos (perto do erro das pesquisas)</td><td class="r">52,6%</td><td class="r">47,5–57,7%</td><td class="r">80%</td></tr>
+</table></div>
+<p>Por eleição de referência, as medianas são 51,0% (2014), 52,8% (2018) e 53,0% (2022). A leitura honesta é: <b>vantagem do 22 de 2 a 3 pontos, com chance real de virada</b>. As pesquisas divulgadas entre 18 e 21 de outubro dão ao 22 de 49,0% a 53,0% dos válidos (comparação completa na <a href="../segundo-turno/#pesquisas">página da simulação</a>).</p>
+<div class="caixa"><b>Uma conferência independente.</b> A pesquisa Datafolha feita logo depois do 1º turno de 2022 perguntou aos eleitores de Tebet e de Ciro em quem votariam no 2º. Para os de Tebet, a divisão confere com a estimada aqui. Para os de Ciro, não: a pesquisa mediu 31% Lula e 42% Bolsonaro, e a estimativa dá 44% e 35%. A subamostra de Ciro era pequena e a pesquisa é do começo da campanha, mas a divergência fica registrada.</div>
+
+<h2 id="aovivo"><span class="n">5</span>A projeção durante a apuração</h2>
+<p>O <a href="../ao-vivo/">painel ao vivo</a> responde a uma pergunta só: dado o que já foi contado, onde o resultado deve terminar?</p>
+<h3>Antes do primeiro boletim</h3>
+<p>Cada município recebe um <b>esperado</b>: a fatia do 22 entre os válidos e o número de votos válidos por eleitor, aplicando a migração média (2014 = 15, 2018 = 35, 2022 = 50) ao 1º turno de 2026 daquele município. Somado, o esperado dá 52,6% ao 22 e 47,4% ao 13, praticamente o mesmo centro da simulação (52,7%).</p>
+<h3>A cada atualização</h3>
+<p>Para cada município que já mandou boletins, mede-se quanto a contagem foge do esperado, em logit (a escala em que um desvio de 2 pontos vale o mesmo perto de 50% e perto de 90%). Esse desvio é decomposto em camadas:</p>
+<div class="formula">desvio(m) = efeito Brasil + efeito região(m) + efeito estado(m) + efeito próprio(m)
+
+a priori:  Brasil ~ N(0; 0,035)   região ~ N(0; 0,04)   estado ~ N(0; 0,05)   município ~ N(0; 0,07)
+(em logit; 0,05 ≈ 1,25 ponto perto de 50%. Os desvios de município e estado foram medidos em 2022.)</div>
+<p>Os efeitos são estimados por regressão bayesiana com todos os municípios já apurados. O peso de cada município depende de quanto dele já foi contado, medido em eleitores: os primeiros boletins costumam vir de aldeias, quilombos e comunidades pequenas, que votam muito diferente da sede do município, e uma contagem parcial é uma amostra pequena (as seções de um mesmo município variam 0,34 em logit entre si). A regressão é robusta (pesos de Huber), para que um punhado de seções muito fora do padrão não arraste a projeção do país nos primeiros minutos. Um município que ainda não apurou nada herda o efeito do seu estado e da sua região. Um que apurou metade herda também 70% do seu próprio desvio. É assim que o modelo desconta o fato de os primeiros boletins virem de lugares que votam diferente: o que chega primeiro é comparado com o que <i>se esperava daquele lugar</i>, não com a média do país.</p>
+<h3>A ordem de chegada</h3>
+<p>Os primeiros municípios de um estado não são uma amostra ao acaso dos demais: capitais e cidades grandes chegam antes do interior e votam diferente, mesmo depois de descontado o 1º turno. Sem tratar isso, o modelo ficava confiante demais. Por isso o que falta apurar recebe um choque extra, comum ao país (0,045) e a cada estado (0,05), que encolhe com a raiz da fração ainda não apurada. Os valores do país (0,035 e 0,045) foram escolhidos para que, antes do primeiro boletim, a projeção ao vivo tenha a mesma largura do Monte Carlo da simulação do 2º turno (o 22 passa de 50% em 96% dos sorteios, nos dois casos); o teste com a noite de 2022 continua com a mesma cobertura.</p>
+<h3>Monte Carlo</h3>
+<p>Cada projeção sorteia 2.000 vezes os efeitos (da distribuição a posteriori), os choques e o efeito próprio de cada município, e soma os votos que faltam. Daí saem a mediana, a faixa de 90% e a chance de vitória. Leva de 0,1 a 0,2 segundo no navegador.</p>
+<h3>O teste: a noite de 30 de outubro de 2022</h3>
+<p>Com o esperado que se teria antes daquela eleição (1º turno de 2022 e migração de 2014 e 2018, que davam 48,0% a Bolsonaro contra os 49,1% reais), os boletins foram reprocessados na ordem e na hora em que chegaram:</p>
+<figure>
+  <div class="legend"><span><i class="sw" style="background:var(--band-2)"></i>projeção do final (faixa de 90%)</span><span><i class="sw" style="background:var(--c22)"></i>contagem de Bolsonaro no momento</span><span><i class="sw" style="background:var(--ink)"></i>resultado final</span></div>
+  <div class="chart" id="ch-teste"></div>
+  <figcaption id="cap-teste">—</figcaption>
+</figure>
+<h3>Arquitetura</h3>
+<ul>
+<li><b>Sem servidor.</b> O site é estático (GitHub Pages) e o navegador consulta a API do TSE diretamente, porque o TSE libera o acesso de outras origens (CORS). A cada minuto, o painel lê o índice de andamento e baixa só os municípios que mudaram.</li>
+<li><b>Coletor opcional.</b> Com muitos visitantes, um script (<code>pipeline/coletor.py</code>) consulta o TSE uma vez por minuto e publica um único arquivo com todos os municípios e o histórico da noite. O painel usa esse arquivo quando ele existe e é recente.</li>
+<li><b>Mesmo código em todo lugar.</b> O modelo (<code>ao-vivo/modelo.js</code>) roda igual no navegador, no coletor e no teste de 2022.</li>
+<li><b>Ensaios.</b> O painel tem dois modos de reprodução acelerada: a noite real de 2022 e uma noite simulada de 2026 no cenário central do modelo (votos do 1º turno redistribuídos pela migração de votos, mais erros sorteados), com os boletins chegando na hora do 1º turno.</li>
+</ul>
+
+<h2 id="limites"><span class="n">6</span>O que estes números não dizem</h2>
+<ul>
+<li><b>Não são pesquisa.</b> A simulação supõe que os eleitores de 2026 migram como os de eleições passadas. Se a campanha do 2º turno mudar o comportamento, por exemplo com um apoio inesperado ou um escândalo, o modelo não vê.</li>
+<li><b>A classificação dos candidatos é uma escolha.</b> Mudá-la altera o resultado, e a página de simulação permite testar isso.</li>
+<li><b>Inferência ecológica tem limites.</b> Ela estima o comportamento médio de grupos a partir de agregados. As restrições e o estimador "dentro do município" reduzem o problema, mas não o eliminam, e a divergência com o Datafolha nos eleitores de Ciro é um lembrete disso.</li>
+<li><b>Comparecimento.</b> A simulação usa a abstenção do 1º turno redistribuída como no passado. Uma mudança grande de comparecimento é a principal fonte de erro que a página permite explorar à mão.</li>
+<li><b>A projeção ao vivo foi testada em uma noite só.</b> Ela funcionou bem em 2022, mas a calibração do choque de ordem de chegada saiu dessa mesma noite.</li>
+<li><b>Nada aqui substitui o TSE.</b> O resultado oficial é o da totalização do TSE.</li>
+</ul>
+
+<h2 id="reproduzir"><span class="n">7</span>Como reproduzir</h2>
+<div class="formula">pip install polars numpy        # Python 3.11+
+python pipeline/baixar.py        # dados abertos do TSE (em memória; grava só tabelas reduzidas em data/)
+python pipeline/votos.py         # mapa de votos e histogramas
+python pipeline/curva_apuracao.py
+python pipeline/transferencia.py # migração de votos 2014/2018/2022 (alguns minutos)
+python pipeline/ao_vivo.py       # esperado por município, noite de 2022 e noite simulada
+node   pipeline/teste_ao_vivo.js replay_2022</div>
+<p>Depois, sirva a pasta <code>site/</code> com qualquer servidor estático (por exemplo, <code>python -m http.server -d site</code>).</p>
+</main>
+<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE.</footer>
+
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script>
+"use strict";
+const pct = (x, d = 1) => x == null || !isFinite(x) ? "—" : (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let T, TESTE, ano = "2022";
+
+function tabelaTransf() {
+  const A = T.anos[ano], g1 = T.g1, g2 = T.g2;
+  // média nacional de cada linha, ponderada pelo tamanho do grupo em cada região
+  const linhas = g1.map((g, k) => {
+    let w = 0, peso = 0; const s = [0, 0, 0, 0];
+    for (const r of T.regioes) { const R = A.regioes[r], n = R.totalReal.reduce((a, b) => a + b, 0) * R.parte[k]; R.media[k].forEach((v, j) => s[j] += v * n); w += n; peso += (R.peso?.[k] ?? 1) * n; }
+    return { g, v: s.map(x => x / w), peso: peso / w };
+  });
+  const quem = {};
+  Object.values(T.classif[ano]).forEach(c => (quem[c.grupo] ??= []).push(c.nome));
+  const cor = v => `background: color-mix(in srgb, var(--accent) ${Math.round(v * 70)}%, transparent)`;
+  document.getElementById("tb-transf").innerHTML = `<tr><th>1º turno</th>${g2.map(d => `<th class="r">${T.nomesG2[d]}</th>`).join("")}</tr>` +
+    linhas.map(l => `<tr><td>${T.nomesG1[l.g]}${l.peso < 0.9 ? " *" : ""}<br><small>${quem[l.g]?.join(", ") ?? ""}</small></td>${l.v.map(v => `<td class="r heat" style="${cor(v)}">${pct(v, 0)}</td>`).join("")}</tr>`).join("");
+}
+function tabelaValid() {
+  document.getElementById("tb-valid").innerHTML = `<tr><th>Migração de</th><th>aplicada a</th><th class="r">Previsto para a esquerda</th><th class="r">Real</th><th class="r">Erro</th></tr>` +
+    T.validacao.map(v => `<tr><td>${v.treino}</td><td>${v.teste}</td><td class="r">${pct(v.previstoE)}</td><td class="r">${pct(v.realE)}</td><td class="r">${v.erroPP > 0 ? "+" : "−"}${Math.abs(v.erroPP).toFixed(1).replace(".", ",")} p.p.</td></tr>`).join("");
+}
+function graficoTeste() {
+  const el = document.getElementById("ch-teste"), L = TESTE.linhas.filter(l => l.apurado < 0.999 || l === TESTE.linhas.find(x => x.apurado >= 0.999));
+  const W = Math.max(300, el.clientWidth - 24 || 700), H = Math.round(Math.min(340, Math.max(220, W * 0.45)));
+  const ml = 40, mr = 70, mt = 8, mb = 30, iw = W - ml - mr, ih = H - mt - mb;
+  const t = l => new Date(2022, 9, 30, 17, 0).getTime() + l.k * 120000;
+  const x = d3.scaleTime().domain(d3.extent(L, t)).range([0, iw]);
+  const y = d3.scaleLinear().domain([.44, .62]).range([ih, 0]).clamp(true);
+  const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Teste do modelo na noite de 2022");
+  const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
+  y.ticks(6).forEach(v => { g.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(v)).attr("y2", y(v)); g.append("text").attr("x", -6).attr("y", y(v)).attr("dy", ".32em").attr("text-anchor", "end").text(pct(v, 0)); });
+  x.ticks(W < 480 ? 4 : 6).forEach(v => g.append("text").attr("x", x(v)).attr("y", ih + 18).attr("text-anchor", "middle").text(d3.timeFormat("%Hh%M")(v).replace("h00", "h")));
+  g.append("path").attr("d", d3.area().x(l => x(t(l))).y0(l => y(l.q05)).y1(l => y(l.q95)).curve(d3.curveMonotoneX)(L)).attr("fill", css("--band-2"));
+  g.append("path").attr("d", d3.line().x(l => x(t(l))).y(l => y(l.atual)).defined(l => l.atual != null).curve(d3.curveMonotoneX)(L)).attr("fill", "none").attr("stroke", css("--c22")).attr("stroke-width", 2.2);
+  g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(TESTE.final)).attr("y2", y(TESTE.final)).attr("stroke", css("--ink")).attr("stroke-width", 1.4);
+  g.append("text").attr("x", iw + 6).attr("y", y(TESTE.final)).attr("dy", ".32em").style("fill", css("--ink")).text(`final ${pct(TESTE.final)}`);
+  el.replaceChildren(svg.node());
+  const l8 = TESTE.linhas.find(l => l.apurado >= 0.08), ate = TESTE.linhas.filter(l => l.apurado > 0 && l.apurado < 0.95);
+  document.getElementById("cap-teste").innerHTML = `Com ${pct(l8.apurado, 0)} apurado, a contagem dava ${pct(l8.atual)} a Bolsonaro e a projeção, ${pct(l8.mediana)} (${pct(l8.q05)} a ${pct(l8.q95)}). O resultado final ficou dentro da faixa de 90% em ${ate.filter(l => l.q05 <= TESTE.final && TESTE.final <= l.q95).length} de ${ate.length} atualizações até 95% apurado. Depois disso a faixa fica mais estreita que 0,05 ponto e erra por centésimos.`;
+}
+Promise.all([fetch("../dados/transferencia.json").then(r => r.json()), fetch("../ao-vivo/dados/teste_replay_2022.json").then(r => r.json())]).then(([t, te]) => {
+  T = t; TESTE = te;
+  tabelaTransf(); tabelaValid(); graficoTeste();
+  document.querySelectorAll("#seg-ano button").forEach(b => b.addEventListener("click", () => { ano = b.dataset.ano; document.querySelectorAll("#seg-ano button").forEach(x => x.setAttribute("aria-pressed", x === b)); tabelaTransf(); }));
+});
+let tr; addEventListener("resize", () => { clearTimeout(tr); tr = setTimeout(() => TESTE && graficoTeste(), 200); });
+</script>
+</body>
+</html>
