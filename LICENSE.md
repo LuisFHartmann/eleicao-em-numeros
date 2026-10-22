@@ -1,13 +1,22 @@
 # Licença
 
-## Código, textos e páginas: todos os direitos reservados
+Copyright © 2026 Luis Felipe Hartmann. Todos os direitos reservados, com as permissões abaixo.
 
-Copyright © 2026 Luis Felipe Hartmann. Todos os direitos reservados.
+## O que é permitido
 
-O código-fonte, os textos e o desenho das páginas deste repositório são publicados para que qualquer pessoa possa **ler, conferir e reproduzir os resultados** (rodar o pipeline e comparar os números). Isso não concede licença para copiar, redistribuir, modificar ou usar este material, no todo ou em parte, em outros projetos, sites ou produtos, comerciais ou não, sem autorização por escrito do autor.
+- **Ler, baixar e rodar** o código deste repositório para conferir, reproduzir e estudar os resultados, inclusive rodar a simulação de Monte Carlo com outras escolhas (pesos, erro, classificação dos candidatos) e analisar os sorteios.
+- **Usar os dados derivados** (as tabelas em `site/dados/`, `site/apuracao/dados/` e `site/ao-vivo/dados/`) e **citar** os resultados em pesquisa, ensino, jornalismo e uso pessoal, desde que com a fonte: "Eleição em Números, a partir de dados do TSE", e sem alterar os números atribuídos ao projeto.
 
-## Dados derivados: abertos (CC BY 4.0)
+## O que é proibido
 
-As tabelas geradas a partir dos dados públicos do TSE e do IBGE, nas pastas `site/dados/`, `site/apuracao/dados/` e `site/ao-vivo/dados/`, estão disponíveis sob a licença [Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.pt_BR). Podem ser usadas livremente, desde que citada a fonte: "Eleição em Números, a partir de dados do TSE".
+- **Uso político-eleitoral.** Nenhuma parte deste repositório ou do site (código, textos, gráficos, dados derivados, resultados ou o nome do projeto) pode ser usada por campanhas, partidos, federações, coligações, candidatos ou pré-candidatos, nem em propaganda eleitoral, material de campanha ou impulsionamento de conteúdo político, de qualquer lado.
+- **Sugerir apoio.** Não é permitido apresentar o projeto ou o autor como apoiadores de candidato, partido ou posição política.
+- **Redistribuir ou publicar versões modificadas** do código, das páginas ou do relatório, no todo ou em parte, sem autorização por escrito do autor.
+- **Uso comercial** sem autorização por escrito do autor.
 
-Os dados originais são do Tribunal Superior Eleitoral e do IBGE e seguem as condições de uso desses órgãos. A biblioteca d3.js em `site/vendor/` é de terceiros, sob licença ISC.
+## Observações
+
+- Este projeto não é pesquisa eleitoral nem enquete: não entrevista eleitores. Usa apenas resultados oficiais do TSE e pesquisas registradas no TSE e divulgadas pela imprensa, com a fonte.
+- Os dados originais são do Tribunal Superior Eleitoral e do IBGE, são públicos e seguem as condições de uso desses órgãos. Estas restrições valem para o que foi produzido neste projeto, não para os dados originais.
+- A biblioteca d3.js em `site/vendor/` é de terceiros, sob licença ISC.
+- Pedidos de autorização: abra contato pelo perfil do autor no GitHub.

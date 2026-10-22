@@ -30,3 +30,6 @@
   .abas { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
   .abas a { padding: 12px 12px 11px; }
 }
+
+/* Aba externa (código no GitHub): no fim da barra, em destaque discreto. */
+.abas a.aba-externa { margin-left: auto; color: var(--accent); }

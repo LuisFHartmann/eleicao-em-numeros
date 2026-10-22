@@ -6,6 +6,36 @@ Eleição presidencial de 2026 contada com dados públicos do TSE: mapa de votos
 
 Projeto independente e apartidário. O resultado oficial é sempre o do TSE.
 
+## Rodar a simulação no seu computador
+
+A simulação de Monte Carlo do 2º turno roda com um comando, sem baixar nada além deste repositório, e dá os mesmos números do site (mesmo algoritmo, mesmo gerador, mesma semente):
+
+```sh
+git clone https://github.com/LuisFHartmann/eleicao-em-numeros.git
+cd eleicao-em-numeros
+pip install numpy
+python pipeline/simular.py
+```
+
+Saída com as escolhas-padrão:
+
+```
+20.000 simulações · pesos 2014=15, 2018=35, 2022=50 · erro nacional ±1,21 pontos · semente 20261025
+  13 (Lula):             mediana 47,3%   90% entre 45,2% e 49,8%   passa de 50% em 4,0%
+  22 (Flávio Bolsonaro): mediana 52,7%   90% entre 50,2% e 54,8%   passa de 50% em 96,0%
+```
+
+Para testar outras premissas:
+
+```sh
+python pipeline/simular.py --erro 3                      # erro nacional de ±3 pontos
+python pipeline/simular.py --pesos 2022=100              # só a migração de votos de 2022
+python pipeline/simular.py --classif 70=OD,14=OC         # reclassificar candidatos do 1º turno
+python pipeline/simular.py --n 100000 --semente 7 --csv sorteios.csv   # gravar todos os sorteios
+```
+
+O que entra na simulação está em `site/dados/`: `votos.json` (1º turno de 2026 por município) e `transferencia.json` (como os eleitores migraram do 1º para o 2º turno em 2014, 2018 e 2022, estimado por região, com 120 reamostragens). Como cada parte foi feita está em [metodologia](https://eleicaoemnumeros.pages.dev/metodologia/) e no [relatório em PDF](https://eleicaoemnumeros.pages.dev/relatorio/simulacao-segundo-turno-2026.pdf).
+
 ## Páginas (`site/`)
 
 | Página | O que mostra |
@@ -20,7 +50,7 @@ O site é estático. Na noite da apuração o navegador consulta a API de divulg
 
 ## Reproduzir
 
-Requer Python 3.11+ (`polars`, `numpy`) e Node 18+ (só para o teste do modelo ao vivo).
+Requer Python 3.11+ (`pip install -r requirements.txt`) e Node 18+ (só para o teste do modelo ao vivo).
 
 ```sh
 python pipeline/baixar.py          # dados abertos do TSE, lidos em memória; grava só tabelas reduzidas em data/
@@ -66,7 +96,9 @@ Sem o coletor o site continua funcionando: cada navegador consulta o TSE direto 
 
 ## Licença
 
-Código, textos e páginas: todos os direitos reservados. O repositório é público para conferência e reprodução dos resultados, não para reuso. Os dados derivados (pastas `dados/` do site) são abertos sob CC BY 4.0. Detalhes em [LICENSE.md](LICENSE.md).
+Todos os direitos reservados, com permissões: o código pode ser lido, baixado e rodado para conferir e estudar os resultados, e os dados derivados podem ser usados em pesquisa, ensino, jornalismo e uso pessoal, com a fonte. **É proibido o uso por campanhas, partidos, candidatos e em propaganda eleitoral**, de qualquer lado. Detalhes em [LICENSE.md](LICENSE.md).
+
+Este projeto não é pesquisa eleitoral nem enquete: não entrevista eleitores; usa apenas resultados oficiais do TSE e pesquisas registradas e divulgadas pela imprensa.
 
 ## Fontes
 

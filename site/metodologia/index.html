@@ -95,7 +95,7 @@ footer { max-width: 800px; margin: 0 auto; padding: 0 16px 48px; color: var(--mu
   <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
   <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Metodologia</div></div>
 </div>
-<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/" aria-current="page">Metodologia</a><a href="../apuracao/">Curva da apuração</a></nav></header>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/" aria-current="page">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
 
 <main>
 <div class="eyebrow">Atualizado em 19 de outubro de 2026</div>
@@ -211,7 +211,10 @@ a priori:  Brasil ~ N(0; 0,035)   região ~ N(0; 0,04)   estado ~ N(0; 0,05)   m
 </ul>
 
 <h2 id="reproduzir"><span class="n">7</span>Como reproduzir</h2>
-<p>O código completo está no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>. Para refazer tudo do zero:</p>
+<p>O código completo está no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>. Só a simulação de Monte Carlo roda com um comando, sem baixar dados (dá os mesmos números do site e aceita outras premissas: <code>--erro 3</code>, <code>--pesos 2022=100</code>, <code>--classif 70=OD</code>):</p>
+<div class="formula">pip install numpy
+python pipeline/simular.py</div>
+<p>Para refazer tudo do zero, a partir dos dados abertos do TSE:</p>
 <div class="formula">pip install polars numpy        # Python 3.11+
 python pipeline/baixar.py        # dados abertos do TSE (em memória; grava só tabelas reduzidas em data/)
 python pipeline/votos.py         # mapa de votos e histogramas
@@ -221,7 +224,7 @@ python pipeline/ao_vivo.py       # esperado por município, noite de 2022 e noit
 node   pipeline/teste_ao_vivo.js replay_2022</div>
 <p>Depois, sirva a pasta <code>site/</code> com qualquer servidor estático (por exemplo, <code>python -m http.server -d site</code>).</p>
 </main>
-<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE. Código aberto no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>.</footer>
+<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE. Código no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>.</footer>
 
 <script src="../vendor/d3-7.9.0.min.js"></script>
 <script>

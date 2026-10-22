@@ -83,13 +83,13 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
   <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
   <div><div class="brand-name">Eleição em Números</div><div class="brand-sub">Eleições 2026 · Presidente · dados públicos do TSE</div></div>
 </div>
-<nav class="abas" aria-label="Páginas"><a href="./" aria-current="page">Início</a><a href="votos/">Mapa de votos</a><a href="segundo-turno/">Simulação do 2º turno</a><a href="ao-vivo/">Ao vivo</a><a href="metodologia/">Metodologia</a><a href="apuracao/">Curva da apuração</a></nav></header>
+<nav class="abas" aria-label="Páginas"><a href="./" aria-current="page">Início</a><a href="votos/">Mapa de votos</a><a href="segundo-turno/">Simulação do 2º turno</a><a href="ao-vivo/">Ao vivo</a><a href="metodologia/">Metodologia</a><a href="apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
 
 <main class="wrap">
   <section class="hero">
     <div class="eyebrow">1º turno em 4 de outubro · 2º turno em 25 de outubro de 2026</div>
     <h1>Um experimento de estatística com a eleição presidencial</h1>
-    <p>Este site usa os dados públicos do TSE para pôr à prova algumas ferramentas de estatística: como o país votou no 1º turno, por que a apuração parece "virar" durante a noite, o que as eleições passadas sugerem para o 2º turno e, no domingo, para onde a contagem está indo. Código aberto e contas à vista, para quem quiser conferir ou discordar.</p>
+    <p>Este site usa os dados públicos do TSE para pôr à prova algumas ferramentas de estatística: como o país votou no 1º turno, por que a apuração parece "virar" durante a noite, o que as eleições passadas sugerem para o 2º turno e, no domingo, para onde a contagem está indo. Código público e contas à vista, para quem quiser conferir ou discordar.</p>
   </section>
   <aside class="nota" role="note" aria-labelledby="nota-titulo">
     <h2 id="nota-titulo"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="6.2" r="1.2" fill="currentColor"/></svg>Antes de começar: o que este site é, e o que não é</h2>
@@ -98,6 +98,8 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
       <li><b>A eleição é o estudo de caso.</b> Ela serve de caso de teste para entender o poder, e os limites, dessas ferramentas para prever esse tipo de situação.</li>
       <li><b>Não há preferência por nenhum candidato.</b> O trabalho é puramente estatístico e matemático. As cores seguem a convenção usada pela imprensa (vermelho para o 13, historicamente a cor do PT, partido do Lula; azul para o 22, cor usada em geral para o candidato mais à direita) e não indicam preferência.</li>
       <li><b>O que fica de fora.</b> Debates, notícias, apoios e outros acontecimentos entre o 1º e o 2º turno mudam o resultado e <b>não</b> são levados em conta neste estudo.</li>
+      <li><b>Não é pesquisa eleitoral nem enquete.</b> Ninguém é entrevistado: o site usa só resultados oficiais do TSE e pesquisas registradas no TSE e divulgadas pela imprensa, sempre com a fonte.</li>
+      <li><b>Uso político proibido.</b> Campanhas, partidos, candidatos e propaganda eleitoral não podem usar o conteúdo deste site (veja a <a href="https://github.com/LuisFHartmann/eleicao-em-numeros/blob/main/LICENSE.md" rel="noopener">licença</a>).</li>
       <li class="inteira"><b>O resultado oficial é sempre o do TSE.</b> Simulações e projeções daqui são estimativas com margem de erro, não resultado.</li>
     </ul>
   </aside>
@@ -107,19 +109,12 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
     <a class="card" href="apuracao/"><span class="k">1º TURNO</span><h2>A curva da apuração</h2><p>A apuração reconstruída minuto a minuto, e o que acontece com a "virada" quando todos os estados apuram no mesmo ritmo.</p><span class="vai">Ver a curva →</span></a>
     <a class="card" href="segundo-turno/"><span class="k">2º TURNO</span><h2>Simulação do 2º turno</h2><p>20 mil simulações aplicando ao 1º turno de 2026 a migração de votos de 2014, 2018 e 2022. Os pesos e a classificação dos candidatos podem ser mudados.</p><span class="vai">Simular →</span></a>
     <a class="card" href="metodologia/"><span class="k">COMO É FEITO</span><h2>Metodologia</h2><p>Dados, premissas, o teste com a noite de 2022 e o que estes números não dizem.</p><span class="vai">Ler →</span></a>
+      <a class="card" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener"><span class="k">CÓDIGO</span><h2>Rode você mesmo</h2><p>O código está no GitHub. Com um comando, a simulação de Monte Carlo roda no seu computador e dá os mesmos números do site; dá para mudar os pesos das eleições, o tamanho do erro e a classificação dos candidatos.</p><span class="vai">Ver no GitHub →</span></a>
   </section>
   <section class="princ">
     <div><h3>Apartidário</h3><p>Os mesmos métodos valem para qualquer candidato. As cores são a convenção da imprensa (vermelho para o 13, cor histórica do PT; azul para o 22) e não indicam preferência.</p></div>
-    <div><h3>Código aberto</h3><p>Os programas leem os dados abertos do TSE direto da internet, e o código está todo no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>. Qualquer pessoa pode conferir, rodar e chegar aos mesmos números.</p></div>
+    <div><h3>Código público</h3><p>Os programas leem os dados abertos do TSE direto da internet, e o código está todo, para conferência, no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>. Qualquer pessoa pode conferir, rodar e chegar aos mesmos números.</p></div>
     <div><h3>Não é o resultado oficial</h3><p>Simulações e projeções são estimativas com margem de erro. O resultado oficial é sempre o do TSE.</p></div>
-  </section>
-  <!-- SOBRE O AUTOR: fatos do handoff do site pessoal (sem oferta de serviços; o site pessoal ainda não está no ar) -->
-  <section class="sobre" id="sobre">
-    <div class="eyebrow">Sobre o autor</div>
-    <h2>Luis Felipe Hartmann</h2>
-    <p class="sobre-texto">Engenheiro de computação em Curitiba. Há dez anos trabalho com P&amp;D de ponta a ponta: hardware, firmware, nuvem, modelos de IA em produção e os dashboards em tempo real que mostram se tudo isso está funcionando. Hoje sou diretor de engenharia numa healthtech, tenho artigos em periódicos internacionais (um deles com redes bayesianas para previsão) e faço mestrado em IA aplicada na PUCPR.</p>
-    <p class="sobre-texto">Este site é um experimento pessoal: eu queria ver até onde uma simulação de Monte Carlo, alimentada pelo 1º turno e pelo histórico das eleições anteriores, consegue chegar, e se um modelo bayesiano consegue projetar o resultado ao vivo, enquanto os boletins chegam. Uso agentes de IA para construir mais rápido; o modelo, as premissas e as checagens são meus.</p>
-    <p class="sobre-links">Comentários e correções são bem-vindos: <a href="https://www.linkedin.com/in/luis-felipe-hartmann/" rel="noopener">LinkedIn</a> · <a href="https://github.com/LuisFHartmann" rel="noopener">GitHub</a></p>
   </section>
 </main>
 </body>
