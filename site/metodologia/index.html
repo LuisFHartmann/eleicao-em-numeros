@@ -211,6 +211,7 @@ a priori:  Brasil ~ N(0; 0,035)   região ~ N(0; 0,04)   estado ~ N(0; 0,05)   m
 </ul>
 
 <h2 id="reproduzir"><span class="n">7</span>Como reproduzir</h2>
+<p>O código completo está no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>. Para refazer tudo do zero:</p>
 <div class="formula">pip install polars numpy        # Python 3.11+
 python pipeline/baixar.py        # dados abertos do TSE (em memória; grava só tabelas reduzidas em data/)
 python pipeline/votos.py         # mapa de votos e histogramas
@@ -220,7 +221,7 @@ python pipeline/ao_vivo.py       # esperado por município, noite de 2022 e noit
 node   pipeline/teste_ao_vivo.js replay_2022</div>
 <p>Depois, sirva a pasta <code>site/</code> com qualquer servidor estático (por exemplo, <code>python -m http.server -d site</code>).</p>
 </main>
-<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE.</footer>
+<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE. Código aberto no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>.</footer>
 
 <script src="../vendor/d3-7.9.0.min.js"></script>
 <script>

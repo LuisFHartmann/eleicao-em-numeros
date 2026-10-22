@@ -1,5 +1,7 @@
 # Eleição em Números
 
+**No ar:** https://eleicaoemnumeros.pages.dev
+
 Eleição presidencial de 2026 contada com dados públicos do TSE: mapa de votos do 1º turno, a curva da apuração (e o que acontece com a "virada" quando todos os estados apuram no mesmo ritmo), uma simulação do 2º turno pela migração de votos de 2014, 2018 e 2022 e um painel que projeta, durante a apuração do 2º turno, o resultado final.
 
 Projeto independente e apartidário. O resultado oficial é sempre o do TSE.
