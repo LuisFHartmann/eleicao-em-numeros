@@ -1,5 +1,5 @@
 {
- "atualizado": "2026-10-21",
+ "atualizado": "2026-10-24",
  "descricao": "Pesquisas de intenção de voto para o 2º turno presidencial de 2026 (% dos votos válidos) e erro das pesquisas de véspera em 2026 e 2022. 'totais convertidos': o veículo publicou só os votos totais; os válidos foram calculados aqui como candidato / (13 + 22). Erro = pesquisa − resultado, em pontos percentuais.",
  "resultados": {
   "1t2026": {
@@ -550,6 +550,378 @@
     "v22": 50
    },
    "registroTSE": "BR-03835/2026"
+  },
+  {
+   "instituto": "PoderData/Aya",
+   "campo": "19-21/10",
+   "inicio": "2026-10-19",
+   "fim": "2026-10-21",
+   "divulgacao": "2026-10-22",
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Poder360",
+     "url": "https://www.poder360.com.br/poderdata/pesquisa-poderdata-aya-leia-os-resultados-de-lula-e-flavio-na-reta-final-do-2o-turno-3/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-07926/2026"
+  },
+  {
+   "instituto": "Indexa",
+   "campo": "20-21/10",
+   "inicio": "2026-10-20",
+   "fim": "2026-10-21",
+   "divulgacao": "2026-10-22",
+   "v13": 49.4,
+   "v22": 50.6,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CartaCapital",
+     "url": "https://www.cartacapital.com.br/cartaexpressa/pesquisa-indexa-mostra-flavio-bolsonaro-com-506-ante-494-de-lula/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 44.1,
+    "v22": 45.2
+   },
+   "registroTSE": "BR-02348/2026"
+  },
+  {
+   "instituto": "Datafolha",
+   "campo": "20-22/10",
+   "inicio": "2026-10-20",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-22",
+   "v13": 50.0,
+   "v22": 50.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/datafolha-flavio-e-lula-empatam-em-50-de-votos-validos-no-2o-turno/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-09709/2026"
+  },
+  {
+   "instituto": "Real Time Big Data",
+   "campo": "19-22/10",
+   "inicio": "2026-10-19",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-23",
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/real-time-flavio-tem-52-dos-votos-validos-no-2o-turno-lula-48/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-09670/2026"
+  },
+  {
+   "instituto": "Vox Brasil",
+   "campo": "20-22/10",
+   "inicio": "2026-10-20",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-23",
+   "v13": 50.6,
+   "v22": 49.4,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Metrópoles",
+     "url": "https://www.metropoles.com/brasil/vox-lula-soma-506-dos-votos-validos-contra-494-de-flavio-bolsonaro"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 45.4,
+    "v22": 44.3
+   },
+   "registroTSE": "BR-03259/2026"
+  },
+  {
+   "instituto": "Ipespe/Abrapel",
+   "campo": "20-22/10",
+   "inicio": "2026-10-20",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-23",
+   "v13": 49.5,
+   "v22": 50.5,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Metrópoles",
+     "url": "https://www.metropoles.com/brasil/ipespe-flavio-tem-505-e-lula-marca-495-dos-votos-validos-no-2o-turno"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-04350/2026"
+  },
+  {
+   "instituto": "Alfa Inteligência",
+   "campo": "18-22/10",
+   "inicio": "2026-10-18",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-23",
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/alfa-flavio-tem-52-dos-votos-validos-no-2o-turno-lula-48/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-08496/2026"
+  },
+  {
+   "instituto": "Veritá",
+   "campo": "18-22/10",
+   "inicio": "2026-10-18",
+   "fim": "2026-10-22",
+   "divulgacao": "2026-10-23",
+   "v13": 48.7,
+   "v22": 51.3,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Exame",
+     "url": "https://exame.com/brasil/pesquisa-verita-flavio-bolsonaro-tem-513-e-lula-487-dos-votos-validos/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 47.5,
+    "v22": 50.2
+   },
+   "registroTSE": "BR-06070/2026"
+  },
+  {
+   "instituto": "CNT/MDA",
+   "campo": "21-23/10",
+   "inicio": "2026-10-21",
+   "fim": "2026-10-23",
+   "divulgacao": "2026-10-24",
+   "v13": 49.3,
+   "v22": 50.7,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Brasil 247",
+     "url": "https://www.brasil247.com/brasil/cnt-mda-lula-e-flavio-bolsonaro-estao-empatados-tecnicamente-na-vespera-do-segundo-turno/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-02136/2026"
+  },
+  {
+   "instituto": "Instituto França",
+   "campo": "21-23/10",
+   "inicio": "2026-10-21",
+   "fim": "2026-10-23",
+   "divulgacao": "2026-10-24",
+   "v13": 48.6,
+   "v22": 51.4,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Congresso em Foco",
+     "url": "https://www.congressoemfoco.com.br/noticia/123590/flavio-tem-51-4-dos-votos-validos-lula-48-6--diz-instituto-franca"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 43.1,
+    "v22": 45.6
+   },
+   "registroTSE": "BR-04863/2026"
+  },
+  {
+   "instituto": "Colectta",
+   "campo": "23/10",
+   "inicio": "2026-10-23",
+   "fim": "2026-10-23",
+   "divulgacao": "2026-10-24",
+   "v13": 50.3,
+   "v22": 49.7,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CartaCapital",
+     "url": "https://www.cartacapital.com.br/cartaexpressa/pesquisa-colectta-mostra-lula-com-503-contra-497-de-flavio-bolsonaro/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 46.5,
+    "v22": 46.0
+   },
+   "registroTSE": "BR-05601/2026"
+  },
+  {
+   "instituto": "AtlasIntel",
+   "campo": "18-23/10",
+   "inicio": "2026-10-18",
+   "fim": "2026-10-23",
+   "divulgacao": "2026-10-24",
+   "v13": 49.2,
+   "v22": 50.8,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "Money Times",
+     "url": "https://www.moneytimes.com.br/pesquisa-atlasintel-bloomberg-24-de-outubro-gaep/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 48.4,
+    "v22": 49.9
+   },
+   "registroTSE": "BR-06380/2026"
+  },
+  {
+   "instituto": "Gerp",
+   "campo": "22-24/10",
+   "inicio": "2026-10-22",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 48.0,
+   "v22": 52.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/gerp-flavio-tem-52-dos-votos-validos-no-2o-turno-lula-48-2/"
+    },
+    {
+     "nome": "Jovem Pan",
+     "url": "https://jovempan.com.br/politica/flavio-x-lula-o-que-dizem-as-pesquisas-divulgadas-na-vespera-do-2o-turno/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 46,
+    "v22": 49
+   },
+   "registroTSE": "BR-09327/2026"
+  },
+  {
+   "instituto": "Datafolha",
+   "campo": "23-24/10",
+   "inicio": "2026-10-23",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/datafolha-flavio-tem-51-dos-votos-validos-lula-49/"
+    },
+    {
+     "nome": "Tribuna de Jundiaí",
+     "url": "https://tribunadejundiai.com.br/politica/eleicoes-2026/pesquisa-datafolha-presidente-flavio-bolsonaro-lula-24-outubro-2026/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 47,
+    "v22": 48
+   },
+   "registroTSE": "BR-09540/2026"
+  },
+  {
+   "instituto": "Quaest",
+   "campo": "23-24/10",
+   "inicio": "2026-10-23",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 49.0,
+   "v22": 51.0,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "ISTOÉ",
+     "url": "https://istoe.com.br/quaest-flavio-51-lula-49-votos-validos-segundo-turno"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 45,
+    "v22": 46
+   },
+   "registroTSE": "BR-09158/2026"
+  },
+  {
+   "instituto": "BTG/Nexus",
+   "campo": "23-24/10",
+   "inicio": "2026-10-23",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 49.5,
+   "v22": 50.5,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/nexus-btg-flavio-tem-505-de-votos-validos-no-2o-turno-lula-495/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-08234/2026"
+  },
+  {
+   "instituto": "Palver",
+   "campo": "22-24/10",
+   "inicio": "2026-10-22",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 49.5,
+   "v22": 50.5,
+   "base": "totais convertidos",
+   "fontes": [
+    {
+     "nome": "CartaCapital",
+     "url": "https://www.cartacapital.com.br/politica/palver-na-vespera-do-2o-turno-flavio-bolsonaro-50-lula-49/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "totais": {
+    "v13": 49,
+    "v22": 50
+   },
+   "registroTSE": "BR-01794/2026"
+  },
+  {
+   "instituto": "Futura",
+   "campo": "23-24/10",
+   "inicio": "2026-10-23",
+   "fim": "2026-10-24",
+   "divulgacao": "2026-10-24",
+   "v13": 49.9,
+   "v22": 50.1,
+   "base": "válidos",
+   "fontes": [
+    {
+     "nome": "CNN Brasil",
+     "url": "https://www.cnnbrasil.com.br/eleicoes/futura-flavio-tem-501-dos-votos-validos-no-2o-turno-lula-499/"
+    }
+   ],
+   "origem": "busca de 24/10/2026",
+   "registroTSE": "BR-09726/2026"
   }
  ],
  "erros": [

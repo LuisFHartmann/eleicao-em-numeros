@@ -1,0 +1,414 @@
+{
+ "descricao": "Curadoria de data/estudo/pesquisas_historicas.json para a página Depois do resultado. E = finalista de esquerda (13), D = finalista de direita. Rejeição: Datafolha ('não votaria de jeito nenhum'), quando publicada. Aprovação: Datafolha, ótimo/bom e ruim/péssimo. Pesquisas: média das últimas pesquisas de 2º turno em votos válidos (Datafolha, Ibope/Ipec, Quaest, AtlasIntel quando houver). Valores nulos não foram encontrados com fonte.",
+ "anos": {
+  "2002": {
+   "pesquisa_validos_E": 0.6559,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "18/10/2002-18/10/2002",
+     "final": false,
+     "validos": null,
+     "total": {
+      "13": 61,
+      "45": 32,
+      "branco_nulo": null,
+      "indecisos": null,
+      "branco_nulo_ns_somados": 7
+     },
+     "fonte": "https://www.redalyc.org/pdf/238/23802213.pdf"
+    }
+   ],
+   "rejeicao": null,
+   "aprovacao": {
+    "ob": 26,
+    "rp": 32,
+    "presidente": "FHC",
+    "data": "18/10/2002",
+    "fonte": "https://www.redalyc.org/pdf/238/23802213.pdf"
+   },
+   "governista": "45",
+   "notas": [
+    "Última pesquisa de 2º turno (véspera) de Datafolha e Ibope em 2002 NÃO localizada; usado Datafolha de 18/10/2002 como a mais tardia encontrada (totais apenas, sem válidos).",
+    "Rejeição de Lula e Serra no 2º turno de 2002: não encontrada (null).",
+    "Datafolha 4-5/10/2002 (1º turno): Lula 48, Serra 21, Garotinho 19 (votos válidos, compilação ANBIMA https://www.anbima.com.br/data/files/03/37/1D/D6/246775106582A275862C16A8/LucianoDias_170914_1_.pdf); simulação de 2º turno da mesma época não verificada.",
+    "Datafolha 19-20/09/2002 (InfoMoney 23/09/2002, https://www.infomoney.com.br/?p=81306): simulação 2º turno Lula 56 x Serra 35."
+   ]
+  },
+  "2006": {
+   "pesquisa_validos_E": 0.61,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "27/10/2006-28/10/2006",
+     "final": true,
+     "validos": {
+      "13": 61,
+      "45": 39
+     },
+     "total": {
+      "13": null,
+      "45": null,
+      "branco_nulo": null,
+      "indecisos": null
+     },
+     "fonte": "https://www.congressoemfoco.com.br/noticia/97223/pesquisas-apontam-vitoria-de-lula"
+    },
+    {
+     "instituto": "Ibope",
+     "campo": "27/10/2006-28/10/2006",
+     "final": true,
+     "validos": {
+      "13": 61,
+      "45": 39
+     },
+     "total": {
+      "13": null,
+      "45": null,
+      "branco_nulo": null,
+      "indecisos": null
+     },
+     "fonte": "https://www.congressoemfoco.com.br/noticia/97223/pesquisas-apontam-vitoria-de-lula"
+    }
+   ],
+   "rejeicao": null,
+   "aprovacao": {
+    "ob": 53,
+    "rp": 15,
+    "presidente": "Lula",
+    "data": "24/10/2006",
+    "fonte": "https://www.congressoemfoco.com.br/noticia/92393/datafolha-lula-tem-61-dos-votos-validos"
+   },
+   "governista": "13",
+   "notas": [
+    "Totais (não-válidos) da última Datafolha e Ibope (27-28/10/2006) não encontrados; incluída a Datafolha de 23-24/10 com totais.",
+    "Série Datafolha 2º turno 2006 (totais): 05-06/10 Lula 50 x Alckmin 43, BN 3, indecisos 4 (válidos 54x46); ~16-17/10 Lula 57 x Alckmin 38, BN 3, indecisos 3 (válidos 60x40, amostra 7133); 23-24/10 58x37, BN 2, ind 3 (válidos 61x39).",
+    "Rejeição de Lula e Alckmin no 2º turno de 2006: não encontrada (null). CNT/Sensus (sem data precisa, ~set/2006, 1º turno) registrou rejeição de Alckmin de 42% (clipping PT: https://siac.fpabramo.org.br/uploads/acervo/PTDN_DisputaEleitoral_ExecutivoFederal_2006_MTR_347.pdf) — instituto diferente, não usado.",
+    "Última Datafolha do 1º turno 2006: 29-30/09/2006, Lula 51, Alckmin 38, Heloísa 9 (válidos; ANBIMA)."
+   ]
+  },
+  "2010": {
+   "pesquisa_validos_E": 0.555,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "29/10/2010-30/10/2010",
+     "final": true,
+     "validos": {
+      "13": 55,
+      "45": 45
+     },
+     "total": {
+      "13": 51,
+      "45": 41,
+      "branco_nulo": null,
+      "indecisos": null
+     },
+     "fonte": "https://www.congressoemfoco.com.br/noticia/82633/veja-ultimos-numeros-do-ibope-e-datafolha ; https://conexaoto.com.br/2010/10/30/na-vespera-da-votacao-vox-populi-ibope-e-data-folha-mostram-dilma-com-vitoria-garantida ; https://en.wikipedia.org/wiki/Opinion_polling_for_the_2010_Brazilian_presidential_election"
+    },
+    {
+     "instituto": "Ibope",
+     "campo": "27/10/2010-30/10/2010",
+     "final": true,
+     "validos": {
+      "13": 56,
+      "45": 44
+     },
+     "total": {
+      "13": 52,
+      "45": 40,
+      "branco_nulo": 5,
+      "indecisos": 3
+     },
+     "fonte": "https://www.congressoemfoco.com.br/noticia/82633/veja-ultimos-numeros-do-ibope-e-datafolha ; https://conexaoto.com.br/2010/10/30/na-vespera-da-votacao-vox-populi-ibope-e-data-folha-mostram-dilma-com-vitoria-garantida ; https://en.wikipedia.org/wiki/Opinion_polling_for_the_2010_Brazilian_presidential_election"
+    }
+   ],
+   "rejeicao": null,
+   "aprovacao": null,
+   "governista": "13",
+   "notas": [
+    "Rejeição de 2º turno 2010 disponível apenas para CNT/Sensus (campo 23-25/10/2010, n=2.000, reg. 37609/2010): Serra 43% (antes 39,8%), Dilma 32,5% (antes 35,2%); válidos 58,6/41,4; total 51,9/36,7. Fonte: https://blogdocampelo.blogspot.com/2010/10/todas-as-pesquisas-apontam-vitoria-de.html (27/10/2010) e https://www.gazetadopovo.com.br/vida-publica/eleicoes/2010/dilma-tem-586-e-serra-414-dos-votos-validos-aponta-sensus-0pmut80z8313olg5vautn25hq/ . Não é Datafolha/Ibope.",
+    "Links primários do Terra citados pela Wikipédia (OI4764206 Datafolha; OI4764287 Ibope) recusaram conexão; web.archive.org bloqueado para o fetcher.",
+    "Datafolha anterior (27/10/2010, divulgado 26-27/10): total 49/38, válidos 56/44, brancos/nulos 5, indecisos 8 (resumo de busca, sul21/congressoemfoco 70757; não verificado diretamente)."
+   ]
+  },
+  "2014": {
+   "pesquisa_validos_E": 0.525,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "24/10/2014-25/10/2014",
+     "final": true,
+     "validos": {
+      "13": 52,
+      "45": 48
+     },
+     "total": {
+      "13": 47,
+      "45": 43,
+      "branco_nulo": 5,
+      "indecisos": 5
+     },
+     "fonte": "https://www.jb.com.br/eleicoes-2014/noticias/2014/10/25/amp/dilma-na-frente-de-aecio-aponta-ultimas-pesquisas-do-ibope-e-datafolha.html ; https://tribunademinas.com.br/?p=9520"
+    },
+    {
+     "instituto": "Ibope",
+     "campo": "24/10/2014-25/10/2014",
+     "final": true,
+     "validos": {
+      "13": 53,
+      "45": 47
+     },
+     "total": {
+      "13": 49,
+      "45": 43,
+      "branco_nulo": 5,
+      "indecisos": 3
+     },
+     "fonte": "https://www.jb.com.br/eleicoes-2014/noticias/2014/10/25/amp/dilma-na-frente-de-aecio-aponta-ultimas-pesquisas-do-ibope-e-datafolha.html ; https://tribunademinas.com.br/?p=9520"
+    }
+   ],
+   "rejeicao": {
+    "E": 38,
+    "D": 41,
+    "data": "24/10/2014-25/10/2014",
+    "fonte": "https://tribunademinas.com.br/?p=9520",
+    "instituto": "Datafolha"
+   },
+   "aprovacao": {
+    "ob": 42,
+    "rp": 20,
+    "presidente": "Dilma",
+    "data": "21/10/2014",
+    "fonte": "https://jornalgrandebahia.com.br/2014/12/pesquisa-datafolha-avalia-governo-de-dilma-rousseff/"
+   },
+   "governista": "13",
+   "notas": [
+    "Datafolha 22-23/10/2014 (n=9.910): total 48/42, brancos/nulos 5, indecisos 5, válidos 53/47; rejeição Aécio 41, Dilma 37 (https://tribunademinas.com.br/?p=9300).",
+    "Ibope 20-22/10/2014: total 49/41, brancos/nulos 7, indecisos 3, válidos 54/46.",
+    "Rejeição Datafolha de Aécio no 2º turno: 34% (09/10) -> 38% -> 40% (21/10) -> 41% (23/10 e 25/10); Dilma 43% (09/10) -> 39% -> 37-38% (fontes Tribuna de Minas/Congresso em Foco)."
+   ]
+  },
+  "2018": {
+   "pesquisa_validos_E": 0.455,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "26/10/2018-27/10/2018",
+     "final": true,
+     "validos": {
+      "17": 55,
+      "13": 45
+     },
+     "total": {
+      "17": 47,
+      "13": 39,
+      "branco_nulo": 8,
+      "indecisos": 5
+     },
+     "fonte": "https://www.moneytimes.com.br/datafolha-bolsonaro-tem-55-dos-votos-validos-e-haddad-45/"
+    },
+    {
+     "instituto": "Ibope",
+     "campo": "26/10/2018-27/10/2018",
+     "final": true,
+     "validos": {
+      "17": 54,
+      "13": 46
+     },
+     "total": {
+      "17": 47,
+      "13": 41,
+      "branco_nulo": 10,
+      "indecisos": 2
+     },
+     "fonte": "https://www.poder360.com.br/eleicoes/ibope-bolsonaro-54-x-46-haddad-datafolha-bolsonaro-55-x-45-haddad/"
+    }
+   ],
+   "rejeicao": {
+    "E": 52,
+    "D": 45,
+    "data": "26/10/2018-27/10/2018",
+    "fonte": "https://www.poder360.com.br/eleicoes/ibope-bolsonaro-54-x-46-haddad-datafolha-bolsonaro-55-x-45-haddad/",
+    "instituto": "Datafolha"
+   },
+   "aprovacao": {
+    "ob": 4,
+    "rp": 73,
+    "presidente": "Temer",
+    "data": "20/08/2018-21/08/2018",
+    "fonte": "https://www.gazetasp.com.br/cotidiano/42773-reprovacao-a-temer-recua-mas-governo-permanece-ruim-ou-p/"
+   },
+   "governista": null,
+   "notas": [
+    "Todos os valores em % conforme publicados.",
+    "Não houve candidato governista no 2º turno de 2018.",
+    "Avaliação Temer: Datafolha set/out 2018 não localizada; usada ago/2018."
+   ]
+  },
+  "2022": {
+   "pesquisa_validos_E": 0.5285,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "28/10/2022-29/10/2022",
+     "final": true,
+     "validos": {
+      "13": 52,
+      "22": 48
+     },
+     "total": {
+      "13": 49,
+      "22": 45,
+      "branco_nulo": 4,
+      "indecisos": 2
+     },
+     "fonte": "https://static.poder360.com.br/2022/12/datafolha-BR-082972022-1.pdf"
+    },
+    {
+     "instituto": "Ipec",
+     "campo": "27/10/2022-29/10/2022",
+     "final": true,
+     "validos": {
+      "13": 54,
+      "22": 46
+     },
+     "total": {
+      "13": 50,
+      "22": 43,
+      "branco_nulo": 5,
+      "indecisos": 2
+     },
+     "fonte": "https://www.poder360.com.br/pesquisas/lula-tem-54-dos-votos-validos-ante-46-de-bolsonaro-diz-ipec-2/"
+    },
+    {
+     "instituto": "Quaest",
+     "campo": "28/10/2022-29/10/2022",
+     "final": true,
+     "validos": {
+      "13": 52,
+      "22": 48
+     },
+     "total": {
+      "13": 46,
+      "22": 43,
+      "branco_nulo": 5,
+      "indecisos": 5
+     },
+     "fonte": "https://www.infomoney.com.br/politica/genial-quaest-lula-tem-46-dos-votos-totais-no-segundo-turno-bolsonaro-sobe-para-43/"
+    },
+    {
+     "instituto": "AtlasIntel",
+     "campo": "26/10/2022-29/10/2022",
+     "final": true,
+     "validos": {
+      "13": 53.4,
+      "22": 46.6
+     },
+     "total": {
+      "13": 52.4,
+      "22": 45.7,
+      "branco_nulo": null,
+      "indecisos": null
+     },
+     "fonte": "https://www.correiobraziliense.com.br/politica/2022/10/5047912-pesquisa-atlas-lula-tem-534-dos-votos-validos-bolsonaro-466.html"
+    }
+   ],
+   "rejeicao": {
+    "E": 46,
+    "D": 50,
+    "data": "28/10/2022-29/10/2022",
+    "fonte": "https://static.poder360.com.br/2022/12/datafolha-BR-082972022-1.pdf",
+    "instituto": "Datafolha"
+   },
+   "aprovacao": {
+    "ob": 38,
+    "rp": 39,
+    "presidente": "Bolsonaro",
+    "data": "25/10/2022-27/10/2022 (divulgada 27/10/2022)",
+    "fonte": "https://www.bandab.com.br/?p=1186937"
+   },
+   "governista": "22",
+   "notas": [
+    "Todos os valores em % conforme publicados.",
+    "Ipec: rejeição mais recente encontrada é de 15-17/10/2022; rodadas de 24/10 e 29/10 sem rejeição localizada.",
+    "AtlasIntel: rejeição não encontrada; brancos/nulos e indecisos só somados (1,9%)."
+   ]
+  },
+  "2026": {
+   "pesquisa_validos_E": 0.4907,
+   "pesquisas": [
+    {
+     "instituto": "Datafolha",
+     "campo": "23/10/2026-24/10/2026",
+     "final": true,
+     "validos": {
+      "13": 49,
+      "22": 51
+     },
+     "total": {
+      "13": 47,
+      "22": 48,
+      "branco_nulo": 3,
+      "indecisos": 2
+     },
+     "fonte": "https://www.congressoemfoco.com.br/noticia/123597/datafolha-flavio-tem-51-dos-votos-validos-e-lula-49-no-2-turno ; https://www.dci.com.br/politica/pesquisa-datafolha-hoje-24-10-veja-o-resultado-de-lula-e-flavio-bolsonaro-no-2o-turno/"
+    },
+    {
+     "instituto": "Quaest",
+     "campo": "23/10/2026-24/10/2026",
+     "final": true,
+     "validos": {
+      "13": 49,
+      "22": 51
+     },
+     "total": {
+      "13": 45,
+      "22": 46,
+      "branco_nulo": 8,
+      "indecisos": 1
+     },
+     "fonte": "https://www.oliberal.com/politica/quaest-flavio-bolsonaro-tem-51-dos-votos-validos-e-lula-49-na-vespera-do-segundo-turno-1.1186432"
+    },
+    {
+     "instituto": "AtlasIntel",
+     "campo": "18/10/2026-23/10/2026",
+     "final": true,
+     "validos": {
+      "13": 49.2,
+      "22": 50.8
+     },
+     "total": {
+      "13": 48.4,
+      "22": 49.9,
+      "branco_nulo": null,
+      "indecisos": null,
+      "branco_nulo_mais_indecisos": 1.7
+     },
+     "fonte": "https://www.moneytimes.com.br/pesquisa-atlasintel-bloomberg-24-de-outubro-gaep/"
+    }
+   ],
+   "rejeicao": {
+    "E": 48,
+    "D": 48,
+    "data": "20/10/2026-22/10/2026 (divulgada 22/10/2026, BR-09709/2026)",
+    "fonte": "https://www.agazeta.com.br/brasil/48-rejeitam-lula-e-flavio-bolsonaro-mostra-datafolha-1026 ; https://www.poder360.com.br/poder-eleicoes-2026/flavio-e-rejeitado-por-46-e-lula-por-45-diz-datafolha/",
+    "instituto": "Datafolha"
+   },
+   "aprovacao": {
+    "ob": 35,
+    "rp": 41,
+    "presidente": "Lula",
+    "data": "13/10/2026-14/10/2026 (divulgada 15/10/2026, BR-00466/2026)",
+    "fonte": "https://www.oliberal.com/politica/datafolha-governo-lula-tem-avaliacao-negativa-de-41-e-positiva-de-35-1.1183053"
+   },
+   "governista": "13",
+   "notas": [
+    "1º turno (04/10/2026): Flávio 47,03% (56.104.503) x Lula 45,16% (53.879.538) dos válidos (https://www.moneytimes.com.br/pesquisa-atlasintel-bloomberg-24-de-outubro-gaep/). Lula virou no 2º turno.",
+    "Todas as pesquisas finais (Datafolha, Quaest, AtlasIntel) davam Flávio numericamente à frente nos válidos (51, 51, 50,8); resultado: Lula 51,79.",
+    "Série Datafolha 2º turno 2026 (válidos Flávio x Lula): 06-07/10 52x48; 13-15/10 51x49; 20-22/10 50x50; 23-24/10 51x49.",
+    "Fontes de 2026 são principalmente imprensa regional/agregadores replicando Folha/Estadão Conteúdo; folha.uol.com.br não foi acessado diretamente."
+   ]
+  }
+ }
+}

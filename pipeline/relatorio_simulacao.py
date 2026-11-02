@@ -225,8 +225,13 @@ Z90 = 1.6449  # quantil de 95% da normal: ± Z90 · σ cobre 90%
 
 
 def resumo_pesquisas(P):
+    import datetime as dt
     L = P["segundoTurno2026"]
-    rec = [p for p in L if (p.get("divulgacao") or "") >= "2026-10-18"]
+    # pesquisas recentes: divulgadas nos 7 dias que terminam na divulgação mais recente
+    ult = dt.date.fromisoformat(max(p["divulgacao"] for p in L if p.get("divulgacao")))
+    ini = ult - dt.timedelta(days=6)
+    rec = [p for p in L if (p.get("divulgacao") or "") >= ini.isoformat()]
+    janela = f"{ini.day} a {ult.day}/{ult.month}" if ini.month == ult.month else f"{ini.day}/{ini.month} a {ult.day}/{ult.month}"
     v = np.array([p["v22"] for p in rec])
     res = P["resultados"]
     erros = []
@@ -242,7 +247,7 @@ def resumo_pesquisas(P):
     rms = math.sqrt(sum(x * x for x in base) / len(base))
     vies = {el: float(np.mean([e["d2"] for e in erros if e["eleicao"] == el])) for el in ("1t2026", "2t2022")}
     media = float(v.mean())
-    return {"L": L, "rec": rec, "media": media, "min": float(v.min()), "max": float(v.max()), "n": len(rec),
+    return {"L": L, "rec": rec, "janela": janela, "media": media, "min": float(v.min()), "max": float(v.max()), "n": len(rec),
             "erros": erros, "rms": rms, "nbase": len(base), "vies": vies,
             "faixa": (media - Z90 * rms, media + Z90 * rms)}
 
@@ -445,7 +450,7 @@ def fig_comparacao(plt, PS, res, sig, estreita):
     linhas = [
         (f"Simulação, erro ±{nf(sig * 100)}", R0["q05"] * 100, R0["mediana"] * 100, R0["q95"] * 100, "faixa de 90%"),
         ("Simulação, erro ±3", R3["q05"] * 100, R3["mediana"] * 100, R3["q95"] * 100, "faixa de 90%"),
-        (f"Pesquisas de 18 a 21/10", PS["min"], m, PS["max"], f"menor e maior; média {nf(m)}%"),
+        (f"Pesquisas de {PS['janela']}", PS["min"], m, PS["max"], f"menor e maior; média {nf(m)}%"),
         ("Média ± erro típico", a, m, b, f"média ± {nf(Z90, 3)} × {nf(PS['rms'], 2)}"),
         ("Média sem o viés do 1º t. 2026", None, m - PS["vies"]["1t2026"], None, f"{nf(m)} {sinal(-PS['vies']['1t2026'])}"),
         ("Média sem o viés do 2º t. 2022", None, m - PS["vies"]["2t2022"], None, f"{nf(m)} {sinal(-PS['vies']['2t2022'])}"),
@@ -585,7 +590,7 @@ def tab_conta(PS, res):
     a, b = PS["faixa"]
     d = [e["d2"] for e in PS["erros"] if e["eleicao"] in ("1t2026", "2t2022")]
     linhas = [
-        ("1", f"Média das {PS['n']} pesquisas divulgadas de 18 a 21/10 (fatia do 22 nos válidos)", f"{nf(PS['media'], 2)}%"),
+        ("1", f"Média das {PS['n']} pesquisas divulgadas de {PS['janela']} (fatia do 22 nos válidos)", f"{nf(PS['media'], 2)}%"),
         ("2", f"Erro típico das pesquisas de véspera: raiz da média dos quadrados dos {PS['nbase']} erros na disputa a dois "
               "(1º turno de 2026 e 2º turno de 2022)", f"{nf(PS['rms'], 2)} p.p."),
         ("3", f"Faixa de 90% supondo erro normal: média ± {nf(Z90, 3)} × erro típico", f"{nf(a)}% a {nf(b)}%"),
@@ -659,7 +664,7 @@ def main():
         sys.exit("Os números do Python não batem com os da página; confira antes de publicar.")
     sig = sigma_hist(T)
     PS = resumo_pesquisas(P)
-    print(f"\nPesquisas de 18 a 21/10: n = {PS['n']}, média do 22 = {PS['media']:.2f} (de {PS['min']} a {PS['max']})")
+    print(f"\nPesquisas de {PS['janela']}: n = {PS['n']}, média do 22 = {PS['media']:.2f} (de {PS['min']} a {PS['max']})")
     print(f"Erro típico (RMS, disputa a dois, 1t2026 + 2t2022, n = {PS['nbase']}): {PS['rms']:.2f} p.p.; "
           f"viés médio 1t2026 = {PS['vies']['1t2026']:+.2f}, 2t2022 = {PS['vies']['2t2022']:+.2f}")
     print(f"Faixa média ± {Z90}·σ: {PS['faixa'][0]:.2f} a {PS['faixa'][1]:.2f}")

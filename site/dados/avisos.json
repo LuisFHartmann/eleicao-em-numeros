@@ -1,0 +1,13 @@
+{
+  "avisos": [
+    {
+      "id": "prorrogacao-19h",
+      "nivel": "alerta",
+      "paginas": ["ao-vivo", "votos", "inicio"],
+      "titulo": "Votação prorrogada até as 19h.",
+      "texto": "Por decisão do ministro Cristiano Zanin (STF), a votação do 2º turno foi prorrogada até as 19h em todo o país, e o TSE suspendeu a totalização até lá. O único lote divulgado antes disso (às 17h06, com 0,25% das seções, mais da metade do exterior) é o que aparece nas páginas. A contagem esperada por horário foi deslocada para começar às 19h.",
+      "desde": "2026-10-25T17:20:00-03:00",
+      "ate": null
+    }
+  ]
+}

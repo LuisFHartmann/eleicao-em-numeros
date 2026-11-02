@@ -9,3 +9,4 @@ site/ao-vivo/dados/*.tmp
 site/ao-vivo/dados/vivo_6258.json
 node_modules/
 .wrangler/
+logs/

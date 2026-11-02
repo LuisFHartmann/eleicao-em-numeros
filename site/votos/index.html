@@ -234,8 +234,9 @@ footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-
       <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub" id="brand-sub">Eleições 2026 · 1º turno · dados públicos do TSE</div></div>
     </div>
   </div>
-  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/" aria-current="page">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav>
+  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/" aria-current="page">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../pos-resultado/">Depois do resultado</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav>
 </header>
+<div class="avisos" data-pagina="votos"></div>
 
 <main class="wrap">
   <section class="lede">
@@ -243,7 +244,7 @@ footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-
     <h1 id="titulo">Como o Brasil votou</h1>
     <div class="turnos" id="c-turno" role="group" aria-label="Turno">
       <button type="button" data-v="1" aria-pressed="true"><b>1º turno</b><span>4/10 · resultado completo</span></button>
-      <button type="button" data-v="2" aria-pressed="false"><b><i class="ponto" id="t2-ponto"></i>2º turno</b><span id="t2-sub">ao vivo a partir das 17h de 25/10</span></button>
+      <button type="button" data-v="2" aria-pressed="false"><b><i class="ponto" id="t2-ponto"></i>2º turno</b><span id="t2-sub">ao vivo a partir das 19h de 25/10</span></button>
     </div>
     <p class="lede-txt">A votação para Presidente em cada estado e município. A escala vai do vermelho (13) ao azul (22), passando pelo cinza quando a disputa é equilibrada. Em área, o mapa exagera municípios grandes e pouco povoados; os círculos mostram o peso real de cada lugar.</p>
   </section>
@@ -287,7 +288,7 @@ const C2 = [{ n: "13", nome: "Lula" }, { n: "22", nome: "Flávio Bolsonaro" }];
 const num = s => +String(s ?? "0").replace(/\./g, "").replace(",", ".") || 0;
 const getFresh = url => fetch(url, { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`${r.status} em ${url.split("/").pop()}`); return r.json(); });
 const marca = x => `${x.s?.st}|${x.dt}|${x.ht}`;
-const INICIO2 = Date.parse("2026-10-25T17:00:00-03:00");
+const INICIO2 = Date.parse("2026-10-25T19:00:00-03:00");  // votação prorrogada até as 19h (STF)
 const T2 = { fonte: null, ufs: {}, ext: null, br: null, chave: new Map(), munUF: {}, vistoUF: {}, vistoMun: {}, horaTSE: "", consulta: null, erro: null, timer: null, ocupado: false, denovo: false, prior: null };
 
 const MEDIDAS = {
@@ -658,7 +659,7 @@ function gravarURL() {
 /* legenda do botão do 2º turno: antes das 17h de 25/10, durante a apuração e depois do fim */
 function rotuloTurno2() {
   const u = T2.br, fim = !TESTE && T2.fonte && u.ts > 0 && u.st >= u.ts, vivo = Date.now() >= INICIO2 && !fim;
-  document.getElementById("t2-sub").textContent = fim ? "25/10 · apuração concluída" : vivo ? "ao vivo · apuração em andamento" : "ao vivo a partir das 17h de 25/10";
+  document.getElementById("t2-sub").textContent = fim ? "25/10 · apuração concluída" : vivo ? "ao vivo · apuração em andamento" : "ao vivo a partir das 19h de 25/10 (votação prorrogada)";
   document.getElementById("t2-ponto").classList.toggle("vivo", vivo);
 }
 
@@ -703,7 +704,7 @@ async function lerColetor() {
   let d;
   for (const u of [`/vivo/${ELE}.json`, `../ao-vivo/dados/vivo_${ELE}.json`]) { try { d = await getFresh(u); break; } catch { /* tenta o próximo */ } }
   if (!d) return false;
-  if (!d?.obs || !(Date.now() - Date.parse(d.atualizado) < 10 * 60000)) return false;
+  if (!d?.obs || !(Date.now() - Date.parse(d.atualizado) < Math.max(10 * 60000, 2.5 * (d.intervalo ?? 60) * 1000))) return false;
   T2.prior ??= await getJSON("../ao-vivo/dados/prior_2026.json");
   const P = T2.prior, o = d.obs;
   P.uf.forEach((uf, i) => {
@@ -713,7 +714,7 @@ async function lerColetor() {
   });
   Object.keys(UFS).forEach(uf => { T2.ufs[uf] = ufDeMunicipios(uf); T2.munUF[uf] = true; });
   totalBR();
-  T2.fonte = "coletor"; T2.horaTSE = d.horaTSE || "";
+  T2.fonte = "coletor"; T2.oficial = d.oficial ?? null; T2.horaTSE = d.oficial?.hora?.slice(11, 16) || "";
   return true;
 }
 
@@ -733,7 +734,11 @@ async function lerTSE() {
   }));
   totalBR();
   T2.fonte = "tse";
-  T2.horaTSE = br.abr.find(x => x.tpabr === "br")?.ht || "";
+  try { // total nacional oficial: o TSE pode publicá-lo antes do detalhe por estado e município
+    const u = await getFresh(`${TSE}/br/br-c0001-${E6}-u.json`), x = lerU(u);
+    T2.oficial = { a: x.v[0], b: x.v[1], st: x.st, ts: x.ts };
+    T2.horaTSE = (u.hg || "").slice(0, 5);
+  } catch { T2.oficial = null; T2.horaTSE = ""; }
   if (state.gran === "mun" && state.uf) falhas += await lerMunicipiosTSE(state.uf);
   if (falhas) throw new Error(`${falhas} arquivo(s) do TSE não responderam`);
 }
@@ -748,7 +753,7 @@ async function lerMunicipiosTSE(UF) {
     else if (T2.vistoMun[UF + x.cdabr] !== marca(x)) pend.push([m, x]);
   });
   let falhas = 0;
-  for (let i = 0; i < pend.length; i += 24) await Promise.all(pend.slice(i, i + 24).map(async ([m, x]) => {
+  for (let i = 0; i < pend.length; i += 6) await Promise.all(pend.slice(i, i + 6).map(async ([m, x]) => {
     try {
       aplicar(m, lerU(await getFresh(`${TSE}/${uf}/${uf}${x.cdabr}-c0001-${E6}-u.json`)));
       T2.vistoMun[UF + x.cdabr] = marca(x);
@@ -765,7 +770,10 @@ function unidades2() {
 const apur = u => u.ts ? u.st / u.ts : 0;
 
 function totais2() {
-  const el = document.getElementById("totais"), u = T2.br;
+  const el = document.getElementById("totais"), det = T2.br, of = T2.oficial;
+  // topo: total nacional oficial do TSE; o mapa e a tabela usam o detalhe por estado e município já publicado
+  const u = of && of.st > 0 ? { v: [of.a, of.b], validos: of.a + of.b, st: of.st, ts: of.ts || det.ts } : det;
+  const parcial = u !== det && det.validos < 0.95 * u.validos;
   statusVivo();
   rotuloTurno2();
   if (!T2.fonte) {
@@ -773,13 +781,13 @@ function totais2() {
     return;
   }
   if (!u.st) {
-    el.innerHTML = `<div class="aviso"><b>A apuração do 2º turno começa às 17h de 25 de outubro; o mapa se atualiza sozinho.</b>
+    el.innerHTML = `<div class="aviso"><b>A votação do 2º turno foi prorrogada até as 19h de 25 de outubro (decisão do STF), e a apuração recomeça depois disso; o mapa se atualiza sozinho.</b>
       <p>Até lá o mapa fica em cor neutra. Para a projeção do resultado durante a noite, veja a página <a href="../ao-vivo/">Ao vivo</a>.</p></div>`;
     return;
   }
   const fim = u.st >= u.ts;
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:7px">${[0, 1].map(i => linhaCand(C2[i], u.v[i], u.validos, i ? "--c22" : "--c13", true)).join("")}
-      <p style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">Percentuais dos votos válidos${TESTE ? " somando só o 13 e o 22" : ""}, contados até agora. ${fmt.format(u.validos)} votos válidos. Inclui o exterior.</p></div>
+      <p style="margin:6px 0 0;font-size:12.5px;color:var(--muted)">Percentuais dos votos válidos${TESTE ? " somando só o 13 e o 22" : ""}, contados até agora (total oficial do TSE). ${fmt.format(u.validos)} votos válidos. Inclui o exterior.${parcial ? ` <b>O TSE ainda não publicou o detalhe por estado e município da maior parte desses votos: o mapa e a tabela mostram ${fmt.format(det.validos)} votos (${pct(det.validos / u.validos, 0)} do total).</b>` : ""}</p></div>
     <div><div class="apurado"><b class="num">${pct(apur(u), 2)}</b><span>das seções apuradas (${fmt.format(u.st)} de ${fmt.format(u.ts)})</span></div>
       ${fim ? "" : `<p class="parcial">Resultado parcial. A contagem depende da ordem em que os boletins chegam ao TSE, e essa ordem não é aleatória: alguns lugares terminam antes de outros. A vantagem de agora pode mudar até o fim. A página <a href="../ao-vivo/">Ao vivo</a> projeta o resultado levando isso em conta.</p>`}</div>`;
 }
@@ -788,7 +796,7 @@ function statusVivo() {
   const p = [];
   if (TESTE) p.push(`<b>Teste com o 1º turno</b> (só os votos no 13 e no 22)`);
   if (T2.fonte) p.push(T2.fonte === "coletor" ? "Fonte: coletor do projeto" : "Fonte: site do TSE, consultado direto do seu navegador");
-  if (T2.horaTSE) p.push(`TSE às ${esc(T2.horaTSE)}`);
+  if (T2.horaTSE) p.push(`último lote do TSE às ${esc(T2.horaTSE)}`);
   if (T2.consulta) p.push(`consultado às ${hora(T2.consulta)}`);
   if (T2.erro && T2.fonte) p.push(`última consulta incompleta (${esc(T2.erro)})`);
   p.push("atualiza sozinho a cada minuto");
@@ -803,7 +811,9 @@ function tip2(u, med, esc_) {
 }
 function detalhe2(lista) {
   const sel = state.sel && lista.find(x => String(x.id) === String(state.sel));
-  const u = sel || (state.uf ? T2.ufs[state.uf] : T2.br);
+  // Brasil inteiro: total oficial do TSE (o detalhe por estado pode estar atrasado em relação a ele)
+  const of = T2.oficial, br = of && of.st > 0 ? { ...T2.br, v: [of.a, of.b], validos: of.a + of.b, st: of.st, ts: of.ts || T2.br.ts } : T2.br;
+  const u = sel || (state.uf ? T2.ufs[state.uf] : br);
   const tipo = u.cod ? "Município" : sel ? "Estado" : "Total do recorte";
   const margem = (u.v[1] - u.v[0]) / u.validos, a = apur(u);
   document.getElementById("detalhe").innerHTML = `
@@ -839,5 +849,6 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", tema);
 new MutationObserver(tema).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 iniciar().catch(err => { document.getElementById("content").innerHTML = `<div class="loading">Não foi possível carregar os dados (${esc(err.message)}).</div>`; console.error(err); });
 </script>
+<script src="../avisos.js"></script>
 </body>
 </html>

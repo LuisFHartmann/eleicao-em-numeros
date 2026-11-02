@@ -83,7 +83,8 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
   <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
   <div><div class="brand-name">Eleição em Números</div><div class="brand-sub">Eleições 2026 · Presidente · dados públicos do TSE</div></div>
 </div>
-<nav class="abas" aria-label="Páginas"><a href="./" aria-current="page">Início</a><a href="votos/">Mapa de votos</a><a href="segundo-turno/">Simulação do 2º turno</a><a href="ao-vivo/">Ao vivo</a><a href="metodologia/">Metodologia</a><a href="apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
+<nav class="abas" aria-label="Páginas"><a href="./" aria-current="page">Início</a><a href="votos/">Mapa de votos</a><a href="segundo-turno/">Simulação do 2º turno</a><a href="ao-vivo/">Ao vivo</a><a href="pos-resultado/">Depois do resultado</a><a href="metodologia/">Metodologia</a><a href="apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
+<div class="avisos" data-pagina="inicio"></div>
 
 <main class="wrap">
   <section class="hero">
@@ -104,7 +105,7 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
     </ul>
   </aside>
   <section class="cards">
-    <a class="card destaque" href="ao-vivo/"><span class="k">25 DE OUTUBRO · A PARTIR DAS 17H</span><h2>Apuração ao vivo</h2><p>Contagem oficial e projeção do resultado final, recalculadas a cada boletim. Antes da noite, dá para ensaiar com a apuração real de 2022 ou com uma noite simulada.</p><span class="vai">Abrir o painel →</span></a>
+    <a class="card destaque" href="ao-vivo/"><span class="k">25 DE OUTUBRO · APURAÇÃO A PARTIR DAS 19H</span><h2>Apuração ao vivo</h2><p>Contagem oficial e projeção do resultado final, recalculadas a cada boletim. Antes da noite, dá para ensaiar com a apuração real de 2022 ou com uma noite simulada.</p><span class="vai">Abrir o painel →</span></a>
     <a class="card" href="votos/"><span class="k">1º E 2º TURNOS</span><h2>Mapa de votos</h2><p>Votação para Presidente por estado e município, no 1º turno e ao vivo no 2º, com a distribuição das seções em 2026 e 2022.</p><span class="vai">Ver o mapa →</span></a>
     <a class="card" href="apuracao/"><span class="k">1º TURNO</span><h2>A curva da apuração</h2><p>A apuração reconstruída minuto a minuto, e o que acontece com a "virada" quando todos os estados apuram no mesmo ritmo.</p><span class="vai">Ver a curva →</span></a>
     <a class="card" href="segundo-turno/"><span class="k">2º TURNO</span><h2>Simulação do 2º turno</h2><p>20 mil simulações aplicando ao 1º turno de 2026 a migração de votos de 2014, 2018 e 2022. Os pesos e a classificação dos candidatos podem ser mudados.</p><span class="vai">Simular →</span></a>
@@ -117,5 +118,6 @@ h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-si
     <div><h3>Não é o resultado oficial</h3><p>Simulações e projeções são estimativas com margem de erro. O resultado oficial é sempre o do TSE.</p></div>
   </section>
 </main>
+<script src="avisos.js"></script>
 </body>
 </html>

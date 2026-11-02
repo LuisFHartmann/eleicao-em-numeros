@@ -107,6 +107,7 @@ details.recolhe > summary span { font-weight: 400; color: var(--muted); font-siz
 details.recolhe[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 details.recolhe > .panel { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
 @media (prefers-reduced-motion: reduce) { details.recolhe > summary svg { transition: none; } }
+.atualizacao { font-size: 12.5px; color: var(--muted); margin: 8px 2px 0; }
 .duo { display: flex; gap: 2px; height: 8px; border-radius: 2px; overflow: hidden; background: var(--surface-2); margin-top: 8px; }
 .duo i { display: block; height: 100%; }
 section.block { padding-block: 26px; border-top: 1px solid var(--line); }
@@ -178,7 +179,8 @@ details.recolhe > summary { flex-wrap: wrap; }
     <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Ao vivo · 2º turno · Presidente</div></div>
   </div>
 </div>
-<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/" aria-current="page">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/" aria-current="page">Ao vivo</a><a href="../pos-resultado/">Depois do resultado</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
+<div class="avisos" data-pagina="ao-vivo"></div>
 
 <main>
   <section class="wrap lede">
@@ -282,6 +284,17 @@ function pararTudo() {
   if (S.tocando) { clearInterval(S.tocando); S.tocando = null; }
   document.getElementById("play").innerHTML = ICON_PLAY;
 }
+// linha discreta abaixo do placar: quando foi a última atualização e de onde vieram os dados
+const horaBR = t => new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+function atualizacao(t, fonte, horaTSE) {
+  const el = document.getElementById("atualizacao");
+  if (!el) return;
+  el.hidden = S.fonte !== "vivo";
+  const p = S.proj, parcial = p?.contadosModelo != null && p.contados > 0 && p.contadosModelo < 0.95 * p.contados;
+  const lote = S.fonte === "vivo" && S.oficial?.hora ? ` · último lote divulgado pelo TSE às ${S.oficial.hora.slice(11, 16)}` : "";
+  el.textContent = `Atualizado às ${horaBR(t)} · fonte: ${fonte}${lote}` +
+    (parcial ? ` · contagem oficial do TSE; o detalhe por município, usado na projeção, já saiu para ${pct(p.contadosModelo / p.contados, 0)} dos votos contados (o TSE publica o total antes do detalhe)` : "");
+}
 function status(cls, txt) {
   const el = document.getElementById("status");
   el.querySelector("i").className = cls;
@@ -300,7 +313,7 @@ async function cicloVivo() {
       const uf = u.cdabr.toLowerCase();
       const ab = await getFresh(`${TSE}/dados/${uf}/${uf}-${E6}-ab.json`);
       const muns = ab.abr.filter(x => x.tpabr === "mun" && num(x.s?.st) > 0 && vistoMun[uf + x.cdabr] !== `${x.s.st}|${x.dt}|${x.ht}`);
-      await emLotes(muns, 24, async x => {
+      await emLotes(muns, 6, async x => {
         const d = await getFresh(`${TSE}/dados/${uf}/${uf}${x.cdabr}-c0001-${E6}-u.json`);
         lerMunicipio(uf, x.cdabr, d);
         vistoMun[uf + x.cdabr] = `${x.s.st}|${x.dt}|${x.ht}`;
@@ -310,10 +323,16 @@ async function cicloVivo() {
       vistoUF[u.cdabr] = `${u.s.st}|${u.dt}|${u.ht}`;
     }
     const tot = br.abr.find(x => x.tpabr === "br" || x.cdabr === "br");
+    try {
+      const u = await getFresh(`${TSE}/dados/br/br-c0001-${E6}-u.json`);
+      const cs = Object.fromEntries((u.carg?.[0]?.agr ?? []).flatMap(a => a.par.flatMap(p => p.cand)).map(c => [c.n, num(c.vap)]));
+      S.oficial = { a: cs[S.prior.rotulos.a] ?? 0, b: cs[S.prior.rotulos.b] ?? 0, apurado: num(u.s?.pst) / 100 };
+    } catch { /* sem o total nacional, a contagem sai da soma dos municípios */ }
     const apuradoTSE = tot ? num(tot.s?.pst) / 100 : null;
     // também na 1ª consulta (S.proj vazio), para a página nunca ficar sem desenho quando há histórico salvo
     if (baixados || !S.hist.length || !S.proj) registrar(new Date(), apuradoTSE);
     status("ok", `TSE · ${tot?.ht || "sem dados ainda"} · ${baixados} municípios novos`);
+    atualizacao(Date.now(), "TSE, consultado direto do seu navegador a cada 1 min", tot?.ht);
     if (!S.hist.length || apuradoTSE === 0) document.getElementById("resposta").innerHTML = textoAntes();
   } catch (e) {
     status("erro", `falha ao consultar o TSE (${e.message}); nova tentativa em 1 min`);
@@ -327,11 +346,14 @@ async function usarSnapshot() {
     let d = null;
     for (const u of [`/vivo/${ELE}.json`, `dados/vivo_${ELE}.json`]) { try { d = await getFresh(u); break; } catch { /* tenta o próximo */ } }
     if (!d) return false;
-    if (Date.now() - Date.parse(d.atualizado) > 10 * 60000) return false;
+    // velho demais: mais de 10 min, ou 2,5 intervalos do coletor (antes das 17h ele consulta a cada 10 min)
+    if (Date.now() - Date.parse(d.atualizado) > Math.max(10 * 60000, 2.5 * (d.intervalo ?? 60) * 1000)) return false;
     ["st", "est", "a", "b"].forEach(k => S.obs[k] = Float64Array.from(d.obs[k]));
+    S.oficial = d.oficial ?? null;
     S.hist = limparHist(d.hist).filter(h => h.t < Date.parse(d.atualizado) - 1000);
     registrar(new Date(d.atualizado), d.apurado);
-    status("ok", `coletor · TSE ${d.horaTSE ?? ""}`);
+    status("ok", `coletor · último lote do TSE ${d.oficial?.hora?.slice(11, 16) ?? ""}`);
+    atualizacao(d.atualizado, `alimentador do projeto, que consulta o TSE a cada ${Math.round((d.intervalo ?? 60) / 60)} min`, d.horaTSE);
     return true;
   } catch { return false; }
 }
@@ -379,6 +401,11 @@ function alternarPlay() {
 function registrar(t, apuradoTSE, sims = 2000, k = null) {
   let p = Modelo.projetar(S.P, S.obs, { sims, semente: 11 + (k ?? S.hist.length) });
   if (!p.contados) p = S.inicial;  // nada contado ainda: a mesma projeção inicial do texto de abertura
+  const of = S.fonte === "vivo" ? S.oficial : null;
+  if (of && of.a + of.b > 0) {
+    // contagem e % apurado oficiais (total nacional do TSE); a projeção continua usando o detalhe por município
+    p = { ...p, atual: of.b / (of.a + of.b), apurado: of.apurado, contados: of.a + of.b, contadosModelo: p.contados ?? 0 };
+  }
   S.proj = p;
   if (!p.contados) { pintar(t); return; }  // antes do 1º boletim (ao vivo ou antes do play): só a base esperada
   const ponto = { t: +t, apurado: apuradoTSE ?? p.apurado, atual: p.atual, mediana: p.mediana, q05: p.q05, q95: p.q95, q25: p.q25, q75: p.q75, pB: p.pB };
@@ -401,14 +428,15 @@ function textoAntes() {
 }
 function montar() {
   const [A, B] = CANDS();
-  document.getElementById("eyebrow").textContent = S.fonte === "replay_2022" ? "Domingo, 30 de outubro de 2022 · noite real, para testar o modelo" : S.fonte === "sim_2026" ? "Simulação · uma noite possível de 25 de outubro de 2026" : "Domingo, 25 de outubro de 2026 · a partir das 17h";
+  document.getElementById("eyebrow").textContent = S.fonte === "replay_2022" ? "Domingo, 30 de outubro de 2022 · noite real, para testar o modelo" : S.fonte === "sim_2026" ? "Simulação · uma noite possível de 25 de outubro de 2026" : "Domingo, 25 de outubro de 2026 · votação prorrogada até as 19h; apuração a partir daí";
   document.getElementById("resposta").innerHTML = textoAntes();
   const aviso = S.fonte === "vivo" ? "" : S.fonte === "sim_2026"
     ? `<b>Simulação, não é a apuração real.</b> Uma noite inventada para ver o painel funcionando. Os votos de cada seção saem do 1º turno de 2026 redistribuídos como os eleitores migraram em 2014, 2018 e 2022 (o mesmo cálculo da <a href="../segundo-turno/">simulação do 2º turno</a>), mais erros sorteados por região, estado, município e seção. O resultado final fica no centro do que o modelo espera hoje, e os boletins chegam na hora em que chegaram no 1º turno. Na noite de 25/10 o painel troca sozinho para os dados do TSE.`
     : `<b>Teste com a noite real de 2022.</b> Boletins reais, na hora em que chegaram. O modelo só sabe o que se sabia antes daquela eleição: o 1º turno de 2022 e a migração de votos de 2014 e 2018. É daí que vem a <b>projeção inicial</b> (o esperado antes do primeiro boletim): ${esc(A.nome)} ${pct(1 - S.inicial.mediana)} e ${esc(B.nome)} ${pct(S.inicial.mediana)}. O resultado real foi ${pct(1 - S.replay.final.b)} e ${pct(S.replay.final.b)}; a diferença é o que os boletins precisam corrigir ao longo da noite. A largura da faixa foi calibrada nesta mesma noite (<a href="como-ler/#testes">por que isso importa</a>).`;
   document.getElementById("conteudo").innerHTML = `
-    ${S.fonte !== "vivo" ? `<p class="aviso">${aviso} Aperte o play.</p>` : ""}
+    ${aviso ? `<p class="aviso">${aviso}${S.fonte !== "vivo" ? " Aperte o play." : ""}</p>` : ""}
     <div class="placar" id="placar"></div>
+    <p class="atualizacao" id="atualizacao" hidden></p>
     <section class="block">
       <div class="block-head"><div><div class="eyebrow">Projeção</div><h2>O resultado projetado, a cada atualização</h2>
         <p><b>Tracejada, em tom apagado da cor de cada um:</b> a projeção inicial, feita antes de qualquer boletim. Fica fixa a noite toda e serve de régua. Até os primeiros boletins chegarem, ela vem com a faixa de 90% das simulações; depois, fica só a linha. <b>Em cor viva:</b> a projeção atualizada a cada boletim (linha fina na mediana e faixa de 90%) e a contagem oficial (linha grossa). A pontilhada é como a contagem deve aparecer a cada horário, dada a ordem em que os boletins costumam chegar. As linhas começam em 1% apurado, porque antes disso poucos boletins oscilam demais. A contagem anda muito; a projeção deve andar pouco.</p></div></div>
@@ -452,9 +480,11 @@ function montar() {
 }
 // início da noite em exibição e instante em que a curva esperada chega a ~100% apurado
 const inicioNoite = () => S.replay ? +horaReplay(0) : Date.parse("2026-10-25T17:00:00-03:00");
+// início da contagem esperada: a votação de 25/10 foi prorrogada até as 19h (STF), e a totalização só recomeça depois
+const inicioEsperado = () => S.replay ? +horaReplay(0) : ELE === "6258" ? Date.parse("2026-10-25T19:00:00-03:00") : Date.parse(INICIO_VIVO);
 const fimCurva = c => { const f = c.q.findIndex(v => v >= 0.997); return f < 0 ? c.b.length : f + 1; };
 const MIN_APURADO = 0.01; // abaixo disso a contagem é feita de poucos boletins e oscila demais para o gráfico
-const fimEsperado = () => { const c = S.prior.curvaEsperadaHora; return inicioNoite() + fimCurva(c) * c.passoMin * 60000; };
+const fimEsperado = () => { const c = S.prior.curvaEsperadaHora; return inicioEsperado() + fimCurva(c) * c.passoMin * 60000; };
 // há contagem a partir de 1% apurado? Até lá, a projeção inicial aparece com a faixa de 90%; depois, só a linha
 const temDados = () => S.hist.some(h => h.atual != null && h.apurado >= MIN_APURADO);
 // tom apagado de cada candidato para a projeção inicial (o cinza de referência puxado para a cor dele)
@@ -494,8 +524,11 @@ function pintar(t) {
 
 function eixoY(g, y, iw) { y.ticks(6).forEach(v => { g.append("line").attr("class", "gridline").attr("x1", 0).attr("x2", iw).attr("y1", y(v)).attr("y2", y(v)); g.append("text").attr("x", -8).attr("y", y(v)).attr("dy", "0.32em").attr("text-anchor", "end").text(pct(v, 0)); }); }
 function linha50(g, y, iw) { g.append("line").attr("x1", 0).attr("x2", iw).attr("y1", y(.5)).attr("y2", y(.5)).attr("stroke", css("--ink")).attr("stroke-dasharray", "2 3").attr("opacity", .55); }
-// eixo simétrico em torno de 50%: os dois candidatos são espelho um do outro
-const escalaSim = (vals, ih, minimo = .05) => { const h = Math.max(minimo, d3.max(vals, v => Math.abs(v - .5)) + .01); return d3.scaleLinear().domain([.5 - h, .5 + h]).range([ih, 0]).clamp(true); };
+// eixo fixo e simétrico em torno de 50% (46% a 54%): os dois candidatos são espelho um do outro; o que passa
+// disso (o começo da noite, com poucos boletins) fica preso à borda
+const escalaSim = (ih, h = .04) => d3.scaleLinear().domain([.5 - h, .5 + h]).range([ih, 0]).clamp(true);
+// linhas não são presas à borda: o trecho fora do eixo simplesmente não é desenhado
+const noEixo = (y, v) => v != null && v >= y.domain()[0] && v <= y.domain()[1];
 // Um bloco de rótulo por candidato, preso à linha da projeção: o candidato de cima cresce para cima e o de baixo
 // para baixo, então os blocos nunca se sobrepõem, mesmo quando os dois estão a décimos de 50%.
 function rotulosDireita(g, itens, iw) { // itens: [{y, titulo, sub: texto ou [texto, ...], cor}]
@@ -516,10 +549,10 @@ function desenharProj() {
   // a noite inteira desde o início: antes do 1º boletim o gráfico já mostra o que o modelo espera
   const ini = inicioNoite(), ch = S.prior.curvaEsperadaHora, p0 = S.inicial;
   const x = d3.scaleTime().domain([ini, Math.max(fimEsperado(), (H0.at(-1)?.t ?? ini) + 600e3)]).range([0, iw]);
-  const esperada = ch.b.slice(0, fimCurva(ch)).map((v, i) => [ini + i * ch.passoMin * 60000, v]).filter((_, i) => ch.q[i] >= MIN_APURADO);
+  const esperada = ch.b.slice(0, fimCurva(ch)).map((v, i) => [inicioEsperado() + i * ch.passoMin * 60000, v]).filter((_, i) => ch.q[i] >= MIN_APURADO);
   const comCont = H0.filter(h => h.atual != null && h.apurado >= MIN_APURADO);
   const faixaIni = !comCont.length; // a faixa da projeção inicial só até haver contagem a partir de 1% apurado
-  const y = escalaSim(H0.flatMap(h => [h.q05, h.q95]).concat(comCont.map(h => h.atual), faixaIni ? [p0.mediana, p0.q05, p0.q95] : [p0.mediana], esperada.map(d => d[1])).filter(v => v != null), ih);
+  const y = escalaSim(ih);
   const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Projeção do resultado de cada candidato ao longo da noite");
   const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
   eixoY(g, y, iw); linha50(g, y, iw);
@@ -544,7 +577,7 @@ function desenharProj() {
   // 2) contagem esperada a cada horário e, durante a noite, a projeção atualizada e a contagem, nas cores dos candidatos
   for (const c of CANDS()) {
     const cor = css(corN(c.n)), f = v => fatia(c.lado, v);
-    g.append("path").attr("d", d3.line().x(d => x(d[0])).y(d => y(f(d[1]))).curve(d3.curveMonotoneX)(esperada)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.6).attr("stroke-dasharray", "1 3").attr("opacity", .7);
+    g.append("path").attr("d", d3.line().defined(d => noEixo(y, f(d[1]))).x(d => x(d[0])).y(d => y(f(d[1]))).curve(d3.curveMonotoneX)(esperada)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.6).attr("stroke-dasharray", "1 3").attr("opacity", .7);
     const subIni = { t: `projeção inicial ${pct(f(p0.mediana))}`, cor: `var(${corIni(c.n)})` };
     if (!H0.length) {
       rot.push({ y: y(f(p0.mediana)), titulo: `${c.n} · ${pct(f(p0.mediana))}`, sub: [{ t: "projeção inicial", cor: subIni.cor }, `faixa ${pct(Math.min(f(p0.q05), f(p0.q95)))}–${pct(Math.max(f(p0.q05), f(p0.q95)))}`], cor });
@@ -552,8 +585,8 @@ function desenharProj() {
     }
     const area = (a, b, op) => g.append("path").attr("d", d3.area().x(h => x(h.t)).y0(h => y(f(h[a]))).y1(h => y(f(h[b]))).curve(d3.curveMonotoneX)(H0)).attr("fill", cor).attr("opacity", op);
     area("q05", "q95", .17);
-    g.append("path").attr("d", d3.line().x(h => x(h.t)).y(h => y(f(h.mediana))).curve(d3.curveMonotoneX)(H0)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.8);
-    g.append("path").attr("d", d3.line().x(h => x(h.t)).y(h => y(f(h.atual))).curve(d3.curveMonotoneX)(comCont)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 3).attr("opacity", .9);
+    g.append("path").attr("d", d3.line().defined(h => noEixo(y, f(h.mediana))).x(h => x(h.t)).y(h => y(f(h.mediana))).curve(d3.curveMonotoneX)(H0)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 1.8);
+    g.append("path").attr("d", d3.line().defined(h => noEixo(y, f(h.atual))).x(h => x(h.t)).y(h => y(f(h.atual))).curve(d3.curveMonotoneX)(comCont)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", 3).attr("opacity", .9);
     const u = H0.at(-1);
     const temCont = u.atual != null && u.apurado >= MIN_APURADO;
     rot.push({ y: y(f(u.mediana)), titulo: `${c.n} · ${pct(f(u.mediana))} agora`, sub: [subIni].concat(temCont ? [`contagem ${pct(f(u.atual))}`] : []), cor });
@@ -585,12 +618,12 @@ function desenharCurva() {
   const ml = 44, mr = 16, mt = 10, mb = 36, iw = W - ml - mr, ih = H - mt - mb;
   // séries como pontos [x, fatia de B]; no eixo de horário, x é a hora da noite em exibição
   const base = S.replay ? new Date(S.replay.inicio) : new Date("2026-10-25T17:00:00-03:00");
-  const hora = (c, i) => +base + i * c.passoMin * 60000;
+  const hora = (c, i) => inicioEsperado() + i * c.passoMin * 60000;
   const serie = (c, ch) => porHora && ch ? ch.b.slice(0, fimCurva(ch)).map((v, i) => [hora(ch, i), v]).filter((_, i) => ch.q[i] >= MIN_APURADO) : c.q.map((q, i) => [q, c.b[i]]).filter(d => d[0] >= MIN_APURADO);
   const esperada = serie(pr.curvaEsperada, pr.curvaEsperadaHora), t1 = pr.curva1T ? serie(pr.curva1T, pr.curva1THora) : null;
   const real = S.hist.filter(h => h.atual != null && h.apurado >= MIN_APURADO).map(h => [porHora ? h.t : h.apurado, h.atual]);
   const x = porHora ? d3.scaleTime().domain([+base, Math.max(d3.max(esperada, d => d[0]), d3.max(real, d => d[0]) ?? 0)]).range([0, iw]) : d3.scaleLinear().domain([0, 1]).range([0, iw]);
-  const y = escalaSim([...esperada, ...(t1 ?? []), ...real].map(d => d[1]), ih, .06);
+  const y = escalaSim(ih);
   const svg = d3.create("svg").attr("viewBox", `0 0 ${W} ${H}`).attr("role", "img").attr("aria-label", "Curva esperada e curva real da apuração, para os dois candidatos");
   const g = svg.append("g").attr("transform", `translate(${ml},${mt})`);
   eixoY(g, y, iw); linha50(g, y, iw);
@@ -598,7 +631,7 @@ function desenharCurva() {
   if (porHora) { x.ticks(iw < 420 ? 4 : 6).forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(d3.timeFormat("%Hh%M")(t).replace("h00", "h"))); g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text("horário de Brasília"); }
   else { [0, .25, .5, .75, 1].forEach(t => g.append("text").attr("x", x(t)).attr("y", ih + 18).attr("text-anchor", "middle").text(pct(t, 0))); g.append("text").attr("x", iw).attr("y", ih + 32).attr("text-anchor", "end").text("das seções apuradas"); }
   for (const c of CANDS()) {
-    const cor = css(corN(c.n)), ln = (pts, w, dash, op = 1) => g.append("path").attr("d", d3.line().x(d => x(d[0])).y(d => y(fatia(c.lado, d[1]))).curve(d3.curveMonotoneX)(pts)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", w).attr("stroke-dasharray", dash).attr("opacity", op);
+    const cor = css(corN(c.n)), ln = (pts, w, dash, op = 1) => g.append("path").attr("d", d3.line().defined(d => noEixo(y, fatia(c.lado, d[1]))).x(d => x(d[0])).y(d => y(fatia(c.lado, d[1]))).curve(d3.curveMonotoneX)(pts)).attr("fill", "none").attr("stroke", cor).attr("stroke-width", w).attr("stroke-dasharray", dash).attr("opacity", op);
     if (t1) ln(t1, 1.6, "1 3", .7);
     ln(esperada, 1.6, "5 4", .75);
     if (real.length) ln(real, 3, null);
@@ -663,15 +696,15 @@ async function iniciar() {
   document.getElementById("tempo").addEventListener("input", e => { if (S.replay) atualizarReplay(+e.target.value, true); });
   document.getElementById("vel").addEventListener("change", () => { if (S.tocando) { alternarPlay(); alternarPlay(); } });
   document.querySelectorAll("#fonte button").forEach(b => b.addEventListener("click", () => usarFonte(b.dataset.fonte)));
-  // ao vivo a partir das 17h de 25/10/2026 (ou com ?fonte=vivo); antes disso, a simulação
+  // padrão: ao vivo; ?fonte=replay_2022 ou ?fonte=sim_2026 abrem os ensaios
   const pedida = new URLSearchParams(location.search).get("fonte");
-  const noite = Date.now() >= Date.parse("2026-10-25T17:00:00-03:00");
-  await usarFonte(pedida || (noite ? "vivo" : "sim_2026"));
+  await usarFonte(pedida || "vivo");  // padrão: ao vivo (antes da apuração mostra a base esperada)
 }
 let tRes, larg = innerWidth;
 addEventListener("resize", () => { clearTimeout(tRes); tRes = setTimeout(() => { if (S.proj && Math.abs(innerWidth - larg) > 20) { larg = innerWidth; pintar(S.hist.at(-1)?.t ?? Date.now()); } }, 200); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => S.proj && pintar(S.hist.at(-1)?.t ?? Date.now()));
 iniciar().catch(e => { document.getElementById("conteudo").innerHTML = `<div class="loading">Não foi possível carregar: ${esc(e.message)}</div>`; });
 </script>
+<script src="../avisos.js"></script>
 </body>
 </html>

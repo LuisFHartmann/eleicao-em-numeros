@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Depois do Resultado</title>
+<meta name="description" content="O que o resultado do 2º turno de 2026 ensinou sobre a simulação: onde o modelo errou, o que a apuração ao vivo acertou e se rejeição e continuidade de governo teriam ajudado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="../comum.css">
+<style>
+:root {
+  --bg: #f4f5f1; --surface: #fdfdfb; --surface-2: #eceee8; --ink: #15181a; --ink-2: #4a504c; --muted: #7d837d;
+  --line: #dcdfd7; --line-strong: #c3c7be; --accent: #0f5a61; --accent-soft: #dcebea;
+  --c22: #2a78d6; --c13: #e34948; --neutro: #8b918a; --gov: #9a6b16;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+    --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+    --c22: #3987e5; --c13: #e66767; --neutro: #7d837d; --gov: #d9a441; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1211; --surface: #171b1a; --surface-2: #202524; --ink: #edf0eb; --ink-2: #c0c6be; --muted: #8b918a;
+  --line: #2a302e; --line-strong: #3a413e; --accent: #6cc1c8; --accent-soft: #1c3335;
+  --c22: #3987e5; --c13: #e66767; --neutro: #7d837d; --gov: #d9a441; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.62; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 10px; padding: 10px max(16px, env(safe-area-inset-left, 0px)); max-width: 1240px; margin: 0 auto; }
+.brand svg { width: 28px; height: 28px; flex: none; }
+.brand-name { font-family: var(--f-display); font-weight: 800; font-stretch: 85%; font-size: 20px; line-height: 1; }
+.brand-name a { color: inherit; text-decoration: none; }
+.brand-sub { font-size: 12px; color: var(--muted); }
+main { max-width: 820px; margin: 0 auto; padding: 36px max(16px, env(safe-area-inset-left, 0px)) 64px max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--f-display); font-weight: 750; font-stretch: 78%; font-size: clamp(32px, 5vw, 52px); line-height: 1.04; letter-spacing: -0.015em; margin: 4px 0 12px; text-wrap: balance; }
+h2 { font-family: var(--f-display); font-weight: 700; font-stretch: 85%; font-size: 28px; line-height: 1.12; margin: 44px 0 8px; padding-top: 20px; border-top: 1px solid var(--line); text-wrap: balance; }
+h2 .n { color: var(--accent); margin-right: 6px; }
+h3 { font-size: 17px; margin: 24px 0 4px; }
+p, li { color: var(--ink-2); }
+p b, li b { color: var(--ink); }
+.deck { font-size: 18px; color: var(--ink-2); }
+.indice { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 18px; margin: 24px 0; font-size: 14.5px; }
+.indice ol { margin: 6px 0 0; padding-left: 20px; }
+.resumo { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: var(--r); padding: 14px 18px; margin: 20px 0; }
+.resumo ul { margin: 6px 0 0; padding-left: 20px; }
+.resumo li { margin-bottom: 6px; }
+.nota { font-size: 14px; color: var(--muted); }
+.tscroll { overflow-x: auto; margin: 14px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td small { color: var(--muted); }
+tr.destaque td { background: var(--accent-soft); }
+figure { margin: 20px 0; }
+figcaption { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart text.forte { fill: var(--ink); font-weight: 600; }
+.gridline { stroke: var(--line); } .baseline { stroke: var(--line-strong); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); margin-bottom: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: -1px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface-2); margin-bottom: 8px; flex-wrap: wrap; }
+.seg button { font: inherit; color: var(--ink-2); border: 0; background: transparent; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.tip { position: fixed; pointer-events: none; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px 10px;
+  font-size: 13px; line-height: 1.4; color: var(--ink); box-shadow: 0 4px 16px rgba(0,0,0,.15); max-width: 300px; opacity: 0; transition: opacity .1s; z-index: 10; }
+.tip .m { color: var(--muted); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 18px 0; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.kpi .t { font-size: 12.5px; color: var(--muted); }
+.kpi .v { font-family: var(--f-display); font-weight: 750; font-stretch: 85%; font-size: 26px; line-height: 1.1; }
+.kpi .s { font-size: 12.5px; color: var(--muted); }
+footer { max-width: 820px; margin: 0 auto; padding: 0 16px 48px; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) { body { font-size: 15.5px; } table { font-size: 13px; } th, td { padding: 5px 6px; } }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap brand">
+  <svg viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="5" width="28" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><polyline points="5,20 10,16 14,17 19,11 25,9" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"/></svg>
+  <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Depois do resultado</div></div>
+</div>
+<nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../pos-resultado/" aria-current="page">Depois do resultado</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav></header>
+
+<main>
+<div class="eyebrow" id="atualizado">Análise pós-resultado</div>
+<h1>O que o resultado ensinou</h1>
+<p class="deck">A simulação deste site dava 96% de chance de vitória ao 22. Venceu o 13, com <span id="t-res"></span>. Esta página olha para trás: onde o modelo errou, o que a projeção durante a apuração acertou e se duas informações que ficaram de fora, a <b>rejeição</b> dos candidatos e o <b>peso de quem está no governo</b>, teriam mudado a previsão. Tudo com a mesma regra do resto do site: dados públicos, os dois candidatos sempre lado a lado e nenhuma preferência.</p>
+
+<div class="resumo" id="resumo"><b>Em resumo</b><ul id="resumo-lista"><li>Carregando…</li></ul></div>
+
+<div class="indice"><b>Nesta página</b>
+<ol><li><a href="#previsoes">As previsões contra o resultado</a></li><li><a href="#aovivo">A projeção durante a apuração</a></li><li><a href="#erro">Onde a simulação errou</a></li><li><a href="#historia">Rejeição e continuidade: o teste com seis eleições</a></li><li><a href="#governadores">O mesmo teste com governadores</a></li><li><a href="#licoes">O que muda numa próxima vez</a></li><li><a href="#limites">Limites desta análise</a></li></ol></div>
+
+<h2 id="previsoes"><span class="n">1</span>As previsões contra o resultado</h2>
+<p>Cada linha é uma previsão feita antes ou durante a noite, com a fatia do 22 entre os votos válidos. A linha vertical é o resultado oficial. As faixas mostram a incerteza que cada previsão declarava.</p>
+<figure><div class="chart"><div class="legend"><span><i class="sw" style="background:var(--c22)"></i>fatia prevista do 22</span><span><i class="sw" style="background:var(--ink)"></i>resultado oficial</span></div><div id="ch-previsoes"></div></div>
+<figcaption id="cap-previsoes"></figcaption></figure>
+
+<h2 id="aovivo"><span class="n">2</span>A projeção durante a apuração</h2>
+<p>Durante a apuração, o painel <a href="../ao-vivo/">Ao vivo</a> refazia a projeção a cada lote do TSE, comparando os votos de cada município com o que se esperava dele. O gráfico mostra a projeção do 22 (linha e faixa de 90%) e a contagem até aquele momento (linha fina), contra a porcentagem das seções apuradas.</p>
+<figure><div class="chart"><div class="legend"><span><i class="sw" style="background:var(--c22)"></i>projeção do resultado final (faixa de 90%)</span><span><i class="sw" style="background:var(--neutro)"></i>contagem até o momento</span><span><i class="sw" style="background:var(--ink)"></i>resultado oficial</span></div><div id="ch-aovivo"></div></div>
+<figcaption id="cap-aovivo"></figcaption></figure>
+
+<h2 id="erro"><span class="n">3</span>Onde a simulação errou</h2>
+<p>A simulação partia do 1º turno de cada município e supunha que cada grupo de eleitores migraria como migrou em 2014, 2018 e 2022. Com os boletins de urna de todas as seções, dá para estimar como cada grupo de fato migrou e comparar com o que o modelo supunha. A estimativa compara, seção a seção, o 1º com o 2º turno (inferência ecológica): mede fluxos líquidos, não o voto de cada pessoa.</p>
+<div class="seg" id="sel-fluxo" role="group" aria-label="Mostrar"><button data-v="margem" aria-pressed="true">Erro na margem, por grupo</button><button data-v="taxas" aria-pressed="false">Para onde cada grupo foi</button></div>
+<figure><div class="chart" id="ch-erro-wrap"><div class="legend" id="leg-erro"></div><div id="ch-erro"></div></div>
+<figcaption id="cap-erro"></figcaption></figure>
+
+<h2 id="historia"><span class="n">4</span>Rejeição e continuidade: o teste com seis eleições</h2>
+<p>A pergunta: se a simulação tivesse usado a rejeição dos candidatos e um peso para a continuação do governo, teria acertado mais? Para responder sem olhar o resultado de 2026, refazemos o modelo com as seis eleições de 2002 a 2022 e prevemos cada uma usando só as outras. O que sobra de erro em cada ano é comparado com o que se sabia antes de cada 2º turno.</p>
+<div class="tscroll"><table id="tb-historia"></table></div>
+<p class="nota" id="nota-historia"></p>
+<figure><div class="seg" id="sel-explica" role="group" aria-label="Variável"></div>
+<div class="chart"><div class="legend"><span><i class="sw" style="background:var(--gov)"></i>2002 a 2022 (usados para estimar)</span><span><i class="sw" style="background:var(--accent)"></i>2026 (não usado)</span></div><div id="ch-explica"></div></div>
+<figcaption id="cap-explica"></figcaption></figure>
+<h3>Os modelos, avaliados deixando um ano de fora</h3>
+<p>Cada linha é uma forma de prever o 2º turno. O erro médio é calculado prevendo cada eleição de 2002 a 2022 sem ela no ajuste; a última coluna é o que cada forma teria dito para 2026, com tudo o que se sabia antes da votação.</p>
+<div class="tscroll"><table id="tb-modelos"></table></div>
+<p class="nota" id="nota-modelos"></p>
+
+<h2 id="governadores"><span class="n">5</span>O mesmo teste com governadores</h2>
+<p>Seis eleições presidenciais são poucas para medir um "peso de quem está no governo". Os 2º turnos para governador de 2002 a 2022 dão muito mais casos da mesma pergunta: quando um dos finalistas é o governador tentando a reeleição, ele termina acima do que o 1º turno indicava?</p>
+<figure><div class="chart"><div class="legend"><span><i class="sw" style="background:var(--gov)"></i>governador tentando a reeleição</span><span><i class="sw" style="background:var(--neutro)"></i>disputas sem governador na final</span></div><div id="ch-gov"></div></div>
+<figcaption id="cap-gov"></figcaption></figure>
+
+<h2 id="licoes"><span class="n">6</span>O que muda numa próxima vez</h2>
+<div id="licoes-texto"></div>
+
+<h2 id="limites"><span class="n">7</span>Limites desta análise</h2>
+<ul id="limites-lista">
+<li><b>Seis eleições são poucas.</b> Qualquer regra ajustada a seis pontos pode parecer boa por acaso. Por isso cada ano é previsto sem ele no ajuste, e mesmo assim a incerteza continua grande.</li>
+<li><b>Inferência ecológica mede saldos, não pessoas.</b> "O eleitor do centro foi para o 13" quer dizer que, onde havia mais eleitores do centro no 1º turno, o 13 cresceu mais. Trocas que se compensam no mesmo lugar não aparecem.</li>
+<li><b>Rejeição e aprovação vêm de pesquisas</b>, que têm seus próprios erros e mudam de método ao longo dos anos. Foram usados os números publicados mais próximos do 2º turno, com fonte na tabela de dados.</li>
+<li><b>Nada aqui explica o porquê.</b> Os números mostram o que aconteceu e o que teria ajudado a prever; não dizem por que os eleitores decidiram como decidiram.</li>
+</ul>
+<p class="nota">Dados e código: <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">github.com/LuisFHartmann/eleicao-em-numeros</a> (scripts <code>historico_presidente.py</code>, <code>estudo_pos.py</code>, <code>estudo_governadores.py</code>, <code>fluxos_2026.py</code>). Os números desta página estão em <a href="../dados/pos_resultado.json">pos_resultado.json</a>.</p>
+</main>
+<footer>Eleição em Números · projeto independente e apartidário, feito com dados públicos do TSE e do IBGE. Código no <a href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">GitHub</a>.</footer>
+<div class="tip" id="tip"></div>
+<script src="../vendor/d3-7.9.0.min.js"></script>
+<script src="pos-resultado.js"></script>
+</body>
+</html>

@@ -199,13 +199,13 @@ footer { padding-block: 28px 48px; color: var(--muted); font-size: 13px; border-
       <div><div class="brand-name"><a href="../">Eleição em Números</a></div><div class="brand-sub">Eleições 2026 · exercício exploratório</div></div>
     </div>
   </div>
-  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/" aria-current="page">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav>
+  <nav class="abas" aria-label="Páginas"><a href="../">Início</a><a href="../votos/">Mapa de votos</a><a href="../segundo-turno/" aria-current="page">Simulação do 2º turno</a><a href="../ao-vivo/">Ao vivo</a><a href="../pos-resultado/">Depois do resultado</a><a href="../metodologia/">Metodologia</a><a href="../apuracao/">Curva da apuração</a><a class="aba-externa" href="https://github.com/LuisFHartmann/eleicao-em-numeros" rel="noopener">Código ↗</a></nav>
 </header>
 
 <main class="wrap">
   <section class="lede">
     <div>
-      <div class="eyebrow">Estudo de caso · 2º turno de 25 de outubro de 2026 · atualizado em 21/10/2026</div>
+      <div class="eyebrow">Estudo de caso · 2º turno de 25 de outubro de 2026 · atualizado em 24/10/2026</div>
       <h1>Para onde vão os votos de quem ficou de fora?</h1>
       <p>Um relatório sobre uma simulação do 2º turno presidencial de 2026, entre o 13 (Lula, PT) e o 22 (Flávio Bolsonaro, PL). A simulação parte do 1º turno já contado e supõe que os eleitores dos outros candidatos, os que votaram branco ou nulo e os que não foram votar vão se comportar como em 2014, 2018 e 2022.</p>
     </div>
@@ -355,11 +355,18 @@ function simular() {
 /* ---------------- pesquisas ---------------- */
 function resumoPesquisas() {
   if (!P) return null;
-  const L = P.segundoTurno2026, rec = L.filter(p => (p.divulgacao || "") >= "2026-10-18");
+  const L = P.segundoTurno2026;
+  // pesquisas recentes: divulgadas nos 7 dias que terminam na divulgação mais recente
+  const ult = d3.max(L, p => p.divulgacao || ""), d0 = new Date(+ult.slice(0, 4), +ult.slice(5, 7) - 1, +ult.slice(8, 10) - 6);
+  const ini = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, "0")}-${String(d0.getDate()).padStart(2, "0")}`;
+  const rec = L.filter(p => (p.divulgacao || "") >= ini);
+  const MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const janela = ini.slice(5, 7) === ult.slice(5, 7) ? `${+ini.slice(8, 10)} a ${dataBR(ult)}` : `${dataBR(ini)} a ${dataBR(ult)}`;
+  const janelaExt = ini.slice(5, 7) === ult.slice(5, 7) ? `${+ini.slice(8, 10)} a ${+ult.slice(8, 10)} de ${MES[+ult.slice(5, 7) - 1]}` : `${dataBR(ini)} a ${dataBR(ult)}`;
   const res = P.resultados, err = e => e.v22 - res[e.eleicao].v22, err13 = e => e.v13 == null ? null : e.v13 - res[e.eleicao].v13;
   const E = P.erros.map(e => ({ ...e, e22: err(e), e13: err13(e) }));
   const faixa = el => d3.extent(E.filter(e => e.eleicao === el), e => e.e22);
-  return { L, rec, mediaRec: d3.mean(rec, p => p.v22), minRec: d3.min(rec, p => p.v22), maxRec: d3.max(rec, p => p.v22), mediaTodas: d3.mean(L, p => p.v22),
+  return { L, rec, janela, janelaExt, mediaRec: d3.mean(rec, p => p.v22), minRec: d3.min(rec, p => p.v22), maxRec: d3.max(rec, p => p.v22), mediaTodas: d3.mean(L, p => p.v22),
     E, f1t26: faixa("1t2026"), f1t26_13: d3.extent(E.filter(e => e.eleicao === "1t2026" && e.e13 != null), e => e.e13), f1t22: faixa("1t2022"), f2t22: faixa("2t2022"), m1t26: d3.mean(E.filter(e => e.eleicao === "1t2026"), e => e.e22) };
 }
 
@@ -388,7 +395,7 @@ function montar() {
         <p>Na mediana de ${fmt.format(R0.nac.length)} 2º turnos simulados, o <b>13 (Lula)</b> fica com <b>${pct(1 - R0.mediana)}</b> dos votos válidos e o <b>22 (Flávio Bolsonaro)</b>, com <b>${pct(R0.mediana)}</b>. Em 90% das simulações, o 13 fica entre ${pct(1 - R0.q95)} e ${pct(1 - R0.q05)}, e o 22 entre ${pct(R0.q05)} e ${pct(R0.q95)}.</p>
         <p>O 13 passa de 50% em <b>${pct(1 - R0.p22, 0)}</b> das simulações e o 22 em <b>${pct(R0.p22, 0)}</b>. A vantagem vem sobretudo do 1º turno, em que o 22 teve ${pct(PRIMEIRO.v22)} dos válidos e o 13, ${pct(PRIMEIRO.v13)}, e de como os outros eleitores migraram no passado.</p>
         <p>O número que mais muda o quadro é o tamanho do erro somado a cada simulação: com <b>±2 pontos</b>, as proporções passam a ${pct(1 - s2.p22, 0)} (13) e ${pct(s2.p22, 0)} (22); com <b>±3 pontos</b>, a ${pct(1 - s3.p22, 0)} e ${pct(s3.p22, 0)}.</p>
-        ${PS ? `<p>Para comparação, as ${PS.rec.length} pesquisas divulgadas de 18 a 21/10 dão ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% dos válidos (média de ${num(PS.mediaRec)}%) e ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% (média de ${num(100 - PS.mediaRec)}%). <a href="#pesquisas">Veja a comparação</a>.</p>` : ""}
+        ${PS ? `<p>Para comparação, as ${PS.rec.length} pesquisas divulgadas de ${PS.janela} dão ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% dos válidos (média de ${num(PS.mediaRec)}%) e ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% (média de ${num(100 - PS.mediaRec)}%). <a href="#pesquisas">Veja a comparação</a>.</p>` : ""}
         <div class="indice"><span>Neste relatório:</span><a href="#simulador">simulador</a><a href="#pergunta">a pergunta</a><a href="#dados">os dados</a><a href="#migracao">migração</a><a href="#validacao">validação</a><a href="#simulacao">a simulação</a><a href="#resultado">resultado</a><a href="#limites">limitações</a><a href="#pesquisas">pesquisas x simulação</a></div>
       </div>
       <div class="grandes">
@@ -515,6 +522,24 @@ function montar() {
         <li><b>Pesquisas.</b> Foram usadas como divulgadas pela imprensa, sem acesso aos microdados. Algumas só publicaram votos totais; nesses casos os válidos foram calculados aqui.</li>
       </ul>
       <p>Outras limitações estão na <a href="../metodologia/#limites">metodologia</a>.</p></div>
+      <details class="recolhe" id="det-chuva">
+        <summary><b>Nota: e a chuva prevista no Sul e no Sudeste?</b><span>verificamos; o efeito esperado no resultado nacional é pequeno (abre a nota)</span></summary>
+        <div class="corpo texto">
+          <p>A previsão para 25 de outubro indicava chuva forte no Paraná e chuva com trovoadas em boa parte do Sudeste, com tempo mais firme no Norte e no Nordeste. Como Sul e Sudeste deram mais votos ao 22 no 1º turno, surgiu a pergunta: uma abstenção maior nesses estados mudaria o resultado?</p>
+          <p>Não há estudo brasileiro que meça o efeito da chuva no comparecimento. Nos Estados Unidos, onde o voto é facultativo, a referência mais citada estima menos de 1 ponto de comparecimento a menos para cada 25 mm de chuva; com voto obrigatório, o efeito deve ser menor. Para dimensionar, refizemos a simulação tirando votos nesses estados:</p>
+          <div class="tscroll"><table class="dados">
+            <thead><tr><th>Cenário</th><th class="r">13 (mediana)</th><th class="r">22 (mediana)</th><th class="r">13 passa de 50%</th><th class="r">22 passa de 50%</th></tr></thead>
+            <tbody>
+              <tr><td>Sem efeito da chuva</td><td class="r num">47,3%</td><td class="r num">52,7%</td><td class="r num">4%</td><td class="r num">96%</td></tr>
+              <tr><td>Abstenção extra de 1 a 3 pontos em PR, SC, RS, SP, RJ, MG e ES; faltosos votariam como o resto do estado</td><td class="r num">47,5%</td><td class="r num">52,5%</td><td class="r num">5%</td><td class="r num">95%</td></tr>
+              <tr><td>O mesmo, com faltosos 10 pontos mais inclinados ao 22 que o estado</td><td class="r num">47,6%</td><td class="r num">52,4%</td><td class="r num">5%</td><td class="r num">95%</td></tr>
+              <tr><td>Caso extremo: 10 pontos de abstenção extra em todo o Sul e o Sudeste, com faltosos 25 pontos mais inclinados ao 22</td><td class="r num">50,0%</td><td class="r num">50,0%</td><td class="r num">51%</td><td class="r num">49%</td></tr>
+            </tbody>
+          </table></div>
+          <p>Mesmo uma abstenção várias vezes maior que a esperada muda o resultado nacional em décimos de ponto. Só o caso extremo, que exige ao mesmo tempo uma abstenção enorme e muito concentrada em um dos lados, empataria a disputa. E a direção não é óbvia: se a chuva atrapalha mais quem depende de transporte público, ela pode tirar votos dos dois candidatos em proporções diferentes das imaginadas. Por isso o cenário não entra na simulação principal.</p>
+          <p style="font-size:13px;color:var(--muted)">Para refazer: <code>python pipeline/simular.py --abstencao PR=3,SC=2,RS=1,SP=2,RJ=2,MG=1,ES=1 --vies-abstencao 10</code>. Fontes da previsão: <a href="https://portal.inmet.gov.br/noticias/previs%C3%A3o-para-s%C3%A1bado-24-domingo-25-e-segunda-feira-26" rel="noopener">Inmet</a>, <a href="https://www.climatempo.com.br/noticia/fim-de-semana/eleicoes-2026-2o-turno-previsao-do-tempo-para-todo-o-brasil" rel="noopener">Climatempo</a>.</p>
+        </div>
+      </details>
     </section>
 
     <section class="block" id="pesquisas">
@@ -746,7 +771,7 @@ function tabelasPesquisas(PS) {
   const fx = ([a, b]) => `de ${num(Math.abs(b))} a ${num(Math.abs(a))} pontos a menos`;
   const f2 = PS.f2t22;
   document.getElementById("p-comp").innerHTML = `<h3>O que cada fonte indica</h3>
-    <p>As ${PS.rec.length} pesquisas divulgadas de 18 a 21 de outubro dão ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% dos votos válidos (média de ${num(100 - PS.mediaRec)}%) e ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% (média de ${num(PS.mediaRec)}%). A simulação, com as escolhas-padrão, dá ${pct(1 - R0.mediana)} ao 13 e ${pct(R0.mediana)} ao 22 na mediana. A diferença entre as duas fontes é de ${num(Math.abs(dif))} ponto${Math.abs(dif) >= 2 ? "s" : ""}, e a média das pesquisas fica ${dentro ? "dentro" : "fora"} da faixa de 90% da simulação (${pct(R0.q05)} a ${pct(R0.q95)} para o 22).</p>
+    <p>As ${PS.rec.length} pesquisas divulgadas de ${PS.janelaExt} dão ao 13 de ${num(100 - PS.maxRec)}% a ${num(100 - PS.minRec)}% dos votos válidos (média de ${num(100 - PS.mediaRec)}%) e ao 22 de ${num(PS.minRec)}% a ${num(PS.maxRec)}% (média de ${num(PS.mediaRec)}%). A simulação, com as escolhas-padrão, dá ${pct(1 - R0.mediana)} ao 13 e ${pct(R0.mediana)} ao 22 na mediana. A diferença entre as duas fontes é de ${num(Math.abs(dif))} ponto${Math.abs(dif) >= 2 ? "s" : ""}, e a média das pesquisas fica ${dentro ? "dentro" : "fora"} da faixa de 90% da simulação (${pct(R0.q05)} a ${pct(R0.q95)} para o 22).</p>
     <p>As duas fontes erram, e o tamanho dos erros passados é parecido com essa diferença. Na véspera do 1º turno de 2026, as pesquisas da tabela deram ao 22 ${fx(PS.f1t26)} do que ele teve, e ao 13 de ${num(Math.abs(PS.f1t26_13[0]))} ponto a menos a ${num(PS.f1t26_13[1])} pontos a mais. Em 2022, o padrão foi o mesmo no 1º turno (${fx(PS.f1t22)} para o 22), mas no 2º turno o erro foi menor: de ${num(Math.abs(f2[0]))} ponto${Math.abs(f2[0]) >= 2 ? "s" : ""} a menos a ${num(Math.abs(f2[1]))} ponto a mais para o 22. Não há garantia de que um erro do 1º turno se repita no 2º. A simulação, por sua vez, errou de ${num(d3.min(T.validacao, v => Math.abs(v.erroPP)))} a ${num(d3.max(T.validacao, v => Math.abs(v.erroPP)))} ponto nos três testes, e não vê nada do que aconteceu na campanha depois de 4 de outubro, como os debates; as pesquisas veem.</p>
     <p>Em resumo: nas pesquisas recentes, a diferença entre os dois vai de ${num(2 * (50 - PS.minRec))} pontos a favor do 13 a ${num(2 * (PS.maxRec - 50))} pontos a favor do 22 (média de ${num(2 * (PS.mediaRec - 50))} pontos a favor do 22); a simulação mostra o que aconteceria se os eleitores repetissem o comportamento de 2014 a 2022. A diferença entre as duas é menor que a incerteza de cada uma. Nenhuma delas é uma previsão do resultado de 25 de outubro.</p>`;
   const fontes = new Map();
@@ -754,7 +779,7 @@ function tabelasPesquisas(PS) {
   const ROT = { "1t2026": "1º turno 2026", "1t2022": "1º turno 2022", "2t2022": "2º turno 2022" };
   PS.L.forEach(p => p.fontes.forEach(f => anota(f.url, f.nome, f.nome.includes("compilação") ? "2º turno 2026" : p.instituto + ", 2º turno 2026")));
   PS.E.forEach(e => anota(e.fonte.url, e.fonte.nome, `${e.instituto}, ${ROT[e.eleicao]}`));
-  document.getElementById("fontes").innerHTML = `<h3 style="font-size:14px;color:var(--ink-2);margin:20px 0 4px">Fontes das pesquisas</h3><p style="margin:0">${[...fontes].map(([u, f]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.nome)}</a> <span>(${esc([...f.extras].join("; "))})</span>`).join(" · ")}. Pesquisas de 9 a 18/10 a partir da compilação do Poder360; as divulgadas de 17 a 21/10, das reportagens indicadas (consulta em 21/10/2026). Quando só os votos totais foram divulgados, os válidos foram calculados como candidato ÷ (13 + 22).</p>`;
+  document.getElementById("fontes").innerHTML = `<h3 style="font-size:14px;color:var(--ink-2);margin:20px 0 4px">Fontes das pesquisas</h3><p style="margin:0">${[...fontes].map(([u, f]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(f.nome)}</a> <span>(${esc([...f.extras].join("; "))})</span>`).join(" · ")}. Pesquisas de 9 a 18/10 a partir da compilação do Poder360; as divulgadas de 17 a 24/10, das reportagens indicadas (consultas em 21 e 24/10/2026). Quando só os votos totais foram divulgados, os válidos foram calculados como candidato ÷ (13 + 22).</p>`;
 }
 
 const redesenhar = () => { if (state.resultado) desenharResultado(); if (RESUMO.padrao) desenharPesquisas(); };

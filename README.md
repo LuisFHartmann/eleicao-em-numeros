@@ -44,6 +44,7 @@ O que entra na simulação está em `site/dados/`: `votos.json` (1º turno de 20
 | `apuracao/` | Curva da apuração reconstruída pela hora de chegada de cada boletim; versão "mesmo ritmo em todos os estados" |
 | `segundo-turno/` | Monte Carlo do 2º turno (20 mil sorteios) com pesos e classificação de candidatos ajustáveis |
 | `ao-vivo/` | Contagem e projeção do resultado final na noite de 25/10/2026; ensaio com a noite real de 2022 e com uma noite simulada |
+| `pos-resultado/` | Depois do 2º turno: previsões contra o resultado, onde a simulação errou e o teste de rejeição e continuidade de governo com as eleições de 2002 a 2022 |
 | `metodologia/` | Dados, premissas, testes e limitações |
 
 O site é estático. Na noite da apuração o navegador consulta a API de divulgação do TSE diretamente (o TSE libera CORS) e baixa só os municípios que mudaram desde a última consulta.
@@ -59,6 +60,14 @@ python pipeline/curva_apuracao.py  # site/apuracao/dados/curva.json
 python pipeline/transferencia.py   # site/dados/transferencia.json (migração de votos; alguns minutos)
 python pipeline/ao_vivo.py         # site/ao-vivo/dados: esperado por município, noite de 2022, noite simulada
 node   pipeline/teste_ao_vivo.js replay_2022   # testa a projeção na noite real de 2022
+
+# análise pós-resultado (página pos-resultado/)
+python pipeline/historico_presidente.py   # presidente por município, 2002 a 2022 (TSE)
+python pipeline/boletins_2t.py            # 2º turno de 2026 por seção, dos boletins de urna (lê ~124 GB em fluxo, grava ~9 MB)
+python pipeline/estudo_pos.py             # transferências por ano e previsão de cada eleição sem ela
+python pipeline/fluxos_2026.py            # para onde foi cada grupo em 2026 x o que a simulação supunha
+python pipeline/estudo_governadores.py    # 2º turnos de governador com reeleição (2002 a 2022)
+python pipeline/estudo_modelos.py         # compara os modelos e grava site/dados/pos_resultado.json
 python -m http.server -d site 8000
 ```
 

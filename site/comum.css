@@ -33,3 +33,10 @@
 
 /* Aba externa (código no GitHub): no fim da barra, em destaque discreto. */
 .abas a.aba-externa { margin-left: auto; color: var(--accent); }
+
+/* Avisos dinâmicos (site/avisos.js) */
+.avisos:empty { display: none; }
+.avisos { max-width: 1240px; margin: 14px auto 0; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.aviso-dinamico { margin: 0 0 8px; padding: 10px 14px; border-radius: 6px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); background: var(--accent-soft); border-left: 3px solid var(--accent); }
+.aviso-dinamico.alerta { border-left-color: #d97706; }
+.aviso-dinamico b { color: var(--ink); }
